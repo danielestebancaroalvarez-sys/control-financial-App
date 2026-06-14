@@ -1,6 +1,53 @@
 import type { CurrencyCode } from '@/lib/household/types'
 import type { Period } from './types'
 
+export type PeriodLabels = {
+  noun: string
+  current: string
+  next: string
+  view: string
+  ofPeriod: string
+  inNext: string
+}
+
+export function getPeriodLabels(period: Period): PeriodLabels {
+  if (period === 'weekly') {
+    return {
+      noun: 'semana',
+      current: 'esta semana',
+      next: 'próxima semana',
+      view: 'Semanal',
+      ofPeriod: 'de la semana',
+      inNext: 'la próxima semana',
+    }
+  }
+  return {
+    noun: 'mes',
+    current: 'este mes',
+    next: 'próximo mes',
+    view: 'Mensual',
+    ofPeriod: 'del mes',
+    inNext: 'el próximo mes',
+  }
+}
+
+export function getNextPeriodRange(period: Period): { start: string; end: string } {
+  const { start, end } = getPeriodRange(period)
+  if (period === 'weekly') {
+    const nextStart = new Date(`${start}T12:00:00`)
+    nextStart.setDate(nextStart.getDate() + 7)
+    const nextEnd = new Date(nextStart)
+    nextEnd.setDate(nextStart.getDate() + 6)
+    return { start: toDateString(nextStart), end: toDateString(nextEnd) }
+  }
+
+  const currentEnd = new Date(`${end}T12:00:00`)
+  const nextStart = new Date(currentEnd)
+  nextStart.setDate(currentEnd.getDate() + 1)
+  const nextEnd = new Date(nextStart.getFullYear(), nextStart.getMonth() + 1, 0)
+  return { start: toDateString(nextStart), end: toDateString(nextEnd) }
+}
+
 export function formatMoney(amount: number, currency: CurrencyCode): string {
   return new Intl.NumberFormat(currency === 'COP' ? 'es-CO' : 'en-AU', {
     style: 'currency',

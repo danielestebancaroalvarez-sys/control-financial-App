@@ -1,4 +1,5 @@
 import { createClient } from '@/utils/supabase/server'
+import { syncUserProfileFromMetadata } from '@/lib/profile/sync'
 import type { CurrencyCode } from '@/lib/household/types'
 import { calculateBalance, sumByTypeInPeriod } from './balance'
 import { calculateGuiltFreeMoney } from './guilt-free'
@@ -139,6 +140,11 @@ export async function searchTransactions(
   filters: SearchFilters
 ): Promise<TransactionListItem[]> {
   const supabase = await createClient()
+  await syncUserProfileFromMetadata()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
   let query = supabase
     .from('transactions')
@@ -190,6 +196,14 @@ export async function searchTransactions(
 
   return data.map(row => {
     const cat = Array.isArray(row.categories) ? row.categories[0] : row.categories
+    let authorName = profileMap.get(row.created_by) ?? null
+    if (!authorName && user && user.id === row.created_by) {
+      authorName =
+        (user.user_metadata?.full_name as string | undefined) ??
+        (user.user_metadata?.name as string | undefined) ??
+        user.email?.split('@')[0] ??
+        'Usuario'
+    }
     return {
       id: row.id,
       type: row.type,
@@ -203,7 +217,7 @@ export async function searchTransactions(
       category_icon: cat?.icon ?? null,
       category_color: cat ? getCategoryColor(cat.name, cat.color) : null,
       created_by: row.created_by,
-      author_name: profileMap.get(row.created_by) ?? null,
+      author_name: authorName,
       line_items: row.line_items as TransactionListItem['line_items'],
     }
   })
@@ -240,24 +254,21 @@ export async function getPredictionsSummary(
 ): Promise<PredictionsSummary> {
   const supabase = await createClient()
 
-  const [recurringResult, txResult, categories] = await Promise.all([
+  const [recurringResult, txResult] = await Promise.all([
     supabase
       .from('recurring_schedules')
       .select(
-        'id, description, amount_original, frequency, category_id, categories (name, icon, is_fixed)'
+        'id, description, amount_original, frequency, next_occurrence, category_id, categories (name, icon, is_fixed)'
       )
       .eq('household_id', householdId)
       .eq('is_active', true)
       .eq('type', 'expense'),
     supabase
       .from('transactions')
-      .select('category_id, amount_base, transaction_date')
+      .select('category_id, amount_base, transaction_date, line_items')
       .eq('household_id', householdId)
       .eq('type', 'expense'),
-    getCategories(householdId),
   ])
-
-  const mercado = categories.find(c => c.name === 'Mercado')
 
   const recurring = (recurringResult.data ?? []).map(r => {
     const cat = Array.isArray(r.categories) ? r.categories[0] : r.categories
@@ -266,6 +277,7 @@ export async function getPredictionsSummary(
       description: r.description,
       amount_original: r.amount_original,
       frequency: r.frequency,
+      next_occurrence: r.next_occurrence,
       category_id: r.category_id,
       categories: cat
         ? { name: cat.name, icon: cat.icon, is_fixed: cat.is_fixed }
@@ -279,9 +291,8 @@ export async function getPredictionsSummary(
       category_id: tx.category_id,
       amount_base: tx.amount_base,
       transaction_date: tx.transaction_date,
+      line_items: tx.line_items as { name: string; price: number }[] | null,
     })),
-    mercado?.id ?? null,
-    mercado?.name ?? 'Mercado',
     period
   )
 }

@@ -3,6 +3,13 @@
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 import type { Period } from '@/lib/finance/types'
+import { ensureUserProfile } from './sync'
+
+const REVALIDATE_PATHS = ['/', '/buscar', '/ahorros', '/predicciones', '/nuevo', '/ajustes']
+
+function revalidateApp() {
+  for (const path of REVALIDATE_PATHS) revalidatePath(path)
+}
 
 export async function updateDashboardPeriod(
   period: Period
@@ -14,14 +21,21 @@ export async function updateDashboardPeriod(
 
   if (!user) return { error: 'Debes iniciar sesión.' }
 
-  const { error } = await supabase
+  await ensureUserProfile()
+
+  const { data, error } = await supabase
     .from('profiles')
     .update({ dashboard_period: period })
     .eq('id', user.id)
+    .select('dashboard_period')
+    .maybeSingle()
 
   if (error) return { error: error.message }
 
-  revalidatePath('/')
-  revalidatePath('/ajustes')
+  if (!data || data.dashboard_period !== period) {
+    return { error: 'No se pudo guardar la preferencia. Intenta de nuevo.' }
+  }
+
+  revalidateApp()
   return {}
 }

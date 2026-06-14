@@ -1,7 +1,9 @@
 import { Suspense } from 'react'
 import { createClient } from '@/utils/supabase/server'
 import { getUserHousehold, getHouseholdMembers } from '@/lib/household/queries'
+import { getUserDashboardPeriod } from '@/lib/profile/queries'
 import { getCategories, searchTransactions } from '@/lib/finance/queries'
+import { getPeriodRange } from '@/lib/finance/format'
 import { BuscarClient } from './buscar-client'
 
 type SearchParams = Promise<{
@@ -27,14 +29,17 @@ export default async function BuscarPage({
   const household = await getUserHousehold()
   if (!household || !user) return null
 
+  const period = await getUserDashboardPeriod()
+  const { start, end } = getPeriodRange(period)
+
   const [results, categories, members] = await Promise.all([
     searchTransactions(household.id, {
       q: params.q,
       type: params.type as 'income' | 'expense' | 'all' | undefined,
       categoryId: params.categoryId,
       createdBy: params.createdBy,
-      startDate: params.startDate,
-      endDate: params.endDate,
+      startDate: params.startDate ?? start,
+      endDate: params.endDate ?? end,
     }),
     getCategories(household.id),
     getHouseholdMembers(household.id),
@@ -48,6 +53,9 @@ export default async function BuscarPage({
         members={members}
         currency={household.base_currency}
         filters={params as Record<string, string>}
+        period={period}
+        defaultStartDate={start}
+        defaultEndDate={end}
       />
     </Suspense>
   )

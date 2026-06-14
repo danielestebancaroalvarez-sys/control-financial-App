@@ -4,8 +4,8 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useTransition } from 'react'
 import { Download, Search } from 'lucide-react'
 import { CategoryIcon } from '@/components/transactions/category-icon'
-import { formatMoney } from '@/lib/finance/format'
-import type { Category, TransactionListItem } from '@/lib/finance/types'
+import { formatMoney, getPeriodLabels } from '@/lib/finance/format'
+import type { Category, Period, TransactionListItem } from '@/lib/finance/types'
 import type { CurrencyCode } from '@/lib/household/types'
 import type { HouseholdMember } from '@/lib/household/types'
 
@@ -15,16 +15,23 @@ export function BuscarClient({
   members,
   currency,
   filters,
+  period,
+  defaultStartDate,
+  defaultEndDate,
 }: {
   results: TransactionListItem[]
   categories: Category[]
   members: HouseholdMember[]
   currency: CurrencyCode
   filters: Record<string, string>
+  period: Period
+  defaultStartDate: string
+  defaultEndDate: string
 }) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [pending, startTransition] = useTransition()
+  const labels = getPeriodLabels(period)
 
   const updateFilter = useCallback(
     (key: string, value: string) => {
@@ -69,7 +76,7 @@ export function BuscarClient({
         <div>
           <h1 className="text-[22px] font-bold text-[#2D3436]">Búsqueda</h1>
           <p className="text-[13px] text-[#636E72]">
-            {results.length} resultado{results.length !== 1 ? 's' : ''}
+            {results.length} resultado{results.length !== 1 ? 's' : ''} · Vista {labels.view}
             {pending && ' · buscando...'}
           </p>
         </div>
@@ -131,8 +138,14 @@ export function BuscarClient({
           </select>
           <input
             type="date"
-            defaultValue={filters.startDate ?? ''}
+            defaultValue={filters.startDate ?? defaultStartDate}
             onChange={e => updateFilter('startDate', e.target.value)}
+            className="px-3 py-2.5 rounded-xl bg-[#F5F5F5] text-[12px] outline-none"
+          />
+          <input
+            type="date"
+            defaultValue={filters.endDate ?? defaultEndDate}
+            onChange={e => updateFilter('endDate', e.target.value)}
             className="px-3 py-2.5 rounded-xl bg-[#F5F5F5] text-[12px] outline-none"
           />
         </div>
@@ -164,7 +177,7 @@ export function BuscarClient({
                 </p>
                 <p className="text-[11px] text-[#636E72]">
                   {tx.category_name} · {tx.transaction_date}
-                  {tx.author_name && ` · ${tx.author_name}`}
+                  {tx.author_name ? ` · ${tx.author_name}` : ''}
                 </p>
               </div>
               <span

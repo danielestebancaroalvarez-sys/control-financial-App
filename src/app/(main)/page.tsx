@@ -2,7 +2,7 @@ import { createClient } from '@/utils/supabase/server'
 import { getUserHousehold } from '@/lib/household/queries'
 import { getUserDashboardPeriod } from '@/lib/profile/queries'
 import { getDashboardSummary } from '@/lib/finance/queries'
-import { formatMoney } from '@/lib/finance/format'
+import { formatMoney, getPeriodLabels } from '@/lib/finance/format'
 import { getFirstName } from '@/lib/utils/name'
 import { BalanceEditButton } from './balance-edit-button'
 import {
@@ -23,7 +23,7 @@ export default async function DashboardPage() {
   const summary = await getDashboardSummary(household.id, period)
   const currency = household.base_currency
   const fmt = (n: number) => formatMoney(n, currency)
-  const periodLabel = period === 'weekly' ? 'esta semana' : 'este mes'
+  const labels = getPeriodLabels(period)
 
   const displayName =
     user.user_metadata?.full_name ??
@@ -45,7 +45,7 @@ export default async function DashboardPage() {
           Hola, {firstName}
         </h1>
         <p className="text-[13px] text-[#636E72]">
-          {household.name} · Vista {periodLabel}
+          {household.name} · Vista {labels.view}
         </p>
       </div>
 
@@ -77,7 +77,7 @@ export default async function DashboardPage() {
               {fmt(summary.guiltFreeMoney)}
             </p>
             <p className="text-[11px] text-[#636E72] mt-1">
-              Ingresos {periodLabel} − gastos {periodLabel}
+              Ingresos − gastos del periodo
             </p>
           </div>
 
@@ -99,8 +99,8 @@ export default async function DashboardPage() {
           </div>
 
           <div className="rounded-2xl bg-[#F5F5F5] p-4">
-            <p className="text-[12px] font-semibold text-[#2D3436] mb-3 capitalize">
-              Resumen {periodLabel}
+            <p className="text-[12px] font-semibold text-[#2D3436] mb-3">
+              Resumen
             </p>
             <div className="flex h-3 rounded-full overflow-hidden mb-3">
               <div className="bg-[#00BFA5]" style={{ width: `${incomePercent}%` }} />
@@ -122,8 +122,8 @@ export default async function DashboardPage() {
 
           {summary.topCategories.length > 0 && (
             <div className="rounded-2xl bg-[#F5F5F5] p-4">
-              <p className="text-[12px] font-semibold text-[#2D3436] mb-3 capitalize">
-                Top categorías · {periodLabel}
+              <p className="text-[12px] font-semibold text-[#2D3436] mb-3">
+                Top categorías
               </p>
               <div className="space-y-2">
                 {summary.topCategories.map(cat => (

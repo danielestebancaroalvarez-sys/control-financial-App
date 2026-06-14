@@ -2,6 +2,7 @@
 
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { syncUserProfileFromMetadata } from '@/lib/profile/sync'
 import { getRealBalance, getHouseholdBaseCurrency } from './queries'
 import { fetchExchangeRate, prepareTransactionAmounts } from './currency'
 import { addFrequency, getTodayString } from './format'
@@ -95,6 +96,8 @@ export async function createTransaction(
   } = await supabase.auth.getUser()
 
   if (!user) return { error: 'Debes iniciar sesión.' }
+
+  await syncUserProfileFromMetadata()
 
   const today = getTodayString()
   if (input.transactionDate > today) {

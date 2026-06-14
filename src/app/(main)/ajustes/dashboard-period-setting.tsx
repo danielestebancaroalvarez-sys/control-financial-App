@@ -1,18 +1,32 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useEffect, useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import { BarChart2 } from 'lucide-react'
 import { updateDashboardPeriod } from '@/lib/profile/actions'
 import type { Period } from '@/lib/finance/types'
 
 export function DashboardPeriodSetting({ current }: { current: Period }) {
+  const router = useRouter()
   const [period, setPeriod] = useState(current)
+  const [error, setError] = useState<string | null>(null)
   const [pending, startTransition] = useTransition()
+
+  useEffect(() => {
+    setPeriod(current)
+  }, [current])
 
   function handleChange(value: Period) {
     setPeriod(value)
+    setError(null)
     startTransition(async () => {
-      await updateDashboardPeriod(value)
+      const result = await updateDashboardPeriod(value)
+      if (result.error) {
+        setError(result.error)
+        setPeriod(current)
+        return
+      }
+      router.refresh()
     })
   }
 
@@ -23,7 +37,7 @@ export function DashboardPeriodSetting({ current }: { current: Period }) {
         Vista del Dashboard
       </h2>
       <p className="text-[12px] text-[#636E72] mb-4">
-        Elige si prefieres ver ingresos y gastos por semana o por mes.
+        Aplica a inicio, búsqueda, radar y predicciones.
       </p>
       <div className="flex rounded-2xl bg-[#F5F5F5] p-1">
         {(['weekly', 'monthly'] as const).map(value => (
@@ -42,6 +56,9 @@ export function DashboardPeriodSetting({ current }: { current: Period }) {
           </button>
         ))}
       </div>
+      {error && (
+        <p className="text-[11px] text-red-600 mt-2">{error}</p>
+      )}
     </section>
   )
 }

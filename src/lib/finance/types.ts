@@ -107,6 +107,16 @@ export type FixedServiceStatus = {
   paidAmount?: number
   paidDate?: string
   categoryIcon: string | null
+  occurrences?: number
+  dueInNextPeriod?: boolean
+}
+
+export type ItemPurchasePrediction = {
+  itemName: string
+  avgUnitPrice: number
+  expectedPurchases: number
+  projectedSpend: number
+  lastPurchased: string | null
 }
 
 export type ConsumptionPrediction = {
@@ -122,7 +132,10 @@ export type ConsumptionPrediction = {
 export type PredictionsSummary = {
   fixedServices: FixedServiceStatus[]
   subscriptions: FixedServiceStatus[]
-  consumption: ConsumptionPrediction | null
+  purchasePredictions: ItemPurchasePrediction[]
+  nextPeriodStart: string
+  nextPeriodEnd: string
+  period: Period
 }
 
 export type CreateTransactionInput = {
