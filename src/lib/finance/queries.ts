@@ -15,6 +15,14 @@ import { buildExpenseGroupTotals } from './category-groups'
 import { calculatePeriodSavingsAllocations } from './savings-dashboard'
 import { buildMemberSpendingStats } from './member-spending'
 import { buildPredictionsSummary } from './predictions'
+import {
+  buildRealSavingsByGoal,
+  sumRealSavingsInPeriod,
+} from './real-savings'
+import {
+  canCompareExpensePeriods,
+  countExpenseTransactionsInPeriod,
+} from './period-comparison'
 import { getHouseholdMembers } from '@/lib/household/queries'
 import type {
   Category,
@@ -134,6 +142,13 @@ export async function getDashboardSummary(
   )
   const { total: periodSavings, items: savingsBreakdown } =
     calculatePeriodSavingsAllocations(savingsGoals, period, start, end)
+  const periodRealSavings = sumRealSavingsInPeriod(transactions, start, end)
+  const realSavingsBreakdown = buildRealSavingsByGoal(
+    transactions,
+    savingsGoals,
+    start,
+    end
+  )
 
   const expenseCategories = categories.filter(c => c.type === 'expense')
   const categoryMap = new Map(
@@ -178,7 +193,24 @@ export async function getDashboardSummary(
       prev.start,
       prev.end
     )
-    if (prevExpenses > 0) {
+    const prevExpenseCount = countExpenseTransactionsInPeriod(
+      transactions,
+      prev.start,
+      prev.end
+    )
+    const currentExpenseCount = countExpenseTransactionsInPeriod(
+      transactions,
+      start,
+      end
+    )
+    if (
+      canCompareExpensePeriods(
+        periodExpenses,
+        prevExpenses,
+        currentExpenseCount,
+        prevExpenseCount
+      )
+    ) {
       expenseChangePercent =
         Math.round(
           ((periodExpenses - prevExpenses) / prevExpenses) * 1000
@@ -187,9 +219,17 @@ export async function getDashboardSummary(
   }
 
   const categoryTotals = new Map<string, number>()
+  let savingsCategoryTotal = 0
+
   for (const tx of transactions) {
     if (tx.type !== 'expense' || !tx.category_id) continue
     if (tx.transaction_date < start || tx.transaction_date > end) continue
+
+    if (tx.savings_goal_id) {
+      savingsCategoryTotal += Number(tx.amount_base)
+      continue
+    }
+
     const prev = categoryTotals.get(tx.category_id) ?? 0
     categoryTotals.set(tx.category_id, prev + Number(tx.amount_base))
   }
@@ -212,7 +252,23 @@ export async function getDashboardSummary(
     .sort((a, b) => b[1] - a[1])
     .map(mapCategoryAmount)
 
-  const expenseGroups = buildExpenseGroupTotals(categoryTotals, categoryMap)
+  if (savingsCategoryTotal > 0) {
+    allCategories.push({
+      name: 'Ahorro',
+      amount: Math.round(savingsCategoryTotal * 100) / 100,
+      color: '#F59E0B',
+    })
+    allCategories.sort((a, b) => b.amount - a.amount)
+  }
+
+  const expenseGroups = [
+    ...buildExpenseGroupTotals(categoryTotals, categoryMap),
+    ...realSavingsBreakdown.map(goal => ({
+      name: goal.name,
+      amount: goal.amount,
+      color: goal.color,
+    })),
+  ].filter(item => item.amount > 0)
 
   const trend = buildTrendSeries(transactions, period, safeOffset, 6)
   const savingsProgress = savingsGoals.map(g => ({
@@ -242,6 +298,8 @@ export async function getDashboardSummary(
     monthlyIncome: periodIncome,
     monthlyExpenses: periodExpenses,
     periodSavings,
+    periodRealSavings,
+    realSavingsBreakdown,
     savingsBreakdown,
     totalSavings,
     guiltFreeMoney,

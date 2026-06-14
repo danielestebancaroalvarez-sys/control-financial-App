@@ -14,8 +14,9 @@ import {
   applySavingsGoalDelta,
   getSavingsContributionCategoryId,
 } from './savings-contribution'
-import { addFrequency, getTodayString } from './format'
+import { getTodayString } from './format'
 import type {
+  CreateRecurringScheduleInput,
   CreateSavingsGoalInput,
   CreateTransactionInput,
   RecordSavingsContributionInput,
@@ -98,6 +99,48 @@ export async function reconcileBalance(
   return { adjustment }
 }
 
+export async function createRecurringSchedule(
+  input: CreateRecurringScheduleInput
+): Promise<{ error?: string; id?: string }> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) return { error: 'Debes iniciar sesión.' }
+
+  await syncUserProfileFromMetadata()
+
+  const baseCurrency = await getHouseholdBaseCurrency(input.householdId)
+  const currency = input.currency ?? baseCurrency
+
+  if (input.amount <= 0) return { error: 'El monto debe ser mayor a cero.' }
+  if (!input.description.trim()) return { error: 'La descripción es obligatoria.' }
+
+  const { data: schedule, error } = await supabase
+    .from('recurring_schedules')
+    .insert({
+      household_id: input.householdId,
+      created_by: user.id,
+      category_id: input.categoryId,
+      type: input.type,
+      description: input.description.trim(),
+      amount_original: input.amount,
+      currency_original: currency,
+      frequency: input.frequency,
+      next_occurrence: input.startDate,
+    })
+    .select('id')
+    .single()
+
+  if (error || !schedule) {
+    return { error: error?.message ?? 'No se pudo crear el movimiento fijo.' }
+  }
+
+  revalidateAll()
+  return { id: schedule.id }
+}
+
 export async function createTransaction(
   input: CreateTransactionInput
 ): Promise<{ error?: string; id?: string }> {
@@ -114,7 +157,7 @@ export async function createTransaction(
   if (input.transactionDate > today) {
     return {
       error:
-        'No puedes registrar movimientos con fecha futura. Marca como recurrente para que se repita automáticamente.',
+        'No puedes registrar movimientos con fecha futura. Usa la sección de ingresos y gastos fijos para programar repetición.',
     }
   }
 
@@ -137,31 +180,6 @@ export async function createTransaction(
 
   const amounts = prepareTransactionAmounts(amount, currency, baseCurrency, exchangeRate)
 
-  let recurringScheduleId: string | null = null
-
-  if (input.isRecurring && input.frequency) {
-    const { data: schedule, error: schedError } = await supabase
-      .from('recurring_schedules')
-      .insert({
-        household_id: input.householdId,
-        created_by: user.id,
-        category_id: input.categoryId,
-        type: input.type,
-        description: input.description,
-        amount_original: amount,
-        currency_original: currency,
-        frequency: input.frequency,
-        next_occurrence: addFrequency(input.transactionDate, input.frequency),
-      })
-      .select('id')
-      .single()
-
-    if (schedError || !schedule) {
-      return { error: schedError?.message ?? 'No se pudo crear el movimiento recurrente.' }
-    }
-    recurringScheduleId = schedule.id
-  }
-
   const { data: tx, error: txError } = await supabase
     .from('transactions')
     .insert({
@@ -173,8 +191,8 @@ export async function createTransaction(
       transaction_date: input.transactionDate,
       ...amounts,
       line_items: input.lineItems?.length ? input.lineItems : null,
-      recurring_schedule_id: recurringScheduleId,
-      is_recurring_instance: !!recurringScheduleId,
+      recurring_schedule_id: null,
+      is_recurring_instance: false,
       savings_goal_id: input.savingsGoalId ?? null,
     })
     .select('id')

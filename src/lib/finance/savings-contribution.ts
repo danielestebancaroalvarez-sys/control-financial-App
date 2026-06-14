@@ -36,7 +36,7 @@ export async function getSavingsContributionCategoryId(
     .select('id')
     .eq('household_id', householdId)
     .eq('type', 'expense')
-    .eq('name', 'Otros gastos')
+    .eq('name', 'Ahorro')
     .maybeSingle()
 
   if (data?.id) return data.id

@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
-  Loader2, Plus, Trash2, Check, ShoppingCart, Repeat,
+  Loader2, Plus, Trash2, Check, ShoppingCart,
 } from 'lucide-react'
 import { createTransaction, createCategory } from '@/lib/finance/actions'
 import { attachReceiptToTransaction } from '@/lib/receipts/actions'
@@ -11,7 +11,6 @@ import { compressReceiptImage } from '@/lib/receipts/compress-image'
 import type { ParsedReceipt } from '@/lib/receipts/types'
 import { ReceiptAttachment } from './receipt-attachment'
 import { ReceiptScanner } from './receipt-scanner'
-import { getCategoryRadarKind } from '@/lib/finance/category-radar'
 import { getTodayString } from '@/lib/finance/format'
 import { CategoryIcon } from './category-icon'
 import type { Category, LineItem } from '@/lib/finance/types'
@@ -40,8 +39,6 @@ export function AddTransactionForm({
   const [description, setDescription] = useState('')
   const [amount, setAmount] = useState('')
   const [date, setDate] = useState(TODAY)
-  const [isRecurring, setIsRecurring] = useState(false)
-  const [frequency, setFrequency] = useState<'weekly' | 'biweekly' | 'monthly'>('monthly')
   const [lineItemsEnabled, setLineItemsEnabled] = useState(false)
   const [lineItems, setLineItems] = useState<LineItem[]>([{ name: '', price: 0 }])
   const [loading, setLoading] = useState(false)
@@ -54,7 +51,7 @@ export function AddTransactionForm({
   const [receiptUploadWarning, setReceiptUploadWarning] = useState<string | null>(null)
 
   const filteredCategories = useMemo(
-    () => categories.filter(c => c.type === txType),
+    () => categories.filter(c => c.type === txType && c.name !== 'Ahorro'),
     [categories, txType]
   )
 
@@ -159,7 +156,7 @@ export function AddTransactionForm({
 
     if (date > TODAY) {
       setError(
-        'No puedes registrar movimientos con fecha futura. Usa recurrente para repetir automáticamente.'
+        'No puedes registrar movimientos con fecha futura. Usa la sección de ingresos y gastos fijos para programar repetición.'
       )
       setLoading(false)
       return
@@ -189,8 +186,6 @@ export function AddTransactionForm({
       amount: parsedAmount,
       currency: baseCurrency,
       transactionDate: date,
-      isRecurring,
-      frequency: isRecurring ? frequency : undefined,
       lineItems:
         lineItemsEnabled && isMercado
           ? lineItems.filter(i => i.name.trim() && i.price > 0)
@@ -248,18 +243,6 @@ export function AddTransactionForm({
             </button>
           ))}
         </div>
-        {isRecurring && selectedCategory && (
-          <p className="text-[11px] text-cc-secondary mt-2">
-            {getCategoryRadarKind(selectedCategory) === 'service' &&
-              'Radar: aparecerá en Servicios (pagos fijos).'}
-            {getCategoryRadarKind(selectedCategory) === 'subscription' &&
-              'Radar: aparecerá en Suscripciones. Usa la descripción para el nombre (ej. Netflix).'}
-            {getCategoryRadarKind(selectedCategory) === 'shopping' &&
-              'Radar: aparecerá en Predicción de compras.'}
-            {getCategoryRadarKind(selectedCategory) === 'other' &&
-              'Para el radar elige: Arriendo/Luz/Internet, Suscripciones o Mercado.'}
-          </p>
-        )}
       </div>
 
       <div className="text-center py-2">
@@ -337,18 +320,6 @@ export function AddTransactionForm({
             </button>
           </div>
         )}
-        {isRecurring && selectedCategory && (
-          <p className="text-[11px] text-cc-secondary mt-2">
-            {getCategoryRadarKind(selectedCategory) === 'service' &&
-              'Radar: aparecerá en Servicios (pagos fijos).'}
-            {getCategoryRadarKind(selectedCategory) === 'subscription' &&
-              'Radar: aparecerá en Suscripciones. Pon el nombre en descripción (ej. Netflix).'}
-            {getCategoryRadarKind(selectedCategory) === 'shopping' &&
-              'Radar: aparecerá en Predicción de compras.'}
-            {getCategoryRadarKind(selectedCategory) === 'other' &&
-              'Para el radar usa: Arriendo/Luz/Internet, Suscripciones o Mercado.'}
-          </p>
-        )}
       </div>
 
       <div>
@@ -358,7 +329,7 @@ export function AddTransactionForm({
           value={description}
           onChange={e => setDescription(e.target.value)}
           placeholder={
-            selectedCategory && getCategoryRadarKind(selectedCategory) === 'subscription'
+            selectedCategory?.name === 'Suscripciones'
               ? 'Ej: Netflix, Spotify, Disney+...'
               : 'Ej: Cena, Salario marzo...'
           }
@@ -371,7 +342,7 @@ export function AddTransactionForm({
           Fecha del movimiento
         </label>
         <p className="text-[10px] text-cc-muted mb-1">
-          Solo hoy o fechas pasadas. Para repetir, usa recurrente.
+          Solo hoy o fechas pasadas. Para repetir, usa la sección de fijos abajo.
         </p>
         <input
           type="date"
@@ -472,45 +443,6 @@ export function AddTransactionForm({
           )}
         </div>
       )}
-
-      <div className="rounded-2xl bg-[#F5F5F5] p-4 space-y-3">
-        <div className="flex items-center gap-2">
-          <Repeat className="w-4 h-4 text-[#00BFA5]" />
-          <label className="flex items-center gap-2 text-[13px] font-semibold text-cc-primary cursor-pointer">
-            <input
-              type="checkbox"
-              checked={isRecurring}
-              onChange={e => setIsRecurring(e.target.checked)}
-              className="rounded accent-[#00BFA5]"
-            />
-            {txType === 'income'
-              ? 'Ingreso fijo recurrente'
-              : 'Gasto fijo recurrente'}
-          </label>
-        </div>
-        {isRecurring && (
-          <>
-            <p className="text-[11px] text-cc-secondary">
-              Se repetirá automáticamente. El primer registro es el de hoy; los
-              siguientes se crearán solos.
-            </p>
-            <div>
-              <label className="text-[11px] font-semibold text-cc-secondary">Frecuencia</label>
-              <select
-                value={frequency}
-                onChange={e =>
-                  setFrequency(e.target.value as 'weekly' | 'biweekly' | 'monthly')
-                }
-                className="mt-1 w-full px-3 py-2.5 rounded-xl bg-white text-[13px] font-semibold outline-none"
-              >
-                <option value="weekly">Semanal</option>
-                <option value="biweekly">Quincenal</option>
-                <option value="monthly">Mensual</option>
-              </select>
-            </div>
-          </>
-        )}
-      </div>
 
       <p className="text-[11px] text-cc-secondary text-center">
         Registrado por: {authorName}

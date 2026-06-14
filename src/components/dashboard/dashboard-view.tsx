@@ -13,26 +13,22 @@ import Link from 'next/link'
 
 function buildBudgetSlices(summary: DashboardSummary) {
   const slices: { value: number; color: string; label: string }[] = []
+  const operatingExpenses = Math.max(
+    0,
+    summary.monthlyExpenses - summary.periodRealSavings
+  )
 
-  if (summary.monthlyExpenses > 0) {
+  if (operatingExpenses > 0) {
     slices.push({
-      value: summary.monthlyExpenses,
+      value: operatingExpenses,
       color: '#EC4899',
       label: 'Gastos',
     })
   }
 
-  if (summary.savingsBreakdown.length > 0) {
-    for (const goal of summary.savingsBreakdown) {
-      slices.push({
-        value: goal.amount,
-        color: goal.color,
-        label: goal.name,
-      })
-    }
-  } else if (summary.periodSavings > 0) {
+  if (summary.periodRealSavings > 0) {
     slices.push({
-      value: summary.periodSavings,
+      value: summary.periodRealSavings,
       color: '#F59E0B',
       label: 'Ahorros',
     })
@@ -47,6 +43,10 @@ function buildBudgetSlices(summary: DashboardSummary) {
   }
 
   return slices
+}
+
+function expensePieTotal(summary: DashboardSummary): number {
+  return summary.expenseGroups.reduce((sum, group) => sum + group.amount, 0)
 }
 
 export function DashboardView({
@@ -67,6 +67,7 @@ export function DashboardView({
   const fmt = (n: number) => formatMoney(n, currency)
   const labels = getPeriodLabels(summary.period)
   const budgetSlices = buildBudgetSlices(summary)
+  const pieTotal = expensePieTotal(summary)
 
   return (
     <div className="space-y-4">
@@ -133,7 +134,13 @@ export function DashboardView({
               <span>·</span>
               <span>Variable: {fmt(summary.variableSpent)}</span>
               <span>·</span>
-              <span>Metas: {fmt(summary.periodSavings)}</span>
+              <span>Metas planificadas: {fmt(summary.periodSavings)}</span>
+              {summary.periodRealSavings > 0 && (
+                <>
+                  <span>·</span>
+                  <span>Ahorro depositado: {fmt(summary.periodRealSavings)}</span>
+                </>
+              )}
             </div>
             {summary.expenseChangePercent !== null && (
               <p
@@ -194,12 +201,12 @@ export function DashboardView({
               <div className="flex items-center gap-2 mb-3">
                 <Users className="w-4 h-4 text-[#00BFA5]" />
                 <p className="text-[12px] font-bold text-cc-primary">
-                  Gasto variable por miembro
+                  Gastos extra por miembro
                 </p>
               </div>
               <p className="text-[10px] text-cc-secondary mb-3">
-                Restaurantes, mercado, transporte y otros gastos no fijos. Sin arriendo,
-                servicios ni suscripciones.
+                Ocio, mercado, restaurantes y otros gastos no fijos. Muestra cuánto
+                gasta cada uno y si va por encima de la media del hogar.
               </p>
               <div className="space-y-3">
                 {summary.memberSpending.map(member => (
@@ -232,7 +239,19 @@ export function DashboardView({
                       />
                     </div>
                     <p className="text-[10px] text-cc-muted mt-0.5">
-                      {member.percent}% del gasto variable del periodo
+                      {member.percent}% del gasto extra del periodo
+                      {member.extraAboveShare > 0 && (
+                        <span className="text-[#EC4899] font-semibold">
+                          {' '}
+                          · +{fmt(member.extraAboveShare)} sobre la media
+                        </span>
+                      )}
+                      {member.extraAboveShare < 0 && (
+                        <span className="text-[#00BFA5] font-semibold">
+                          {' '}
+                          · {fmt(Math.abs(member.extraAboveShare))} bajo la media
+                        </span>
+                      )}
                     </p>
                   </div>
                 ))}
@@ -245,7 +264,7 @@ export function DashboardView({
               Distribución del ingreso
             </p>
             <p className="text-[10px] text-cc-secondary mb-4">
-              Ingresos, gastos, ahorros y dinero libre
+              Ingresos, gastos, ahorro depositado y dinero libre
             </p>
             <DonutChart
               slices={budgetSlices}
@@ -262,35 +281,16 @@ export function DashboardView({
                 <span className="font-bold">{fmt(summary.monthlyExpenses)}</span>
               </div>
               <div className="text-[#F59E0B] font-bold">
-                Ahorros: {fmt(summary.periodSavings)}
+                Ahorro depositado: {fmt(summary.periodRealSavings)}
               </div>
               <div className="text-cc-secondary font-bold">
                 Libre: {fmt(Math.max(0, summary.guiltFreeMoney))}
               </div>
             </div>
-            {summary.savingsBreakdown.length > 0 && (
-              <div className="mt-3 pt-3 border-t border-[var(--cc-border-subtle)] space-y-1.5">
-                <p className="text-[10px] font-semibold text-cc-secondary">
-                  Aportes por meta este periodo
-                </p>
-                {summary.savingsBreakdown.map(goal => (
-                  <div
-                    key={goal.name}
-                    className="flex items-center justify-between text-[11px]"
-                  >
-                    <span className="flex items-center gap-1.5 text-cc-primary truncate">
-                      <span
-                        className="w-2 h-2 rounded-full shrink-0"
-                        style={{ backgroundColor: goal.color }}
-                      />
-                      {goal.name}
-                    </span>
-                    <span className="font-bold text-cc-secondary shrink-0 ml-2">
-                      {fmt(goal.amount)}
-                    </span>
-                  </div>
-                ))}
-              </div>
+            {summary.periodRealSavings > 0 && (
+              <p className="text-[10px] text-cc-secondary mt-2">
+                Metas planificadas este periodo: {fmt(summary.periodSavings)}
+              </p>
             )}
             {summary.totalSavings > 0 && (
               <p className="text-[10px] text-cc-secondary mt-2">
@@ -305,7 +305,7 @@ export function DashboardView({
                 ¿En qué se va la plata?
               </p>
               <p className="text-[10px] text-cc-secondary mb-4">
-                Arriendo, servicios, mercado, restaurantes, transporte y otros
+                Gastos, ahorros depositados por meta y consumo del periodo
               </p>
               <DonutChart
                 slices={summary.expenseGroups.map(g => ({
@@ -313,8 +313,8 @@ export function DashboardView({
                   color: g.color,
                   label: g.name,
                 }))}
-                centerValue={fmt(summary.monthlyExpenses)}
-                centerLabel="Gastos"
+                centerValue={fmt(pieTotal)}
+                centerLabel="Total"
               />
             </div>
           )}

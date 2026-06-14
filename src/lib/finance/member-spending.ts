@@ -1,12 +1,4 @@
-import type { TransactionRow } from './types'
-
-export type MemberSpendingStat = {
-  userId: string
-  name: string
-  amount: number
-  percent: number
-  avatarUrl: string | null
-}
+import type { TransactionRow, MemberSpendingStat } from './types'
 
 type CategoryMeta = {
   is_fixed: boolean
@@ -47,16 +39,19 @@ export function buildMemberSpendingStats(
   if (totalExpenses <= 0) return []
 
   const memberMap = new Map(members.map(m => [m.user_id, m]))
+  const fairShare = totalExpenses / Math.max(members.length, 1)
 
   return [...totals.entries()]
     .map(([userId, amount]) => {
       const member = memberMap.get(userId)
+      const rounded = Math.round(amount * 100) / 100
       return {
         userId,
         name: member?.full_name?.trim() || 'Miembro',
-        amount: Math.round(amount * 100) / 100,
+        amount: rounded,
         percent: Math.round((amount / totalExpenses) * 1000) / 10,
         avatarUrl: member?.avatar_url ?? null,
+        extraAboveShare: Math.round((rounded - fairShare) * 100) / 100,
       }
     })
     .sort((a, b) => b.amount - a.amount)

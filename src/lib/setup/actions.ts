@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { getTodayString } from '@/lib/finance/format'
 import { getCategories } from '@/lib/finance/queries'
-import { createSavingsGoal, createTransaction } from '@/lib/finance/actions'
+import { createSavingsGoal, createRecurringSchedule } from '@/lib/finance/actions'
 import { updateDashboardPeriod } from '@/lib/profile/actions'
 import { ensureUserProfile } from '@/lib/profile/sync'
 import type { InitialSetupInput } from './types'
@@ -77,15 +77,14 @@ export async function completeInitialSetup(
         return { error: 'No se encontró categoría de ingreso.' }
       }
 
-      const incomeResult = await createTransaction({
+      const incomeResult = await createRecurringSchedule({
         householdId: input.householdId,
         type: 'income',
         categoryId: incomeCategoryId,
         description: 'Ingreso mensual del hogar',
         amount: input.monthlyIncome,
-        transactionDate: today,
-        isRecurring: true,
         frequency: 'monthly',
+        startDate: today,
       })
       if (incomeResult.error) return { error: incomeResult.error }
     }
@@ -96,15 +95,14 @@ export async function completeInitialSetup(
       const categoryId = categoryByName.get(expense.categoryName)
       if (!categoryId) continue
 
-      const expenseResult = await createTransaction({
+      const expenseResult = await createRecurringSchedule({
         householdId: input.householdId,
         type: 'expense',
         categoryId,
         description: expense.categoryName,
         amount: expense.amount,
-        transactionDate: today,
-        isRecurring: true,
         frequency: 'monthly',
+        startDate: today,
       })
       if (expenseResult.error) return { error: expenseResult.error }
     }

@@ -78,6 +78,7 @@ export type MemberSpendingStat = {
   amount: number
   percent: number
   avatarUrl: string | null
+  extraAboveShare: number
 }
 
 export type DashboardSummary = {
@@ -85,6 +86,8 @@ export type DashboardSummary = {
   monthlyIncome: number
   monthlyExpenses: number
   periodSavings: number
+  periodRealSavings: number
+  realSavingsBreakdown: { name: string; amount: number; color: string }[]
   savingsBreakdown: { name: string; amount: number; color: string }[]
   totalSavings: number
   guiltFreeMoney: number
@@ -190,6 +193,17 @@ export type InsightHighlight = {
   label: string
   value: string
   tone?: 'positive' | 'negative' | 'neutral' | 'warning'
+}
+
+export type CreateRecurringScheduleInput = {
+  householdId: string
+  type: 'income' | 'expense'
+  categoryId: string
+  description: string
+  amount: number
+  currency?: CurrencyCode
+  frequency: 'weekly' | 'biweekly' | 'monthly'
+  startDate: string
 }
 
 export type CreateTransactionInput = {
