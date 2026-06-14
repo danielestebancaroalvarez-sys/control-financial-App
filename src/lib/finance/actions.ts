@@ -2,6 +2,7 @@
 
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { isValidCategoryIcon, DEFAULT_CATEGORY_ICON } from './category-icons'
 import { syncUserProfileFromMetadata } from '@/lib/profile/sync'
 import { getRealBalance, getHouseholdBaseCurrency } from './queries'
 import { fetchExchangeRate, prepareTransactionAmounts } from './currency'
@@ -277,6 +278,7 @@ export async function createCategory(input: {
   name: string
   type: 'income' | 'expense'
   color?: string
+  icon?: string
   isSubscription?: boolean
 }): Promise<{ error?: string; id?: string }> {
   const supabase = await createClient()
@@ -289,13 +291,15 @@ export async function createCategory(input: {
   const name = input.name.trim()
   if (!name) return { error: 'El nombre es obligatorio.' }
 
+  const icon = isValidCategoryIcon(input.icon) ? input.icon : DEFAULT_CATEGORY_ICON
+
   const { data, error } = await supabase
     .from('categories')
     .insert({
       household_id: input.householdId,
       name,
       type: input.type,
-      icon: 'tag',
+      icon,
       color: input.color ?? '#636E72',
       is_fixed: false,
       is_subscription: input.type === 'expense' && !!input.isSubscription,

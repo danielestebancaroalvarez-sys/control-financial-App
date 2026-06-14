@@ -1,21 +1,4 @@
-import type { ComponentType } from 'react'
-import {
-  Banknote, PlusCircle, ShoppingCart, Utensils, Wrench,
-  Home, Zap, Wifi, Car, MoreHorizontal, Tag,
-} from 'lucide-react'
-
-const ICONS: Record<string, ComponentType<{ className?: string }>> = {
-  banknote: Banknote,
-  'plus-circle': PlusCircle,
-  'shopping-cart': ShoppingCart,
-  utensils: Utensils,
-  wrench: Wrench,
-  home: Home,
-  zap: Zap,
-  wifi: Wifi,
-  car: Car,
-  'more-horizontal': MoreHorizontal,
-}
+import { getCategoryIconComponent } from '@/lib/finance/category-icons'
 
 export function CategoryIcon({
   icon,
@@ -24,6 +7,6 @@ export function CategoryIcon({
   icon: string | null
   className?: string
 }) {
-  const Icon = (icon && ICONS[icon]) || Tag
+  const Icon = getCategoryIconComponent(icon)
   return <Icon className={className} />
 }

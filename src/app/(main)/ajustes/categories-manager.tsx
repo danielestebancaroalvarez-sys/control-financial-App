@@ -4,7 +4,9 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Loader2, Plus, Trash2, Tag } from 'lucide-react'
 import { createCategory, deleteCategory } from '@/lib/finance/actions'
+import { CategoryIconPicker } from '@/components/categories/category-icon-picker'
 import { CategoryIcon } from '@/components/transactions/category-icon'
+import { DEFAULT_CATEGORY_ICON, type CategoryIconId } from '@/lib/finance/category-icons'
 import type { Category } from '@/lib/finance/types'
 
 const COLORS = ['#00BFA5', '#EC4899', '#F59E0B', '#7E57C2', '#636E72', '#FF8A65']
@@ -20,6 +22,7 @@ export function CategoriesManager({
   const [name, setName] = useState('')
   const [type, setType] = useState<'income' | 'expense'>('expense')
   const [color, setColor] = useState(COLORS[0])
+  const [icon, setIcon] = useState<CategoryIconId>(DEFAULT_CATEGORY_ICON)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isSubscription, setIsSubscription] = useState(false)
@@ -36,6 +39,7 @@ export function CategoriesManager({
       name,
       type,
       color,
+      icon,
       isSubscription: type === 'expense' && isSubscription,
     })
     if (result.error) {
@@ -45,6 +49,7 @@ export function CategoriesManager({
     }
 
     setName('')
+    setIcon(DEFAULT_CATEGORY_ICON)
     setLoading(false)
     router.refresh()
   }
@@ -96,6 +101,7 @@ export function CategoriesManager({
             Es suscripción (Netflix, Spotify, etc.)
           </label>
         )}
+        <CategoryIconPicker value={icon} onChange={setIcon} accentColor={color} />
         <div className="flex gap-2">
           {COLORS.map(c => (
             <button
