@@ -19,7 +19,15 @@ function buildBudgetSlices(summary: DashboardSummary) {
     })
   }
 
-  if (summary.periodSavings > 0) {
+  if (summary.savingsBreakdown.length > 0) {
+    for (const goal of summary.savingsBreakdown) {
+      slices.push({
+        value: goal.amount,
+        color: goal.color,
+        label: goal.name,
+      })
+    }
+  } else if (summary.periodSavings > 0) {
     slices.push({
       value: summary.periodSavings,
       color: '#F59E0B',
@@ -148,6 +156,35 @@ export function DashboardView({
                 Libre: {fmt(Math.max(0, summary.guiltFreeMoney))}
               </div>
             </div>
+            {summary.savingsBreakdown.length > 0 && (
+              <div className="mt-3 pt-3 border-t border-white space-y-1.5">
+                <p className="text-[10px] font-semibold text-[#636E72]">
+                  Aportes por meta este periodo
+                </p>
+                {summary.savingsBreakdown.map(goal => (
+                  <div
+                    key={goal.name}
+                    className="flex items-center justify-between text-[11px]"
+                  >
+                    <span className="flex items-center gap-1.5 text-[#2D3436] truncate">
+                      <span
+                        className="w-2 h-2 rounded-full shrink-0"
+                        style={{ backgroundColor: goal.color }}
+                      />
+                      {goal.name}
+                    </span>
+                    <span className="font-bold text-[#636E72] shrink-0 ml-2">
+                      {fmt(goal.amount)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {summary.totalSavings > 0 && (
+              <p className="text-[10px] text-[#636E72] mt-2">
+                Total acumulado en metas: {fmt(summary.totalSavings)}
+              </p>
+            )}
           </div>
 
           {summary.expenseGroups.length > 0 && (

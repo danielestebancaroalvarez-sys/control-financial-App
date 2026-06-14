@@ -1,7 +1,8 @@
 import { parseLineItems } from './category-radar'
+import { buildConsumptionPrediction } from './consumption-prediction'
 import { getPeriodRangeAtOffset, listPeriodBlocks } from './format'
 import { classifyProductName } from './market-product-keywords'
-import type { Period, MarketProductGroup } from './types'
+import type { Period, MarketProductGroup, ConsumptionPrediction } from './types'
 
 export type { MarketProductGroup } from './types'
 
@@ -71,6 +72,7 @@ export type MarketInsights = {
   groupStats: MarketGroupStat[]
   topProducts: MarketProductStat[]
   shoppingList: ShoppingListItem[]
+  monthProjection: ConsumptionPrediction | null
   hasMercadoData: boolean
 }
 
@@ -284,6 +286,12 @@ export function buildMarketInsights(
     groupStats: groupStats.filter(g => g.totalSpent > 0 || g.purchaseTrips > 0),
     topProducts: topProducts.slice(0, 20),
     shoppingList,
+    monthProjection: buildConsumptionPrediction(
+      transactions,
+      mercadoCategoryId,
+      'Mercado',
+      'monthly'
+    ),
     hasMercadoData,
   }
 }

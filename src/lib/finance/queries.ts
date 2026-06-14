@@ -208,7 +208,7 @@ export async function searchTransactions(
       `
       id, type, description, transaction_date,
       amount_base, amount_original, currency_original,
-      category_id, created_by, line_items,
+      category_id, created_by, line_items, receipt_image_path,
       categories (name, icon, color)
     `
     )
@@ -278,6 +278,7 @@ export async function searchTransactions(
       created_by: row.created_by,
       author_name: authorName,
       line_items: row.line_items as TransactionListItem['line_items'],
+      receipt_image_path: row.receipt_image_path ?? null,
     }
   })
 }
@@ -300,7 +301,9 @@ export async function getPredictionsSummary(
       .eq('type', 'expense'),
     supabase
       .from('transactions')
-      .select('category_id, amount_base, transaction_date, description, line_items')
+      .select(
+        'category_id, amount_base, transaction_date, description, line_items, recurring_schedule_id'
+      )
       .eq('household_id', householdId)
       .eq('type', 'expense')
       .gte('transaction_date', trendStart),
@@ -337,6 +340,7 @@ export async function getPredictionsSummary(
       transaction_date: tx.transaction_date,
       description: tx.description,
       line_items: tx.line_items,
+      recurring_schedule_id: tx.recurring_schedule_id,
     })),
     mercado?.id ?? null,
     period

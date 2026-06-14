@@ -11,8 +11,11 @@ import {
   TrendingUp,
   CalendarDays,
   Package,
+  Download,
+  Share2,
 } from 'lucide-react'
 import { formatMoney, formatShortDate } from '@/lib/finance/format'
+import { ConsumptionPredictionCard } from '@/components/predictions/consumption-prediction-card'
 import {
   MARKET_GROUP_LABELS,
   type MarketInsights,
@@ -61,6 +64,48 @@ export function MercadoClient({
     })
   }
 
+  function exportShoppingList() {
+    if (insights.shoppingList.length === 0) return
+    const header = 'Producto,Grupo,Precio estimado,Urgencia,Última compra\n'
+    const rows = insights.shoppingList
+      .map(item =>
+        [
+          `"${item.name.replace(/"/g, '""')}"`,
+          MARKET_GROUP_LABELS[item.group],
+          item.estimatedPrice,
+          item.urgency,
+          item.lastPurchased ?? '',
+        ].join(',')
+      )
+      .join('\n')
+    const blob = new Blob([header + rows], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `lista-compra-${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  function shareShoppingList() {
+    const unchecked = insights.shoppingList.filter(item => !checked.has(item.name))
+    if (unchecked.length === 0) return
+    const text = [
+      '🛒 Lista de compra CoupleCash',
+      ...unchecked.map(
+        (item, i) =>
+          `${i + 1}. ${item.name} (~${fmt(item.estimatedPrice)})`
+      ),
+      `\nTotal estimado: ~${fmt(unchecked.reduce((s, i) => s + i.estimatedPrice, 0))}`,
+    ].join('\n')
+
+    if (navigator.share) {
+      navigator.share({ title: 'Lista de compra', text }).catch(() => {})
+    } else {
+      navigator.clipboard.writeText(text).then(() => alert('Lista copiada al portapapeles'))
+    }
+  }
+
   const aseoGroup = insights.groupStats.find(g => g.group === 'aseo')
   const carneGroup = insights.groupStats.find(g => g.group === 'carne')
 
@@ -101,6 +146,14 @@ export function MercadoClient({
         </section>
       ) : (
         <>
+          {insights.monthProjection && (
+            <ConsumptionPredictionCard
+              prediction={insights.monthProjection}
+              formatValue={fmt}
+              compact
+            />
+          )}
+
           <section className="rounded-[24px] bg-white/90 backdrop-blur-md border border-white/60 shadow-sm p-5 space-y-4">
             <div className="flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-[#00BFA5]" />
@@ -186,9 +239,31 @@ export function MercadoClient({
                 <ListChecks className="w-4 h-4 text-[#00BFA5]" />
                 <h2 className="text-[14px] font-bold text-[#2D3436]">Lista de compra sugerida</h2>
               </div>
-              <span className="text-[11px] font-bold text-[#00BFA5]">
-                ~{fmt(insights.shoppingList.reduce((s, i) => s + i.estimatedPrice, 0))}
-              </span>
+              <div className="flex items-center gap-1">
+                <span className="text-[11px] font-bold text-[#00BFA5] mr-1">
+                  ~{fmt(insights.shoppingList.reduce((s, i) => s + i.estimatedPrice, 0))}
+                </span>
+                {insights.shoppingList.length > 0 && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={shareShoppingList}
+                      className="w-8 h-8 rounded-lg bg-[#F5F5F5] flex items-center justify-center text-[#636E72] hover:text-[#00BFA5]"
+                      aria-label="Compartir lista"
+                    >
+                      <Share2 className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={exportShoppingList}
+                      className="w-8 h-8 rounded-lg bg-[#F5F5F5] flex items-center justify-center text-[#636E72] hover:text-[#00BFA5]"
+                      aria-label="Exportar lista"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
             <p className="text-[11px] text-[#636E72]">
               Basada en productos que sueles comprar y cuándo los compraste por última vez.

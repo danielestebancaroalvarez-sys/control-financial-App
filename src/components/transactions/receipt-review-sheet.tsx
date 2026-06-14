@@ -1,17 +1,22 @@
 'use client'
 
-import { useState } from 'react'
-import { Plus, Trash2, X } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { Plus, Trash2, X, CheckCircle2, AlertCircle, ShoppingCart } from 'lucide-react'
+import { diffReceiptAgainstShoppingList } from '@/lib/finance/shopping-list-diff'
+import { MARKET_GROUP_LABELS } from '@/lib/finance/market-analytics'
+import type { ShoppingListItem } from '@/lib/finance/market-analytics'
 import type { ParsedReceipt, ParsedReceiptItem } from '@/lib/receipts/types'
 
 export function ReceiptReviewSheet({
   receipt,
   previewUrl,
+  shoppingList = [],
   onApply,
   onClose,
 }: {
   receipt: ParsedReceipt
   previewUrl: string | null
+  shoppingList?: ShoppingListItem[]
   onApply: (receipt: ParsedReceipt) => void
   onClose: () => void
 }) {
@@ -19,6 +24,15 @@ export function ReceiptReviewSheet({
   const [date, setDate] = useState(receipt.transactionDate ?? '')
   const [items, setItems] = useState<ParsedReceiptItem[]>(
     receipt.items.length > 0 ? receipt.items : [{ name: '', price: 0 }]
+  )
+
+  const diff = useMemo(
+    () =>
+      diffReceiptAgainstShoppingList(
+        items.filter(i => i.name.trim() && i.price > 0),
+        shoppingList
+      ),
+    [items, shoppingList]
   )
 
   function updateItem(index: number, field: keyof ParsedReceiptItem, value: string) {
@@ -30,6 +44,8 @@ export function ReceiptReviewSheet({
       )
     )
   }
+
+  const hasDiff = shoppingList.length > 0 && (diff.missing.length > 0 || diff.extra.length > 0)
 
   return (
     <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/40 px-4 pb-[calc(5rem+env(safe-area-inset-bottom))]">
@@ -65,6 +81,48 @@ export function ReceiptReviewSheet({
               <li key={w}>{w}</li>
             ))}
           </ul>
+        )}
+
+        {hasDiff && (
+          <div className="rounded-xl bg-[#F5F5F5] p-3 space-y-2">
+            <div className="flex items-center gap-2">
+              <ShoppingCart className="w-4 h-4 text-[#00BFA5]" />
+              <p className="text-[12px] font-bold text-[#2D3436]">vs. lista sugerida</p>
+            </div>
+            {diff.matched.length > 0 && (
+              <p className="text-[11px] text-[#00BFA5] flex items-center gap-1">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                {diff.matched.length} de tu lista comprados
+              </p>
+            )}
+            {diff.missing.length > 0 && (
+              <div>
+                <p className="text-[11px] text-[#F59E0B] font-semibold flex items-center gap-1 mb-1">
+                  <AlertCircle className="w-3.5 h-3.5" />
+                  Faltan ({diff.missing.length})
+                </p>
+                <ul className="text-[11px] text-[#636E72] space-y-0.5">
+                  {diff.missing.slice(0, 5).map(item => (
+                    <li key={item.name}>
+                      · {item.name} ({MARKET_GROUP_LABELS[item.group]})
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {diff.extra.length > 0 && (
+              <div>
+                <p className="text-[11px] text-[#636E72] font-semibold mb-1">
+                  No estaban en la lista ({diff.extra.length})
+                </p>
+                <ul className="text-[11px] text-[#B2BEC3] space-y-0.5">
+                  {diff.extra.slice(0, 5).map(item => (
+                    <li key={item.name}>· {item.name}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
         )}
 
         <div>

@@ -51,6 +51,7 @@ export type TransactionListItem = {
   created_by: string
   author_name: string | null
   line_items: LineItem[] | null
+  receipt_image_path: string | null
 }
 
 export type SearchFilters = {
@@ -155,10 +156,20 @@ export type ConsumptionPrediction = {
 
 export type PredictionsSummary = {
   upcomingPayments: FixedServiceStatus[]
+  currentPeriodPayments: FixedServiceStatus[]
   purchasePredictions: ItemPurchasePrediction[]
+  consumptionPredictions: ConsumptionPrediction[]
   nextPeriodStart: string
   nextPeriodEnd: string
+  currentPeriodStart: string
+  currentPeriodEnd: string
   period: Period
+}
+
+export type WeeklyInsight = {
+  summary: string
+  tips: string[]
+  generatedAt: string
 }
 
 export type CreateTransactionInput = {

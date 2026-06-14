@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { deleteTransaction } from '@/lib/finance/actions'
 import { EditTransactionSheet } from '@/components/transactions/edit-transaction-sheet'
+import { ReceiptThumbnail } from '@/components/transactions/receipt-thumbnail'
 import { CategoryIcon } from '@/components/transactions/category-icon'
 import { formatMoney, getPeriodLabels } from '@/lib/finance/format'
 import {
@@ -380,6 +381,12 @@ export function BuscarClient({
                   {tx.author_name ? ` · ${tx.author_name}` : ''}
                 </p>
               </div>
+              {tx.receipt_image_path && (
+                <ReceiptThumbnail
+                  path={tx.receipt_image_path}
+                  householdId={householdId}
+                />
+              )}
               <div className="flex items-center gap-1 shrink-0">
                 <span
                   className={`text-[14px] font-bold ${
