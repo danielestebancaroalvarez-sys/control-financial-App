@@ -38,7 +38,7 @@ export async function createHousehold(
   if (error) return { error: error.message }
 
   revalidatePath('/', 'layout')
-  redirect('/')
+  redirect('/configuracion-inicial')
 }
 
 export async function joinHouseholdByCode(
@@ -70,7 +70,7 @@ export async function joinHouseholdByCode(
   if (error) return { error: 'Código inválido. Verifica e intenta de nuevo.' }
 
   revalidatePath('/', 'layout')
-  redirect('/')
+  redirect('/configuracion-inicial')
 }
 
 export async function leaveHousehold(
