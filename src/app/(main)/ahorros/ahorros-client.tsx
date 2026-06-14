@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Loader2, Plus, Pencil, Trash2, Clock } from 'lucide-react'
 import {
@@ -10,11 +10,24 @@ import {
 } from '@/lib/finance/actions'
 import { formatMoney } from '@/lib/finance/format'
 import { formatEstimatedTime } from '@/lib/finance/savings'
-import type { SavingsGoal } from '@/lib/finance/types'
+import { SavingsCategoryPicker } from '@/components/savings/savings-category-picker'
+import {
+  SavingsProjectionChart,
+  formToSavingsGoalInput,
+} from '@/components/savings/savings-projection-chart'
+import { CategoryIcon } from '@/components/transactions/category-icon'
+import {
+  DEFAULT_SAVINGS_CATEGORY,
+  getSavingsCategory,
+  isValidSavingsCategoryId,
+  type SavingsCategoryId,
+} from '@/lib/finance/savings-categories'
+import type { SavingsGoal, SavingsGoalInput } from '@/lib/finance/types'
 import type { CurrencyCode } from '@/lib/household/types'
 
 type FormState = {
   name: string
+  category: SavingsCategoryId
   target: string
   current: string
   contribution: string
@@ -26,6 +39,7 @@ type FormState = {
 
 const emptyForm = (): FormState => ({
   name: '',
+  category: DEFAULT_SAVINGS_CATEGORY.id,
   target: '',
   current: '0',
   contribution: '',
@@ -36,8 +50,12 @@ const emptyForm = (): FormState => ({
 })
 
 function goalToForm(goal: SavingsGoal): FormState {
+  const cat = getSavingsCategory(
+    isValidSavingsCategoryId(goal.category) ? goal.category : 'other'
+  )
   return {
     name: goal.name,
+    category: cat.id,
     target: String(goal.target_amount),
     current: String(goal.current_amount),
     contribution: goal.contribution_amount ? String(goal.contribution_amount) : '',
@@ -88,6 +106,9 @@ function SavingsGoalForm({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const simulationGoal = useMemo(() => formToSavingsGoalInput(form), [form])
+  const selectedCategory = getSavingsCategory(form.category)
+
   function set(field: keyof FormState, value: string) {
     setForm(prev => ({ ...prev, [field]: value }))
   }
@@ -97,9 +118,14 @@ function SavingsGoalForm({
     setLoading(true)
     setError(null)
 
+    const savingsCat = getSavingsCategory(form.category)
+
     const payload = {
       householdId,
       name: form.name.trim(),
+      category: savingsCat.id,
+      icon: savingsCat.icon,
+      color: savingsCat.color,
       targetAmount: parseFloat(form.target),
       currentAmount: parseFloat(form.current) || 0,
       targetDate: form.targetDate || undefined,
@@ -149,6 +175,11 @@ function SavingsGoalForm({
           className="w-full px-4 py-3 rounded-xl bg-[#F5F5F5] text-[14px] outline-none"
         />
       </Field>
+
+      <SavingsCategoryPicker
+        value={form.category}
+        onChange={id => set('category', id)}
+      />
 
       <div className="grid grid-cols-2 gap-3">
         <Field label="Monto objetivo" hint="Cuánto quieres reunir">
@@ -245,6 +276,16 @@ function SavingsGoalForm({
           />
         </Field>
       )}
+
+      <div className="rounded-2xl bg-[#F5F5F5] p-4">
+        <p className="text-[12px] font-bold text-[#2D3436] mb-3">
+          Simulación de crecimiento
+        </p>
+        <SavingsProjectionChart
+          goal={simulationGoal}
+          accentColor={selectedCategory.color}
+        />
+      </div>
 
       {error && <p className="text-[12px] text-red-600">{error}</p>}
 
@@ -360,6 +401,16 @@ export function AhorrosClient({
             Math.round((goal.current_amount / goal.target_amount) * 100)
           )
           const estimate = formatEstimatedTime(goal)
+          const savingsCat = getSavingsCategory(goal.category)
+          const simulationGoal: SavingsGoalInput = {
+            target_amount: goal.target_amount,
+            current_amount: goal.current_amount,
+            contribution_amount: goal.contribution_amount,
+            contribution_frequency: goal.contribution_frequency,
+            savings_mode: goal.savings_mode,
+            annual_interest_rate: goal.annual_interest_rate,
+            target_date: goal.target_date,
+          }
 
           return (
             <div
@@ -367,13 +418,27 @@ export function AhorrosClient({
               className="rounded-[24px] bg-white/90 backdrop-blur-md border border-white/60 shadow-sm p-5"
             >
               <div className="flex items-start justify-between gap-3 mb-3">
-                <div className="flex-1 min-w-0">
-                  <p className="text-[16px] font-bold text-[#2D3436] truncate">
-                    {goal.name}
-                  </p>
-                  <p className="text-[12px] text-[#636E72] mt-0.5">
-                    {fmt(goal.current_amount)} de {fmt(goal.target_amount)}
-                  </p>
+                <div className="flex items-start gap-3 flex-1 min-w-0">
+                  <div
+                    className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0"
+                    style={{
+                      backgroundColor: `${goal.color}22`,
+                      color: goal.color,
+                    }}
+                  >
+                    <CategoryIcon icon={goal.icon} className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[16px] font-bold text-[#2D3436] truncate">
+                      {goal.name}
+                    </p>
+                    <p className="text-[11px] text-[#636E72] mt-0.5">
+                      {savingsCat.label}
+                    </p>
+                    <p className="text-[12px] text-[#636E72] mt-0.5">
+                      {fmt(goal.current_amount)} de {fmt(goal.target_amount)}
+                    </p>
+                  </div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                   <button
@@ -405,13 +470,18 @@ export function AhorrosClient({
 
               <div className="h-2.5 rounded-full bg-[#F5F5F5] overflow-hidden mb-3">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-[#F59E0B] to-[#FBBF24]"
-                  style={{ width: `${pct}%` }}
+                  className="h-full rounded-full"
+                  style={{
+                    width: `${pct}%`,
+                    background: `linear-gradient(90deg, ${goal.color}, ${goal.color}cc)`,
+                  }}
                 />
               </div>
 
               <div className="flex items-center justify-between text-[12px]">
-                <span className="font-bold text-[#F59E0B]">{pct}% completado</span>
+                <span className="font-bold" style={{ color: goal.color }}>
+                  {pct}% completado
+                </span>
                 {goal.target_date && (
                   <span className="text-[#636E72]">Meta: {goal.target_date}</span>
                 )}
@@ -435,6 +505,17 @@ export function AhorrosClient({
                     ` · ${(goal.annual_interest_rate * 100).toFixed(1)}% anual`}
                 </p>
               )}
+
+              <div className="mt-4 rounded-2xl bg-[#F5F5F5] p-3">
+                <p className="text-[11px] font-bold text-[#2D3436] mb-2">
+                  Simulación
+                </p>
+                <SavingsProjectionChart
+                  goal={simulationGoal}
+                  accentColor={goal.color}
+                  height={120}
+                />
+              </div>
             </div>
           )
         })}

@@ -3,6 +3,10 @@
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { isValidCategoryIcon, DEFAULT_CATEGORY_ICON } from './category-icons'
+import {
+  getSavingsCategory,
+  isValidSavingsCategoryId,
+} from './savings-categories'
 import { syncUserProfileFromMetadata } from '@/lib/profile/sync'
 import { getRealBalance, getHouseholdBaseCurrency } from './queries'
 import { fetchExchangeRate, prepareTransactionAmounts } from './currency'
@@ -296,12 +300,19 @@ export async function createSavingsGoal(
 
   if (input.targetAmount <= 0) return { error: 'La meta debe ser mayor a cero.' }
 
+  const savingsCat = isValidSavingsCategoryId(input.category)
+    ? getSavingsCategory(input.category)
+    : getSavingsCategory('other')
+
   const { data, error } = await supabase
     .from('savings_goals')
     .insert({
       household_id: input.householdId,
       created_by: user.id,
       name: input.name,
+      category: savingsCat.id,
+      icon: input.icon && isValidCategoryIcon(input.icon) ? input.icon : savingsCat.icon,
+      color: input.color ?? savingsCat.color,
       target_amount: input.targetAmount,
       current_amount: input.currentAmount ?? 0,
       target_date: input.targetDate ?? null,
@@ -333,10 +344,17 @@ export async function updateSavingsGoal(
   if (!user) return { error: 'Debes iniciar sesión.' }
   if (input.targetAmount <= 0) return { error: 'La meta debe ser mayor a cero.' }
 
+  const savingsCat = isValidSavingsCategoryId(input.category)
+    ? getSavingsCategory(input.category)
+    : getSavingsCategory('other')
+
   const { error } = await supabase
     .from('savings_goals')
     .update({
       name: input.name,
+      category: savingsCat.id,
+      icon: input.icon && isValidCategoryIcon(input.icon) ? input.icon : savingsCat.icon,
+      color: input.color ?? savingsCat.color,
       target_amount: input.targetAmount,
       current_amount: input.currentAmount ?? 0,
       target_date: input.targetDate ?? null,

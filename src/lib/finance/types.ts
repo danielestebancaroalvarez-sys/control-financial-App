@@ -89,6 +89,9 @@ export type DashboardSummary = {
 export type SavingsGoal = {
   id: string
   name: string
+  category: string
+  icon: string
+  color: string
   target_amount: number
   current_amount: number
   target_date: string | null
@@ -182,6 +185,9 @@ export type UpdateTransactionInput = {
 export type CreateSavingsGoalInput = {
   householdId: string
   name: string
+  category?: string
+  icon?: string
+  color?: string
   targetAmount: number
   currentAmount?: number
   targetDate?: string

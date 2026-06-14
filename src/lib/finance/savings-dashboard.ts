@@ -65,7 +65,7 @@ export function calculatePeriodSavingsAllocations(
     items.push({
       name: goal.name,
       amount,
-      color: SAVINGS_COLORS[colorIndex % SAVINGS_COLORS.length],
+      color: goal.color ?? SAVINGS_COLORS[colorIndex % SAVINGS_COLORS.length],
     })
     colorIndex++
   }

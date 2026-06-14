@@ -70,6 +70,9 @@ export const getSavingsGoals = cache(
     return (data ?? []).map(g => ({
       id: g.id,
       name: g.name,
+      category: g.category ?? 'other',
+      icon: g.icon ?? 'piggy-bank',
+      color: g.color ?? '#F59E0B',
       target_amount: Number(g.target_amount),
       current_amount: Number(g.current_amount),
       target_date: g.target_date,
