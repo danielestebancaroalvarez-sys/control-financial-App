@@ -1,9 +1,9 @@
 import { redirect } from 'next/navigation'
 import { getMainAppContextWithPeriod } from '@/lib/app/context'
 import { getPredictionsSummary } from '@/lib/finance/queries'
-import { formatMoney, getPeriodLabels } from '@/lib/finance/format'
+import { formatMoney, formatFrequency, getPeriodLabels } from '@/lib/finance/format'
 import { CategoryIcon } from '@/components/transactions/category-icon'
-import { Circle, ShoppingBag } from 'lucide-react'
+import { CalendarClock, ShoppingBag } from 'lucide-react'
 
 export default async function PrediccionesPage() {
   const ctx = await getMainAppContextWithPeriod()
@@ -23,37 +23,42 @@ export default async function PrediccionesPage() {
       </div>
 
       <section className="rounded-[24px] bg-white/90 backdrop-blur-md border border-white/60 shadow-sm p-5">
-        <h2 className="text-[14px] font-bold text-[#2D3436] mb-4">
-          Servicios y pagos fijos · {labels.next}
+        <h2 className="text-[14px] font-bold text-[#2D3436] mb-1 flex items-center gap-2">
+          <CalendarClock className="w-4 h-4 text-[#00BFA5]" />
+          Pagos de {labels.inNext}
         </h2>
-        {summary.fixedServices.length === 0 ? (
+        <p className="text-[11px] text-[#636E72] mb-4">
+          Todo gasto marcado como recurrente aparece aquí, sin importar la categoría.
+        </p>
+        {summary.upcomingPayments.length === 0 ? (
           <p className="text-[13px] text-[#636E72]">
-            Crea gastos recurrentes en categorías de servicio (Arriendo, Luz, Internet).
+            Al registrar un gasto en Nuevo, activa &quot;Recurrente&quot; y elige la frecuencia
+            (semanal, quincenal o mensual) para verlo en este radar.
           </p>
         ) : (
           <ul className="space-y-3">
-            {summary.fixedServices.map(svc => (
+            {summary.upcomingPayments.map(payment => (
               <li
-                key={svc.id}
+                key={payment.id}
                 className="flex items-center gap-3 p-3 rounded-2xl bg-[#F5F5F5]"
               >
-                <Circle className="w-5 h-5 text-[#F59E0B] shrink-0" />
                 <div
                   className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-white"
                   style={{ color: '#636E72' }}
                 >
-                  <CategoryIcon icon={svc.categoryIcon} className="w-4 h-4" />
+                  <CategoryIcon icon={payment.categoryIcon} className="w-4 h-4" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[14px] font-semibold text-[#2D3436]">{svc.name}</p>
+                  <p className="text-[14px] font-semibold text-[#2D3436]">{payment.name}</p>
                   <p className="text-[11px] text-[#636E72]">
-                    {fmt(svc.amount)}
-                    {svc.occurrences && svc.occurrences > 1
-                      ? ` · ${svc.occurrences} pagos`
-                      : ` / ${svc.frequency}`}
+                    {payment.categoryName && (
+                      <span>{payment.categoryName} · </span>
+                    )}
+                    {fmt(payment.amount)} ·{' '}
+                    {formatFrequency(payment.frequency, payment.occurrences)}
                   </p>
                 </div>
-                <span className="text-[11px] font-bold px-2 py-1 rounded-lg bg-[#FFE082]/30 text-[#F59E0B]">
+                <span className="text-[11px] font-bold px-2 py-1 rounded-lg bg-[#E0F2F1] text-[#00BFA5] shrink-0">
                   Próximo
                 </span>
               </li>
@@ -61,33 +66,6 @@ export default async function PrediccionesPage() {
           </ul>
         )}
       </section>
-
-      {summary.subscriptions.length > 0 && (
-        <section className="rounded-[24px] bg-white/90 backdrop-blur-md border border-white/60 shadow-sm p-5">
-          <h2 className="text-[14px] font-bold text-[#2D3436] mb-4">
-            Suscripciones · {labels.next}
-          </h2>
-          <div className="grid grid-cols-2 gap-2">
-            {summary.subscriptions.map(sub => (
-              <div
-                key={sub.id}
-                className="p-3 rounded-2xl bg-[#F5F5F5] border border-[#EEEEEE]"
-              >
-                <p className="text-[13px] font-semibold text-[#2D3436] truncate">
-                  {sub.name}
-                </p>
-                <p className="text-[12px] text-[#636E72]">
-                  {fmt(sub.amount)}
-                  {sub.occurrences && sub.occurrences > 1
-                    ? ` · ${sub.occurrences}x`
-                    : ` / ${sub.frequency}`}
-                </p>
-                <p className="text-[10px] text-[#F59E0B] mt-1">Próximo periodo</p>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
 
       <section className="rounded-[24px] bg-white/90 backdrop-blur-md border border-white/60 shadow-sm p-5">
         <div className="flex items-center gap-2 mb-3">
@@ -98,8 +76,8 @@ export default async function PrediccionesPage() {
         </div>
         {summary.purchasePredictions.length === 0 ? (
           <p className="text-[13px] text-[#636E72]">
-            Registra compras en Mercado (con o sin ítems detallados) o marca un gasto
-            recurrente en Mercado para ver predicciones aquí.
+            Registra compras en Mercado (con o sin ítems detallados) para ver qué productos
+            podrías volver a comprar {labels.inNext}.
           </p>
         ) : (
           <ul className="space-y-2">

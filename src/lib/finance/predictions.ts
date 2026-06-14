@@ -10,7 +10,7 @@ import {
   getPeriodRange,
   getPreviousPeriodRanges,
 } from './format'
-import { getCategoryRadarKind, parseLineItems } from './category-radar'
+import { parseLineItems } from './category-radar'
 
 type RecurringRow = {
   id: string
@@ -59,7 +59,7 @@ function countOccurrencesInRange(
   return count
 }
 
-function mapUpcomingService(
+function mapUpcomingPayment(
   r: RecurringRow,
   rangeStart: string,
   rangeEnd: string
@@ -84,6 +84,7 @@ function mapUpcomingService(
     frequency: r.frequency,
     status: 'pending',
     occurrences,
+    categoryName: cat?.name ?? null,
     categoryIcon: cat?.icon ?? null,
     dueInNextPeriod: true,
   }
@@ -97,27 +98,19 @@ export function buildPredictionsSummary(
 ): PredictionsSummary {
   const nextRange = getNextPeriodRange(period)
 
-  const fixedServices = recurring
-    .filter(r => getCategoryRadarKind(r.categories) === 'service')
-    .map(r => mapUpcomingService(r, nextRange.start, nextRange.end))
+  const upcomingPayments = recurring
+    .map(r => mapUpcomingPayment(r, nextRange.start, nextRange.end))
     .filter((s): s is FixedServiceStatus => s !== null)
-
-  const subscriptions = recurring
-    .filter(r => getCategoryRadarKind(r.categories) === 'subscription')
-    .map(r => mapUpcomingService(r, nextRange.start, nextRange.end))
-    .filter((s): s is FixedServiceStatus => s !== null)
+    .sort((a, b) => b.amount - a.amount)
 
   const purchasePredictions = buildItemPurchasePredictions(
-    recurring,
     transactions,
     mercadoCategoryId,
-    nextRange,
     period
   )
 
   return {
-    fixedServices,
-    subscriptions,
+    upcomingPayments,
     purchasePredictions,
     nextPeriodStart: nextRange.start,
     nextPeriodEnd: nextRange.end,
@@ -126,10 +119,8 @@ export function buildPredictionsSummary(
 }
 
 function buildItemPurchasePredictions(
-  recurring: RecurringRow[],
   transactions: TxRow[],
   mercadoCategoryId: string | null,
-  nextRange: { start: string; end: string },
   period: Period
 ): ItemPurchasePrediction[] {
   const analysisRanges = [
@@ -148,10 +139,7 @@ function buildItemPurchasePredictions(
 
   const mercadoTx = mercadoCategoryId
     ? transactions.filter(tx => tx.category_id === mercadoCategoryId)
-    : transactions.filter(tx => {
-        // fallback if category id unknown
-        return false
-      })
+    : []
 
   for (const tx of mercadoTx) {
     const lineItems = parseLineItems(tx.line_items)
@@ -209,38 +197,6 @@ function buildItemPurchasePredictions(
       expectedPurchases,
       projectedSpend,
       lastPurchased: [...stats.purchaseDates].sort().at(-1) ?? null,
-    })
-  }
-
-  const recurringMercado = recurring.filter(
-    r =>
-      r.category_id === mercadoCategoryId ||
-      getCategoryRadarKind(r.categories) === 'shopping'
-  )
-
-  for (const r of recurringMercado) {
-    const frequency = r.frequency as 'weekly' | 'biweekly' | 'monthly'
-    const occurrences = countOccurrencesInRange(
-      r.next_occurrence,
-      frequency,
-      nextRange.start,
-      nextRange.end
-    )
-    if (occurrences === 0) continue
-
-    const unitAmount = Number(r.amount_original)
-    const label = r.description.trim() || 'Mercado recurrente'
-
-    if (predictions.some(p => p.itemName.toLowerCase() === label.toLowerCase())) {
-      continue
-    }
-
-    predictions.push({
-      itemName: label,
-      avgUnitPrice: unitAmount,
-      expectedPurchases: occurrences,
-      projectedSpend: Math.round(unitAmount * occurrences * 100) / 100,
-      lastPurchased: null,
     })
   }
 

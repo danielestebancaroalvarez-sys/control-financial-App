@@ -113,6 +113,7 @@ export type FixedServiceStatus = {
   status: 'pending' | 'paid'
   paidAmount?: number
   paidDate?: string
+  categoryName: string | null
   categoryIcon: string | null
   occurrences?: number
   dueInNextPeriod?: boolean
@@ -137,8 +138,7 @@ export type ConsumptionPrediction = {
 }
 
 export type PredictionsSummary = {
-  fixedServices: FixedServiceStatus[]
-  subscriptions: FixedServiceStatus[]
+  upcomingPayments: FixedServiceStatus[]
   purchasePredictions: ItemPurchasePrediction[]
   nextPeriodStart: string
   nextPeriodEnd: string

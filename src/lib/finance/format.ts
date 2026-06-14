@@ -213,6 +213,19 @@ export function addFrequency(
   return toDateString(d)
 }
 
+export function formatFrequency(
+  frequency: string,
+  occurrences = 1
+): string {
+  const labels: Record<string, string> = {
+    weekly: 'semanal',
+    biweekly: 'quincenal',
+    monthly: 'mensual',
+  }
+  const label = labels[frequency] ?? frequency
+  return occurrences > 1 ? `${occurrences} pagos` : label
+}
+
 export function daysInCurrentMonth(): number {
   const now = new Date()
   return new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
