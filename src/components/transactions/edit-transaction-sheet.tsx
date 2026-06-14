@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Loader2, X } from 'lucide-react'
 import { updateTransaction } from '@/lib/finance/actions'
 import { getTodayString } from '@/lib/finance/format'
+import { ReceiptThumbnail } from './receipt-thumbnail'
 import type { Category, TransactionListItem } from '@/lib/finance/types'
 import type { CurrencyCode } from '@/lib/household/types'
 
@@ -81,6 +82,17 @@ export function EditTransactionSheet({
             <X className="w-4 h-4 text-[#636E72]" />
           </button>
         </div>
+
+        {transaction.receipt_image_path && (
+          <div className="mb-4 flex items-center gap-3 p-3 rounded-xl bg-[#F5F5F5]">
+            <ReceiptThumbnail
+              path={transaction.receipt_image_path}
+              householdId={householdId}
+              className="w-16 h-16"
+            />
+            <p className="text-[11px] text-[#636E72]">Recibo adjunto a este gasto</p>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-3">
           <div className="flex gap-2">

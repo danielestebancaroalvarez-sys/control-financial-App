@@ -92,3 +92,56 @@ export function formatEstimatedTime(goal: SavingsGoal): string {
   }
   return `Tiempo estimado: ${years} año${years === 1 ? '' : 's'} y ${rem} mes${rem === 1 ? '' : 'es'}`
 }
+
+export function estimateMonthsForGoalInput(goal: SavingsGoalInput): number | null {
+  const monthly = goal.contribution_amount
+    ? toMonthlyAmount(
+        Number(goal.contribution_amount),
+        goal.contribution_frequency ?? 'monthly'
+      )
+    : 0
+
+  if (goal.savings_mode === 'compound' && goal.annual_interest_rate) {
+    return monthsToReachTargetCompound(goal)
+  }
+
+  return estimateMonthsToGoalStatic(
+    Number(goal.target_amount),
+    Number(goal.current_amount),
+    monthly
+  )
+}
+
+export function applyContributionBoost(
+  goal: SavingsGoalInput,
+  extraMonthly: number
+): SavingsGoalInput {
+  if (!goal.contribution_amount || extraMonthly <= 0) {
+    return {
+      ...goal,
+      contribution_amount: (goal.contribution_amount ?? 0) + extraMonthly,
+      contribution_frequency: goal.contribution_frequency ?? 'monthly',
+    }
+  }
+
+  const currentMonthly = toMonthlyAmount(
+    Number(goal.contribution_amount),
+    goal.contribution_frequency ?? 'monthly'
+  )
+
+  return {
+    ...goal,
+    contribution_amount: currentMonthly + extraMonthly,
+    contribution_frequency: 'monthly',
+  }
+}
+
+export function formatMonthsLabel(months: number | null): string {
+  if (months === null) return 'Sin estimación'
+  if (months === 0) return 'Meta alcanzada'
+  if (months < 12) return `${months} mes${months === 1 ? '' : 'es'}`
+  const years = Math.floor(months / 12)
+  const rem = months % 12
+  if (rem === 0) return `${years} año${years === 1 ? '' : 's'}`
+  return `${years}a ${rem}m`
+}

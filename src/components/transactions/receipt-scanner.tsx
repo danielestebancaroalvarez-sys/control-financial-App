@@ -1,9 +1,10 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Loader2, ScanLine } from 'lucide-react'
 import { compressReceiptImage } from '@/lib/receipts/compress-image'
 import type { ParsedReceipt } from '@/lib/receipts/types'
+import type { ShoppingListItem } from '@/lib/finance/market-analytics'
 import { ReceiptReviewSheet } from './receipt-review-sheet'
 
 export function ReceiptScanner({
@@ -23,6 +24,18 @@ export function ReceiptScanner({
   const [scanning, setScanning] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [parsed, setParsed] = useState<ParsedReceipt | null>(null)
+  const [shoppingList, setShoppingList] = useState<ShoppingListItem[]>([])
+
+  useEffect(() => {
+    fetch(`/api/market/shopping-list?householdId=${householdId}`)
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data.shoppingList)) {
+          setShoppingList(data.shoppingList)
+        }
+      })
+      .catch(() => {})
+  }, [householdId])
 
   async function handleScan(file: File) {
     setScanning(true)
@@ -71,7 +84,7 @@ export function ReceiptScanner({
           </span>
         </div>
         <p className="text-[11px] text-[#636E72]">
-          Extrae productos, total y fecha automáticamente (solo Mercado).
+          Extrae productos, total y fecha. Compara con tu lista de compra sugerida.
         </p>
         <button
           type="button"
@@ -111,6 +124,7 @@ export function ReceiptScanner({
         <ReceiptReviewSheet
           receipt={parsed}
           previewUrl={previewUrl}
+          shoppingList={shoppingList}
           onApply={data => {
             onApply(data)
             setParsed(null)

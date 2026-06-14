@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { deleteTransaction } from '@/lib/finance/actions'
 import { EditTransactionSheet } from '@/components/transactions/edit-transaction-sheet'
+import { ReceiptThumbnail } from '@/components/transactions/receipt-thumbnail'
 import { CategoryIcon } from '@/components/transactions/category-icon'
 import { formatMoney, getPeriodLabels } from '@/lib/finance/format'
 import {
@@ -247,34 +248,39 @@ export function BuscarClient({
         </FilterSection>
 
         <FilterSection label="Periodo">
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-1.5">
             <button
               type="button"
               onClick={() => selectPeriodPreset('period')}
-              className={`flex-1 py-2.5 rounded-xl text-[12px] font-bold ${
+              className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-colors ${
                 filters.preset === 'period'
                   ? 'bg-[#00BFA5] text-white'
                   : 'bg-[#F5F5F5] text-[#636E72]'
               }`}
             >
-              Periodo actual
-              <span className="block text-[10px] font-normal opacity-80 mt-0.5">
-                {labels.current}
-              </span>
+              {labels.current}
             </button>
             <button
               type="button"
               onClick={() => selectPeriodPreset('last-week')}
-              className={`flex-1 py-2.5 rounded-xl text-[12px] font-bold ${
+              className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-colors ${
                 filters.preset === 'last-week'
                   ? 'bg-[#00BFA5] text-white'
                   : 'bg-[#F5F5F5] text-[#636E72]'
               }`}
             >
               Semana pasada
-              <span className="block text-[10px] font-normal opacity-80 mt-0.5">
-                Lun – dom anterior
-              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setAdvancedOpen(true)}
+              className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-colors ${
+                filters.preset === 'custom'
+                  ? 'bg-[#2D3436] text-white'
+                  : 'bg-[#F5F5F5] text-[#636E72]'
+              }`}
+            >
+              Personalizado
             </button>
           </div>
         </FilterSection>
@@ -380,6 +386,12 @@ export function BuscarClient({
                   {tx.author_name ? ` · ${tx.author_name}` : ''}
                 </p>
               </div>
+              {tx.receipt_image_path && (
+                <ReceiptThumbnail
+                  path={tx.receipt_image_path}
+                  householdId={householdId}
+                />
+              )}
               <div className="flex items-center gap-1 shrink-0">
                 <span
                   className={`text-[14px] font-bold ${
