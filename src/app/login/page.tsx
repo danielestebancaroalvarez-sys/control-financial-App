@@ -3,10 +3,9 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { useRouter } from 'next/navigation'
-import {
-  Mail, Lock, Eye, EyeOff, TrendingUp, Heart,
-  MessageCircle, PiggyBank, DollarSign, BarChart2, Home, User,
-} from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, User } from 'lucide-react'
+import { CoupleCashLogo } from '@/components/login/couple-cash-logo'
+import { CoupleCashMark } from '@/components/brand/couple-cash-mark'
 
 type AuthMode = 'login' | 'signup'
 
@@ -121,13 +120,13 @@ export default function LoginPage() {
     <div className="relative min-h-screen w-full overflow-hidden flex items-center justify-center p-6 bg-gradient-to-br from-[#A8EDEA] via-[#CBF5D3] to-[#FFD6A5]">
 
       <div className="pointer-events-none select-none absolute inset-0 overflow-hidden">
-        <PiggyBank  className="absolute top-[7%]  left-[5%]  w-9 h-9  -rotate-[15deg] opacity-20 text-teal-400" />
-        <TrendingUp className="absolute top-[12%] right-[7%] w-10 h-10 rotate-[10deg]  opacity-20 text-amber-400" />
-        <DollarSign className="absolute top-[32%] left-[4%]  w-8 h-8  rotate-[5deg]   opacity-20 text-emerald-500" />
-        <BarChart2  className="absolute top-[56%] left-[4%]  w-9 h-9  -rotate-[8deg]  opacity-15 text-indigo-400" />
-        <Home       className="absolute bottom-[15%] right-[5%] w-9 h-9 rotate-[12deg] opacity-20 text-amber-400" />
-        <PiggyBank  className="absolute bottom-[7%] left-[7%]  w-8 h-8  rotate-[20deg]  opacity-15 text-emerald-500" />
-        <DollarSign className="absolute top-[72%] right-[4%] w-7 h-7  -rotate-[5deg]  opacity-20 text-teal-400" />
+        <CoupleCashMark className="absolute top-[7%] left-[5%] w-10 h-10 -rotate-[15deg] opacity-20" />
+        <CoupleCashMark variant="coins" className="absolute top-[12%] right-[7%] w-12 h-8 rotate-[10deg] opacity-20" />
+        <CoupleCashMark variant="heart" className="absolute top-[32%] left-[4%] w-8 h-8 rotate-[5deg] opacity-20" />
+        <CoupleCashMark className="absolute top-[56%] left-[4%] w-9 h-9 -rotate-[8deg] opacity-15" />
+        <CoupleCashMark variant="coins" className="absolute bottom-[15%] right-[5%] w-11 h-8 rotate-[12deg] opacity-20" />
+        <CoupleCashMark variant="heart" className="absolute bottom-[7%] left-[7%] w-8 h-8 rotate-[20deg] opacity-15" />
+        <CoupleCashMark className="absolute top-[72%] right-[4%] w-9 h-9 -rotate-[5deg] opacity-20" />
       </div>
 
       <div className="relative z-10 w-full max-w-[380px]">
@@ -135,47 +134,15 @@ export default function LoginPage() {
 
           <div className="px-7 pt-7 pb-5 bg-gradient-to-br from-[#A8EDEA]/55 via-[#CBF5D3]/40 to-[#FFD6A5]/40">
             <div className="flex items-center gap-2.5 mb-5">
-              <div className="relative shrink-0">
-                <div className="w-[42px] h-[42px] rounded-full flex items-center justify-center shadow-md bg-gradient-to-br from-[#F59E0B] to-[#FBBF24]">
-                  <TrendingUp className="w-5 h-5 text-white" />
-                </div>
-                <div className="absolute -top-[3px] -right-[3px] w-4 h-4 rounded-full bg-pink-500 flex items-center justify-center">
-                  <Heart className="w-[9px] h-[9px] text-white fill-white" />
-                </div>
-              </div>
+              <CoupleCashLogo className="w-[42px] h-[42px] shrink-0" />
               <div className="leading-tight">
                 <p className="text-[22px] font-bold text-gray-900 tracking-tight">CoupleCash</p>
                 <p className="text-[11.5px] text-gray-500 font-medium">Finanzas en pareja, fácil y feliz</p>
               </div>
             </div>
 
-            <div className="relative h-[148px] flex items-end justify-center">
-              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[210px] h-[58px] rounded-[30px] bg-[#60C5C0]/28" />
-              <div className="absolute bottom-9 left-1/2 -translate-x-1/2 w-[190px] h-[50px] rounded-[22px] bg-[#60C5C0]/38" />
-              <div className="absolute bottom-3 left-[calc(50%-108px)] rounded-t-[10px] rounded-b-[8px] w-[22px] h-[42px] bg-[#60C5C0]/45" />
-              <div className="absolute bottom-3 left-[calc(50%+86px)] rounded-t-[10px] rounded-b-[8px] w-[22px] h-[42px] bg-[#60C5C0]/45" />
-
-              <div className="absolute bottom-9 left-[calc(50%-68px)] flex flex-col items-center">
-                <div className="w-8 h-8 rounded-full mb-[3px] shadow bg-gradient-to-br from-[#FBBF24] to-[#F59E0B]" />
-                <div className="w-[30px] h-11 rounded-t-[12px] rounded-b-[6px] bg-orange-400" />
-              </div>
-
-              <div className="absolute bottom-9 left-[calc(50%+36px)] flex flex-col items-center">
-                <div className="w-8 h-8 rounded-full mb-[3px] shadow bg-gradient-to-br from-[#FCA5A5] to-[#F87171]" />
-                <div className="w-[30px] h-11 rounded-t-[12px] rounded-b-[6px] bg-emerald-400" />
-              </div>
-
-              <div className="absolute bottom-14 left-1/2 -translate-x-1/2 w-10 h-8 bg-white rounded-[10px] shadow border border-gray-200 flex items-center justify-center">
-                <BarChart2 className="w-[18px] h-[18px] text-teal-400" />
-              </div>
-
-              <div className="absolute top-2.5 left-1/2 ml-3.5 w-[30px] h-[30px] rounded-full bg-white shadow-md flex items-center justify-center">
-                <MessageCircle className="w-4 h-4 text-indigo-400 fill-indigo-50" />
-              </div>
-
-              <span className="absolute top-2 left-[calc(50%-54px)] text-amber-400 text-sm font-bold">✦</span>
-              <span className="absolute top-6 left-[calc(50%-40px)] text-pink-400 text-[8px]">✦</span>
-              <span className="absolute top-1.5 left-[calc(50%+52px)] text-emerald-400 text-[10px] font-bold">✦</span>
+            <div className="relative h-[120px] flex items-center justify-center">
+              <CoupleCashLogo className="w-24 h-24 drop-shadow-md" />
             </div>
           </div>
 

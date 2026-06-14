@@ -73,6 +73,50 @@ export async function joinHouseholdByCode(
   redirect('/')
 }
 
+export async function leaveHousehold(
+  householdId: string
+): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) return { error: 'Debes iniciar sesión.' }
+
+  const { error } = await supabase.rpc('leave_household', {
+    p_household_id: householdId,
+  })
+
+  if (error) return { error: 'No se pudo salir del hogar. Intenta de nuevo.' }
+
+  revalidatePath('/', 'layout')
+  redirect('/onboarding')
+}
+
+export async function removeHouseholdMember(
+  householdId: string,
+  userId: string
+): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) return { error: 'Debes iniciar sesión.' }
+
+  const { error } = await supabase.rpc('remove_household_member', {
+    p_household_id: householdId,
+    p_user_id: userId,
+  })
+
+  if (error) {
+    return { error: 'No se pudo desvincular al miembro. Solo el dueño puede hacerlo.' }
+  }
+
+  revalidateApp()
+  return {}
+}
+
 const REVALIDATE_PATHS = ['/', '/buscar', '/ahorros', '/predicciones', '/nuevo', '/ajustes']
 
 function revalidateApp() {

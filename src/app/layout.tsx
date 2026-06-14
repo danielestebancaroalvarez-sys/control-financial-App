@@ -12,6 +12,10 @@ export const metadata: Metadata = {
   title: "CoupleCash — Finanzas en pareja, fácil y feliz",
   description: "Gestiona tus finanzas en pareja de forma simple y feliz con CoupleCash.",
   manifest: "/manifest.webmanifest",
+  icons: {
+    icon: "/icon.svg",
+    apple: "/icon.svg",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",

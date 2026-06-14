@@ -8,6 +8,7 @@ import { DashboardPeriodSetting } from './dashboard-period-setting'
 import { CategoriesManager } from './categories-manager'
 import { PaymentReminderSetting } from './payment-reminder-setting'
 import { ResetDataButton } from './reset-data-button'
+import { HouseholdMembersSection } from './household-members-section'
 import { Users, Coins } from 'lucide-react'
 
 export default async function AjustesPage() {
@@ -57,32 +58,11 @@ export default async function AjustesPage() {
         </div>
       </section>
 
-      <section className="rounded-[24px] bg-white/90 backdrop-blur-md shadow-sm border border-white/60 p-5">
-        <h2 className="text-[15px] font-bold text-[#2D3436] mb-3">
-          Miembros ({members.length})
-        </h2>
-        <ul className="space-y-3">
-          {members.map(member => (
-            <li
-              key={member.id}
-              className="flex items-center gap-3 p-3 rounded-2xl bg-[#F5F5F5]"
-            >
-              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#00BFA5] to-[#2DD4BF] flex items-center justify-center text-white text-[13px] font-bold shrink-0">
-                {(member.full_name ?? '?').charAt(0).toUpperCase()}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[14px] font-semibold text-[#2D3436] truncate">
-                  {member.full_name ?? 'Usuario'}
-                  {member.user_id === ctx.user.id && (
-                    <span className="text-[#636E72] font-normal"> (tú)</span>
-                  )}
-                </p>
-                <p className="text-[11px] text-[#636E72] capitalize">{member.role}</p>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </section>
+      <HouseholdMembersSection
+        householdId={ctx.household.id}
+        members={members}
+        currentUserId={ctx.user.id}
+      />
 
       <ResetDataButton householdId={ctx.household.id} />
 

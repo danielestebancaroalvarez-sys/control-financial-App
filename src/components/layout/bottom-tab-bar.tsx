@@ -1,16 +1,72 @@
 'use client'
 
+import Link from 'next/link'
+import { useLinkStatus } from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, Search, Plus, PiggyBank, LineChart } from 'lucide-react'
-import { getTabIndex } from './tab-routes'
-import { TabBarLink } from './tab-bar-link'
+import { motion } from 'framer-motion'
+import {
+  TabAddIcon,
+  TabHomeIcon,
+  TabRadarIcon,
+  TabSavingsIcon,
+  TabSearchIcon,
+} from '@/components/brand/tab-icons'
+
+function TabPendingDot() {
+  const { pending } = useLinkStatus()
+  if (!pending) return null
+  return (
+    <span
+      className="absolute -top-0.5 right-2 w-2 h-2 rounded-full bg-[#00BFA5] animate-pulse"
+      aria-hidden
+    />
+  )
+}
+
+function CenterPendingRing({ children }: { children: React.ReactNode }) {
+  const { pending } = useLinkStatus()
+  return (
+    <motion.div
+      whileTap={{ scale: 0.92 }}
+      className={`relative w-14 h-14 rounded-full flex items-center justify-center shadow-lg ring-4 ring-white/90 bg-gradient-to-br from-[#00BFA5] to-[#2DD4BF] ${
+        pending ? 'shadow-[#00BFA5]/50' : 'shadow-[#00BFA5]/25'
+      }`}
+    >
+      {pending && (
+        <span className="absolute inset-0 rounded-full border-2 border-white/60 border-t-white animate-spin" />
+      )}
+      {children}
+    </motion.div>
+  )
+}
 
 const TABS = [
-  { href: '/', label: 'Inicio', icon: Home },
-  { href: '/buscar', label: 'Buscar', icon: Search },
-  { href: '/nuevo', label: 'Añadir', icon: Plus, center: true },
-  { href: '/ahorros', label: 'Ahorros', icon: PiggyBank },
-  { href: '/predicciones', label: 'Radar', icon: LineChart },
+  {
+    href: '/',
+    label: 'Inicio',
+    renderIcon: (active: boolean) => <TabHomeIcon active={active} />,
+  },
+  {
+    href: '/buscar',
+    label: 'Buscar',
+    renderIcon: (active: boolean) => <TabSearchIcon active={active} />,
+  },
+  {
+    href: '/nuevo',
+    label: 'Añadir',
+    center: true as const,
+    renderIcon: (_active?: boolean) => <TabAddIcon />,
+  },
+  {
+    href: '/ahorros',
+    label: 'Ahorros',
+    renderIcon: (active: boolean) => <TabSavingsIcon active={active} />,
+  },
+  {
+    href: '/predicciones',
+    label: 'Radar',
+    renderIcon: (active: boolean) => <TabRadarIcon active={active} />,
+  },
 ] as const
 
 function isActive(pathname: string, href: string) {
@@ -20,7 +76,7 @@ function isActive(pathname: string, href: string) {
 
 export function BottomTabBar() {
   const pathname = usePathname()
-  const activeIndex = getTabIndex(pathname)
+  const activeIndex = TABS.findIndex(tab => isActive(pathname, tab.href))
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 pb-[max(1rem,env(safe-area-inset-bottom))]">
@@ -28,32 +84,47 @@ export function BottomTabBar() {
         <div className="relative flex items-end justify-around rounded-[28px] bg-white/75 backdrop-blur-2xl border border-white/70 shadow-[0_8px_40px_rgba(0,0,0,0.14)] px-2 py-2">
           {TABS.map((tab, index) => {
             const active = isActive(pathname, tab.href)
-            const Icon = tab.icon
 
             if ('center' in tab && tab.center) {
               return (
-                <TabBarLink
+                <Link
                   key={tab.href}
                   href={tab.href}
-                  label={tab.label}
-                  icon={Icon}
-                  active={active}
-                  center
+                  prefetch
+                  className="relative -top-5 flex flex-col items-center shrink-0"
+                  aria-label={tab.label}
                 >
-                  <Plus className="w-7 h-7 text-white" strokeWidth={2.5} />
-                </TabBarLink>
+                  <CenterPendingRing>{tab.renderIcon(false)}</CenterPendingRing>
+                </Link>
               )
             }
 
             return (
-              <TabBarLink
+              <Link
                 key={tab.href}
                 href={tab.href}
-                label={tab.label}
-                icon={Icon}
-                active={active}
-                showActiveDot={active && activeIndex === index}
-              />
+                prefetch
+                className="relative flex flex-col items-center gap-0.5 py-1.5 min-w-[3.25rem]"
+              >
+                {active && activeIndex === index && (
+                  <motion.span
+                    layoutId="tab-active"
+                    className="absolute -top-0.5 w-1 h-1 rounded-full bg-[#00BFA5]"
+                    transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                  />
+                )}
+                <TabPendingDot />
+                <motion.div whileTap={{ scale: 0.88 }}>
+                  {tab.renderIcon(active)}
+                </motion.div>
+                <span
+                  className={`text-[10px] font-semibold transition-colors ${
+                    active ? 'text-[#00BFA5]' : 'text-[#B2BEC3]'
+                  }`}
+                >
+                  {tab.label}
+                </span>
+              </Link>
             )
           })}
         </div>

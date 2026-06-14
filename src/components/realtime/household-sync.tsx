@@ -50,6 +50,16 @@ export function HouseholdSync({ householdId }: { householdId: string }) {
         },
         refresh
       )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'household_members',
+          filter: `household_id=eq.${householdId}`,
+        },
+        refresh
+      )
       .subscribe()
 
     return () => {
