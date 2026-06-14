@@ -374,6 +374,7 @@ export async function getDashboardSummary(
 
   return {
     realBalance: balance.balance,
+    balanceBreakdown: balance,
     monthlyIncome: periodIncome,
     monthlyExpenses: periodExpenses,
     periodSavings,

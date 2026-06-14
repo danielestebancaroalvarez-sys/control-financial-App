@@ -84,6 +84,7 @@ export type MemberSpendingStat = {
 
 export type DashboardSummary = {
   realBalance: number
+  balanceBreakdown: BalanceBreakdown
   monthlyIncome: number
   monthlyExpenses: number
   periodSavings: number

@@ -119,7 +119,28 @@ export function DashboardView({
           <p className="text-[32px] font-bold tracking-tight pr-10">
             {fmt(summary.realBalance)}
           </p>
-          <p className="text-[11px] opacity-75 mt-1">Histórico · ingresos − gastos + ajustes</p>
+          <div className="text-[10px] opacity-80 mt-2 space-y-0.5 pr-10">
+            <p>
+              Ingresos {fmt(summary.balanceBreakdown.income)} − Gastos{' '}
+              {fmt(summary.balanceBreakdown.expense)}
+              {summary.balanceBreakdown.adjustment !== 0 && (
+                <>
+                  {' '}
+                  {summary.balanceBreakdown.adjustment > 0 ? '+' : '−'}{' '}
+                  {fmt(Math.abs(summary.balanceBreakdown.adjustment))} ajustes
+                </>
+              )}
+            </p>
+            <p className="opacity-75">
+              Suma de todo lo registrado · no es por periodo
+            </p>
+            {summary.realBalance < 0 && (
+              <p className="opacity-90 pt-1">
+                Negativo si hay más gastos que ingresos registrados. Los fijos del
+                radar no restan saldo hasta que registres el pago en Nuevo.
+              </p>
+            )}
+          </div>
         </div>
 
         <div className="px-4 pb-4 space-y-4">

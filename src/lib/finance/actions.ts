@@ -130,6 +130,7 @@ export async function createRecurringSchedule(
       currency_original: currency,
       frequency: input.frequency,
       next_occurrence: input.startDate,
+      auto_register: false,
     })
     .select('id')
     .single()
