@@ -78,11 +78,6 @@ export type DashboardSummary = {
   periodEnd: string
   periodLabel: string
   trend: { offset: number; label: string; income: number; expenses: number }[]
-  categoryTrend: {
-    label: string
-    offset: number
-    categories: { name: string; amount: number; color: string }[]
-  }[]
   allCategories: { name: string; amount: number; color: string | null }[]
 }
 

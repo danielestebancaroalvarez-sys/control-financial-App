@@ -6,7 +6,7 @@ import { calculateBalance, sumByTypeInPeriod } from './balance'
 import { calculateGuiltFreeMoney } from './guilt-free'
 import { getPeriodRangeAtOffset, getPeriodBlockLabel } from './format'
 import { getCategoryColor } from './categories'
-import { buildTrendSeries, buildCategoryTrendSeries } from './dashboard-stats'
+import { buildTrendSeries } from './dashboard-stats'
 import { buildExpenseGroupTotals } from './category-groups'
 import { calculatePeriodSavingsAllocations } from './savings-dashboard'
 import { buildPredictionsSummary } from './predictions'
@@ -161,13 +161,6 @@ export async function getDashboardSummary(
   const expenseGroups = buildExpenseGroupTotals(categoryTotals, categoryMap)
 
   const trend = buildTrendSeries(transactions, period, safeOffset, 6)
-  const categoryTrend = buildCategoryTrendSeries(
-    transactions,
-    expenseCategories,
-    period,
-    safeOffset,
-    6
-  )
   const savingsProgress = savingsGoals.map(g => ({
     name: g.name,
     current: Number(g.current_amount),
@@ -196,7 +189,6 @@ export async function getDashboardSummary(
     periodEnd: end,
     periodLabel: getPeriodBlockLabel(period, safeOffset, start, end),
     trend,
-    categoryTrend,
     allCategories,
   }
 }

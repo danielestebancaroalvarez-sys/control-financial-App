@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useCallback, useState, useTransition } from 'react'
+import { useCallback, useEffect, useRef, useState, useTransition } from 'react'
 import {
   Download,
   Search,
@@ -15,6 +15,11 @@ import { deleteTransaction } from '@/lib/finance/actions'
 import { EditTransactionSheet } from '@/components/transactions/edit-transaction-sheet'
 import { CategoryIcon } from '@/components/transactions/category-icon'
 import { formatMoney, getPeriodLabels } from '@/lib/finance/format'
+import {
+  getSearchCacheKey,
+  readSearchCache,
+  writeSearchCache,
+} from '@/lib/finance/search-cache'
 import type { Category, Period, TransactionListItem } from '@/lib/finance/types'
 import type { CurrencyCode } from '@/lib/household/types'
 
@@ -64,7 +69,13 @@ export function BuscarClient({
 }) {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const cacheKey = getSearchCacheKey(searchParams.toString())
   const [pending, startTransition] = useTransition()
+  const [displayResults, setDisplayResults] = useState<TransactionListItem[]>(() => {
+    if (typeof window === 'undefined') return results
+    return readSearchCache(cacheKey) ?? results
+  })
+  const latestResults = useRef(results)
   const [editing, setEditing] = useState<TransactionListItem | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [advancedOpen, setAdvancedOpen] = useState(
@@ -73,6 +84,17 @@ export function BuscarClient({
   const [customStart, setCustomStart] = useState(filters.startDate || rangeStart)
   const [customEnd, setCustomEnd] = useState(filters.endDate || rangeEnd)
   const labels = getPeriodLabels(period)
+
+  useEffect(() => {
+    latestResults.current = results
+    setDisplayResults(results)
+    writeSearchCache(cacheKey, results)
+  }, [results, cacheKey])
+
+  useEffect(() => {
+    const cached = readSearchCache(cacheKey)
+    if (cached?.length) setDisplayResults(cached)
+  }, [cacheKey])
 
   const replaceParams = useCallback(
     (mutate: (params: URLSearchParams) => void) => {
@@ -121,7 +143,7 @@ export function BuscarClient({
 
   function exportCsv() {
     const header = 'Fecha,Tipo,Descripción,Categoría,Monto,Autor\n'
-    const rows = results
+    const rows = displayResults
       .map(tx =>
         [
           tx.transaction_date,
@@ -168,11 +190,11 @@ export function BuscarClient({
         <div>
           <h1 className="text-[22px] font-bold text-[#2D3436]">Búsqueda</h1>
           <p className="text-[13px] text-[#636E72]">
-            {results.length} resultado{results.length !== 1 ? 's' : ''} · {periodLabel}
-            {pending && ' · buscando...'}
+            {displayResults.length} resultado{displayResults.length !== 1 ? 's' : ''} · {periodLabel}
+            {pending && ' · actualizando...'}
           </p>
         </div>
-        {results.length > 0 && (
+        {displayResults.length > 0 && (
           <button
             type="button"
             onClick={exportCsv}
@@ -184,7 +206,12 @@ export function BuscarClient({
         )}
       </div>
 
-      <div className="rounded-[24px] bg-white/90 backdrop-blur-md border border-white/60 shadow-sm p-4 space-y-4">
+      <div className="rounded-[24px] bg-white/90 backdrop-blur-md border border-white/60 shadow-sm p-4 space-y-4 relative">
+        {pending && (
+          <div className="absolute top-0 left-4 right-4 h-0.5 overflow-hidden rounded-full">
+            <div className="h-full w-1/3 bg-[#00BFA5] animate-pulse" />
+          </div>
+        )}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#B2BEC3]" />
           <input
@@ -313,13 +340,24 @@ export function BuscarClient({
         </div>
       </div>
 
-      <div className="space-y-2">
-        {results.length === 0 ? (
+      {pending && displayResults.length > 0 && (
+        <div className="h-1 rounded-full bg-[#F5F5F5] overflow-hidden">
+          <div className="h-full w-1/3 rounded-full bg-[#00BFA5] animate-pulse" />
+        </div>
+      )}
+
+      <div className={`space-y-2 transition-opacity ${pending ? 'opacity-70' : 'opacity-100'}`}>
+        {displayResults.length === 0 && !pending ? (
           <div className="rounded-[24px] bg-white/90 backdrop-blur-md border border-white/60 p-8 text-center">
             <p className="text-[14px] text-[#636E72]">No hay movimientos que coincidan.</p>
           </div>
+        ) : displayResults.length === 0 && pending ? (
+          <div className="rounded-[24px] bg-white/90 backdrop-blur-md border border-white/60 p-8 text-center">
+            <Loader2 className="w-6 h-6 text-[#00BFA5] animate-spin mx-auto mb-2" />
+            <p className="text-[14px] text-[#636E72]">Buscando movimientos...</p>
+          </div>
         ) : (
-          results.map(tx => (
+          displayResults.map(tx => (
             <div
               key={tx.id}
               className="rounded-2xl bg-white/90 backdrop-blur-md border border-white/60 shadow-sm p-4 flex items-center gap-3"

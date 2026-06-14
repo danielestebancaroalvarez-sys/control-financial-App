@@ -1,7 +1,6 @@
 import { DonutChart } from '@/components/dashboard/donut-chart'
 import { TrendBarChart } from '@/components/dashboard/trend-bar-chart'
 import { CategoryBarChart } from '@/components/dashboard/category-bar-chart'
-import { CategoryTrendChart } from '@/components/dashboard/category-trend-chart'
 import { PeriodBlockSelector } from '@/components/dashboard/period-block-selector'
 import { BalanceEditButton } from '@/app/(main)/balance-edit-button'
 import { formatMoney, getPeriodLabels } from '@/lib/finance/format'
@@ -20,14 +19,12 @@ function buildBudgetSlices(summary: DashboardSummary) {
     })
   }
 
-  for (const saving of summary.savingsBreakdown) {
-    if (saving.amount > 0) {
-      slices.push({
-        value: saving.amount,
-        color: saving.color,
-        label: `Ahorro · ${saving.name}`,
-      })
-    }
+  if (summary.periodSavings > 0) {
+    slices.push({
+      value: summary.periodSavings,
+      color: '#F59E0B',
+      label: 'Ahorros',
+    })
   }
 
   if (summary.guiltFreeMoney > 0) {
@@ -188,16 +185,6 @@ export function DashboardView({
               </div>
             </div>
             <TrendBarChart data={summary.trend} />
-          </div>
-
-          <div className="rounded-2xl bg-[#F5F5F5] p-4">
-            <p className="text-[12px] font-bold text-[#2D3436] mb-1">
-              Gastos por categoría · tendencia
-            </p>
-            <p className="text-[10px] text-[#636E72] mb-3">
-              Barras apiladas por {summary.period === 'weekly' ? 'semana' : 'mes'}
-            </p>
-            <CategoryTrendChart data={summary.categoryTrend} />
           </div>
 
           {summary.allCategories.length > 0 && (
