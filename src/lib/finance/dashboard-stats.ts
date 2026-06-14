@@ -1,5 +1,5 @@
 import type { Category, Period, TransactionRow } from './types'
-import { getPeriodRangeAtOffset } from './format'
+import { getPeriodRangeAtOffset, isClosedPeriod } from './format'
 import { sumByTypeInPeriod } from './balance'
 import {
   calculateEffectivePeriodIncome,
@@ -35,19 +35,20 @@ export function buildTrendSeries(
 
   for (let offset = endOffset; offset >= startOffset; offset--) {
     const { start, end } = getPeriodRangeAtOffset(period, offset)
-    const income = calculateEffectivePeriodIncome(
-      transactions,
-      recurring,
-      start,
-      end
-    )
-    const expenses = calculateEffectivePeriodOutflow(
-      transactions,
-      recurring,
-      start,
-      end,
-      categoryMap
-    )
+    const closed = isClosedPeriod(end)
+
+    const income = closed
+      ? sumByTypeInPeriod(transactions, 'income', start, end)
+      : calculateEffectivePeriodIncome(transactions, recurring, start, end)
+    const expenses = closed
+      ? sumByTypeInPeriod(transactions, 'expense', start, end)
+      : calculateEffectivePeriodOutflow(
+          transactions,
+          recurring,
+          start,
+          end,
+          categoryMap
+        )
 
     points.unshift({
       offset,

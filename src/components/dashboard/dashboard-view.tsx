@@ -13,6 +13,9 @@ import Link from 'next/link'
 
 function buildBudgetSlices(summary: DashboardSummary) {
   const slices: { value: number; color: string; label: string }[] = []
+  const savingsAmount = summary.isClosedPeriod
+    ? summary.periodRealSavings
+    : summary.periodSavings
 
   if (summary.scheduledFixedExpenses > 0) {
     slices.push({
@@ -30,11 +33,11 @@ function buildBudgetSlices(summary: DashboardSummary) {
     })
   }
 
-  if (summary.periodSavings > 0) {
+  if (savingsAmount > 0) {
     slices.push({
-      value: summary.periodSavings,
+      value: savingsAmount,
       color: '#F59E0B',
-      label: 'Metas',
+      label: summary.isClosedPeriod ? 'Ahorro' : 'Metas',
     })
   }
 
@@ -72,6 +75,10 @@ export function DashboardView({
   const labels = getPeriodLabels(summary.period)
   const budgetSlices = buildBudgetSlices(summary)
   const pieTotal = expensePieTotal(summary)
+  const savingsInChart = summary.isClosedPeriod
+    ? summary.periodRealSavings
+    : summary.periodSavings
+  const periodModeLabel = summary.isClosedPeriod ? 'real del periodo' : 'proyectado'
 
   return (
     <div className="space-y-4">
@@ -131,8 +138,11 @@ export function DashboardView({
               {fmt(summary.guiltFreeMoney)}
             </p>
             <p className="text-[11px] text-cc-secondary mt-1">
-              Ingresos prometidos {labels.ofPeriod} − gastos fijos prometidos − metas −
-              gasto variable
+              {summary.isClosedPeriod
+                ? 'Ingresos reales − gastos fijos − ahorro depositado − gasto variable'
+                : 'Ingresos prometidos ' +
+                  labels.ofPeriod +
+                  ' − gastos fijos prometidos − metas − gasto variable'}
             </p>
             <div className="flex flex-wrap gap-2 mt-2 text-[10px] text-cc-muted">
               {summary.scheduledFixedIncome > 0 && (
@@ -152,8 +162,12 @@ export function DashboardView({
               </Link>
               <span>·</span>
               <span>Variable: {fmt(summary.variableSpent)}</span>
-              <span>·</span>
-              <span>Metas planificadas: {fmt(summary.periodSavings)}</span>
+              {!summary.isClosedPeriod && (
+                <>
+                  <span>·</span>
+                  <span>Metas planificadas: {fmt(summary.periodSavings)}</span>
+                </>
+              )}
               {summary.periodRealSavings > 0 && (
                 <>
                   <span>·</span>
@@ -283,7 +297,8 @@ export function DashboardView({
               Distribución del ingreso
             </p>
             <p className="text-[10px] text-cc-secondary mb-4">
-              Fijos, variable, metas de ahorro y dinero libre {labels.ofPeriod}
+              Fijos, variable, {summary.isClosedPeriod ? 'ahorro depositado' : 'metas de ahorro'}{' '}
+              y dinero libre · datos {periodModeLabel}
             </p>
             <DonutChart
               slices={budgetSlices}
@@ -304,7 +319,7 @@ export function DashboardView({
                 Variable: {fmt(summary.variableSpent)}
               </div>
               <div className="text-[#F59E0B] font-bold">
-                Metas: {fmt(summary.periodSavings)}
+                {summary.isClosedPeriod ? 'Ahorro' : 'Metas'}: {fmt(savingsInChart)}
               </div>
               <div className="text-cc-secondary font-bold col-span-2">
                 Libre: {fmt(Math.max(0, summary.guiltFreeMoney))}
@@ -362,7 +377,9 @@ export function DashboardView({
               </div>
             </div>
             <p className="text-[10px] text-cc-secondary mb-3">
-              Ingresos y gastos fijos prometidos {labels.ofPeriod} + variable real
+              {summary.isClosedPeriod
+                ? 'Ingresos y gastos registrados en cada bloque'
+                : `Ingresos y gastos fijos prometidos ${labels.ofPeriod} + variable real`}
             </p>
             <TrendBarChart data={summary.trend} />
           </div>
@@ -370,7 +387,7 @@ export function DashboardView({
           {summary.allCategories.length > 0 && (
             <div className="rounded-2xl cc-surface-muted p-4">
               <p className="text-[12px] font-bold text-cc-primary mb-3">
-                Gastos por categoría · periodo actual
+                Gastos por categoría · {summary.periodLabel.toLowerCase()}
               </p>
               <CategoryBarChart items={summary.allCategories} formatValue={fmt} />
             </div>

@@ -5,8 +5,9 @@ import type { CurrencyCode } from '@/lib/household/types'
 import { calculateBalance, sumByTypeInPeriod } from './balance'
 import { calculateGuiltFreeMoney } from './guilt-free'
 import { calculatePromisedCashflow } from './promised-cashflow'
+import { calculateActualPeriodCashflow } from './scheduled-expenses'
 import { sumVariableExpenses } from './variable-expenses'
-import { getPeriodRangeAtOffset, getPeriodBlockLabel } from './format'
+import { getPeriodRangeAtOffset, getPeriodBlockLabel, isClosedPeriod } from './format'
 import { buildMarketInsights } from './market-analytics'
 import type { MarketInsights } from './market-analytics'
 import { getCategoryColor } from './categories'
@@ -169,6 +170,7 @@ export async function getDashboardSummary(
 ): Promise<DashboardSummary> {
   const safeOffset = Math.max(0, Math.min(11, Math.floor(periodOffset)))
   const { start, end } = getPeriodRangeAtOffset(period, safeOffset)
+  const closedPeriod = isClosedPeriod(end)
 
   const [transactions, savingsGoals, categories, members, recurring] =
     await Promise.all([
@@ -196,6 +198,7 @@ export async function getDashboardSummary(
   )
 
   const expenseCategories = categories.filter(c => c.type === 'expense')
+  const incomeCategories = categories.filter(c => c.type === 'income')
   const categoryMap = new Map(
     expenseCategories.map(c => [
       c.id,
@@ -208,27 +211,46 @@ export async function getDashboardSummary(
       },
     ])
   )
+  const incomeCategoryMap = new Map(
+    incomeCategories.map(c => [c.id, { is_fixed: c.is_fixed }])
+  )
 
-  const promised = calculatePromisedCashflow(
-    transactions,
-    recurring,
-    categoryMap,
-    period,
-    safeOffset
-  )
-  const periodIncome = promised.promisedIncome
-  const scheduledFixedExpenses = promised.promisedFixedExpenses
-  const scheduledFixedIncome = promised.promisedFixedIncome
-  const variableSpent = sumVariableExpenses(
-    transactions,
-    start,
-    end,
-    categoryMap
-  )
+  let periodIncome: number
+  let scheduledFixedExpenses: number
+  let scheduledFixedIncome: number
+  let variableSpent: number
+
+  if (closedPeriod) {
+    const actual = calculateActualPeriodCashflow(
+      transactions,
+      start,
+      end,
+      categoryMap,
+      incomeCategoryMap
+    )
+    periodIncome = actual.periodIncome
+    scheduledFixedExpenses = actual.scheduledFixedExpenses
+    scheduledFixedIncome = actual.scheduledFixedIncome
+    variableSpent = actual.variableSpent
+  } else {
+    const promised = calculatePromisedCashflow(
+      transactions,
+      recurring,
+      categoryMap,
+      period,
+      safeOffset
+    )
+    periodIncome = promised.promisedIncome
+    scheduledFixedExpenses = promised.promisedFixedExpenses
+    scheduledFixedIncome = promised.promisedFixedIncome
+    variableSpent = sumVariableExpenses(transactions, start, end, categoryMap)
+  }
+
+  const savingsForBudget = closedPeriod ? periodRealSavings : periodSavings
   const guiltFreeMoney = calculateGuiltFreeMoney(
     periodIncome,
     scheduledFixedExpenses,
-    periodSavings,
+    savingsForBudget,
     variableSpent
   )
   const budgetDeficit =
@@ -374,6 +396,7 @@ export async function getDashboardSummary(
     periodStart: start,
     periodEnd: end,
     periodLabel: getPeriodBlockLabel(period, safeOffset, start, end),
+    isClosedPeriod: closedPeriod,
     trend,
     allCategories,
   }

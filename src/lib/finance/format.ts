@@ -186,6 +186,11 @@ export function getTodayString(): string {
   return toDateString(new Date())
 }
 
+/** El periodo ya terminó (solo datos reales, sin proyección de fijos). */
+export function isClosedPeriod(periodEnd: string, today: string = getTodayString()): boolean {
+  return periodEnd < today
+}
+
 export function getPeriodProgress(period: Period): {
   elapsed: number
   total: number

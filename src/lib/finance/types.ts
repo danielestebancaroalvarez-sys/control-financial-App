@@ -106,6 +106,7 @@ export type DashboardSummary = {
   periodStart: string
   periodEnd: string
   periodLabel: string
+  isClosedPeriod: boolean
   trend: { offset: number; label: string; income: number; expenses: number }[]
   allCategories: { name: string; amount: number; color: string | null }[]
 }
