@@ -4,6 +4,33 @@ import { useEffect, useState } from 'react'
 import { Loader2, RefreshCw, Sparkles, Info } from 'lucide-react'
 import type { InsightHighlight, WeeklyInsight } from '@/lib/finance/types'
 
+const STORAGE_PREFIX = 'cc-weekly-insight:'
+
+type StoredInsight = {
+  insight: WeeklyInsight
+  highlights: InsightHighlight[]
+  dataFingerprint: string
+}
+
+function readStoredInsight(householdId: string): StoredInsight | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const raw = sessionStorage.getItem(`${STORAGE_PREFIX}${householdId}`)
+    if (!raw) return null
+    return JSON.parse(raw) as StoredInsight
+  } catch {
+    return null
+  }
+}
+
+function writeStoredInsight(householdId: string, data: StoredInsight) {
+  try {
+    sessionStorage.setItem(`${STORAGE_PREFIX}${householdId}`, JSON.stringify(data))
+  } catch {
+    // quota or private mode
+  }
+}
+
 const TONE_STYLES: Record<
   NonNullable<InsightHighlight['tone']>,
   string
@@ -15,15 +42,22 @@ const TONE_STYLES: Record<
 }
 
 export function WeeklyInsightsCard({ householdId }: { householdId: string }) {
-  const [insight, setInsight] = useState<WeeklyInsight | null>(null)
-  const [highlights, setHighlights] = useState<InsightHighlight[]>([])
-  const [loading, setLoading] = useState(true)
+  const stored = readStoredInsight(householdId)
+  const [insight, setInsight] = useState<WeeklyInsight | null>(stored?.insight ?? null)
+  const [highlights, setHighlights] = useState<InsightHighlight[]>(
+    stored?.highlights ?? []
+  )
+  const [loading, setLoading] = useState(!stored)
+  const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showBasis, setShowBasis] = useState(false)
+  const [upToDate, setUpToDate] = useState(false)
 
   async function load(refresh = false) {
-    setLoading(true)
+    if (refresh) setRefreshing(true)
+    else if (!insight) setLoading(true)
     setError(null)
+    setUpToDate(false)
     try {
       const res = await fetch(
         `/api/insights/weekly?householdId=${householdId}${refresh ? '&refresh=1' : ''}`
@@ -33,12 +67,24 @@ export function WeeklyInsightsCard({ householdId }: { householdId: string }) {
         setError(data.error ?? 'No se pudieron cargar los insights.')
         return
       }
-      setInsight(data.insight as WeeklyInsight)
-      setHighlights(Array.isArray(data.highlights) ? data.highlights : [])
+      const nextInsight = data.insight as WeeklyInsight
+      const nextHighlights = Array.isArray(data.highlights) ? data.highlights : []
+      setInsight(nextInsight)
+      setHighlights(nextHighlights)
+      if (data.upToDate) setUpToDate(true)
+
+      if (data.dataFingerprint) {
+        writeStoredInsight(householdId, {
+          insight: nextInsight,
+          highlights: nextHighlights,
+          dataFingerprint: data.dataFingerprint,
+        })
+      }
     } catch {
       setError('Error de conexión.')
     } finally {
       setLoading(false)
+      setRefreshing(false)
     }
   }
 
@@ -91,12 +137,19 @@ export function WeeklyInsightsCard({ householdId }: { householdId: string }) {
         <button
           type="button"
           onClick={() => load(true)}
-          className="w-8 h-8 rounded-lg cc-surface-muted flex items-center justify-center text-cc-secondary hover:text-[#00BFA5]"
+          disabled={refreshing}
+          className="w-8 h-8 rounded-lg cc-surface-muted flex items-center justify-center text-cc-secondary hover:text-[#00BFA5] disabled:opacity-50"
           aria-label="Actualizar insights"
         >
-          <RefreshCw className="w-3.5 h-3.5" />
+          <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
         </button>
       </div>
+
+      {upToDate && (
+        <p className="text-[10px] text-cc-muted -mt-1">
+          Los datos no cambiaron; se muestra el último consejo generado.
+        </p>
+      )}
 
       {highlights.length > 0 && (
         <div className="flex flex-wrap gap-1.5">

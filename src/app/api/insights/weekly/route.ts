@@ -10,6 +10,7 @@ import {
   type InsightContext,
 } from '@/lib/insights/gemini-insights'
 import { buildInsightHighlights } from '@/lib/insights/build-highlights'
+import { computeInsightFingerprint } from '@/lib/insights/fingerprint'
 import {
   getCachedWeeklyInsight,
   saveWeeklyInsight,
@@ -61,76 +62,110 @@ export async function GET(request: Request) {
 
   const highlights = buildInsightHighlights(dashboard, predictions, currency)
 
+  const mercado = predictions.consumptionPredictions.find(
+    c => c.categoryName === 'Mercado'
+  )
+
+  const expenseTotal = dashboard.monthlyExpenses || 1
+
+  const context: InsightContext = {
+    currency,
+    period: 'mensual',
+    periodStart: dashboard.periodStart,
+    periodEnd: dashboard.periodEnd,
+    realBalance: dashboard.realBalance,
+    income: dashboard.monthlyIncome,
+    expenses: dashboard.monthlyExpenses,
+    guiltFreeMoney: dashboard.guiltFreeMoney,
+    periodSavings: dashboard.periodSavings,
+    totalSavingsAccumulated: dashboard.totalSavings,
+    topCategories: dashboard.topCategories.slice(0, 5).map(c => ({
+      name: c.name,
+      amount: c.amount,
+      percentOfExpenses: Math.round((c.amount / expenseTotal) * 1000) / 10,
+    })),
+    expenseGroups: dashboard.expenseGroups.slice(0, 5).map(g => ({
+      name: g.name,
+      amount: g.amount,
+    })),
+    savingsGoals: dashboard.savingsGoals.slice(0, 4).map(g => ({
+      name: g.name,
+      percent: g.percent,
+      current: g.current,
+      target: g.target,
+    })),
+    mercadoProjection: mercado
+      ? {
+          spentSoFar: mercado.spentSoFar,
+          projectedTotal: mercado.projectedTotal,
+          historicalAverage: mercado.historicalAverage,
+          percentVsAverage: mercado.percentVsAverage,
+          daysRemaining: mercado.daysRemaining,
+        }
+      : null,
+    pendingPayments: predictions.currentPeriodPayments
+      .filter(p => p.status === 'pending')
+      .slice(0, 6)
+      .map(p => ({
+        name: p.name,
+        amount: p.amount,
+        category: p.categoryName,
+      })),
+    paidPaymentsCount: predictions.currentPeriodPayments.filter(
+      p => p.status === 'paid'
+    ).length,
+    totalPaymentsCount: predictions.currentPeriodPayments.length,
+    shoppingListDueCount: market.shoppingList.filter(
+      i => i.urgency === 'overdue' || i.urgency === 'soon'
+    ).length,
+  }
+
+  const fingerprint = computeInsightFingerprint(context)
+
   if (!refresh) {
     const cached = await getCachedWeeklyInsight(householdId)
-    if (cached) {
-      return NextResponse.json({ insight: cached, highlights, cached: true })
+    if (cached && cached.dataFingerprint === fingerprint) {
+      return NextResponse.json({
+        insight: {
+          summary: cached.summary,
+          tips: cached.tips,
+          generatedAt: cached.generatedAt,
+        },
+        highlights,
+        cached: true,
+        dataFingerprint: fingerprint,
+        aiCalled: false,
+      })
+    }
+  } else {
+    const cached = await getCachedWeeklyInsight(householdId)
+    if (cached && cached.dataFingerprint === fingerprint) {
+      return NextResponse.json({
+        insight: {
+          summary: cached.summary,
+          tips: cached.tips,
+          generatedAt: cached.generatedAt,
+        },
+        highlights,
+        cached: true,
+        dataFingerprint: fingerprint,
+        aiCalled: false,
+        upToDate: true,
+      })
     }
   }
 
   try {
-    const mercado = predictions.consumptionPredictions.find(
-      c => c.categoryName === 'Mercado'
-    )
-
-    const expenseTotal = dashboard.monthlyExpenses || 1
-
-    const context: InsightContext = {
-      currency,
-      period: 'mensual',
-      periodStart: dashboard.periodStart,
-      periodEnd: dashboard.periodEnd,
-      realBalance: dashboard.realBalance,
-      income: dashboard.monthlyIncome,
-      expenses: dashboard.monthlyExpenses,
-      guiltFreeMoney: dashboard.guiltFreeMoney,
-      periodSavings: dashboard.periodSavings,
-      totalSavingsAccumulated: dashboard.totalSavings,
-      topCategories: dashboard.topCategories.slice(0, 5).map(c => ({
-        name: c.name,
-        amount: c.amount,
-        percentOfExpenses: Math.round((c.amount / expenseTotal) * 1000) / 10,
-      })),
-      expenseGroups: dashboard.expenseGroups.slice(0, 5).map(g => ({
-        name: g.name,
-        amount: g.amount,
-      })),
-      savingsGoals: dashboard.savingsGoals.slice(0, 4).map(g => ({
-        name: g.name,
-        percent: g.percent,
-        current: g.current,
-        target: g.target,
-      })),
-      mercadoProjection: mercado
-        ? {
-            spentSoFar: mercado.spentSoFar,
-            projectedTotal: mercado.projectedTotal,
-            historicalAverage: mercado.historicalAverage,
-            percentVsAverage: mercado.percentVsAverage,
-            daysRemaining: mercado.daysRemaining,
-          }
-        : null,
-      pendingPayments: predictions.currentPeriodPayments
-        .filter(p => p.status === 'pending')
-        .slice(0, 6)
-        .map(p => ({
-          name: p.name,
-          amount: p.amount,
-          category: p.categoryName,
-        })),
-      paidPaymentsCount: predictions.currentPeriodPayments.filter(
-        p => p.status === 'paid'
-      ).length,
-      totalPaymentsCount: predictions.currentPeriodPayments.length,
-      shoppingListDueCount: market.shoppingList.filter(
-        i => i.urgency === 'overdue' || i.urgency === 'soon'
-      ).length,
-    }
-
     const insight = await generateWeeklyInsight(context)
-    await saveWeeklyInsight(householdId, insight)
+    await saveWeeklyInsight(householdId, insight, fingerprint)
 
-    return NextResponse.json({ insight, highlights, cached: false })
+    return NextResponse.json({
+      insight,
+      highlights,
+      cached: false,
+      dataFingerprint: fingerprint,
+      aiCalled: true,
+    })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Error al generar insights.'
     return NextResponse.json({ error: message }, { status: 500 })

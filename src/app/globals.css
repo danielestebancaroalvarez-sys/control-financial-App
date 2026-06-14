@@ -298,6 +298,19 @@
     box-shadow: 0 1px 3px rgb(0 0 0 / 0.25);
   }
 
+  .cc-scan-card {
+    background: linear-gradient(
+      to bottom right,
+      var(--cc-accent-teal-bg),
+      var(--cc-surface-muted)
+    );
+    border: 1px solid rgb(0 191 165 / 0.2);
+  }
+
+  .dark .cc-scan-card {
+    border-color: rgb(0 191 165 / 0.25);
+  }
+
   .cc-chip-neutral {
     background-color: var(--cc-surface-muted);
     color: var(--cc-text-secondary);
