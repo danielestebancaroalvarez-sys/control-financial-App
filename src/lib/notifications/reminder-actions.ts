@@ -8,6 +8,7 @@ import {
   listPaymentDueDates,
   type PaymentDueReminder,
 } from '@/lib/finance/payment-reminders'
+import { buildInAppNotifications, type InAppNotification } from './build-notifications'
 
 export type PaymentReminderPayload = {
   nextWeekStart: string
@@ -69,4 +70,10 @@ export async function getPaymentReminderPayload(): Promise<PaymentReminderPayloa
       categoryName: p.categoryName,
     })),
   }
+}
+
+export async function getInAppNotifications(): Promise<InAppNotification[]> {
+  const payload = await getPaymentReminderPayload()
+  if (!payload) return []
+  return buildInAppNotifications(payload)
 }

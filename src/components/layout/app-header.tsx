@@ -1,6 +1,9 @@
+'use client'
+
 import Link from 'next/link'
 import { CoupleCashLogo } from '@/components/login/couple-cash-logo'
 import { AccountAvatarLink } from './account-avatar-link'
+import { NotificationInbox } from '@/components/notifications/notification-inbox'
 
 export function AppHeader({
   firstName,
@@ -19,11 +22,14 @@ export function AppHeader({
           CoupleCash
         </span>
       </Link>
-      <AccountAvatarLink
-        firstName={firstName}
-        email={email}
-        avatarUrl={avatarUrl}
-      />
+      <div className="flex items-center gap-2">
+        <NotificationInbox />
+        <AccountAvatarLink
+          firstName={firstName}
+          email={email}
+          avatarUrl={avatarUrl}
+        />
+      </div>
     </header>
   )
 }

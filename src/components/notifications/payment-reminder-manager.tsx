@@ -1,7 +1,9 @@
 'use client'
 
 import { useCallback, useEffect, useRef } from 'react'
-import { getPaymentReminderPayload } from '@/lib/notifications/reminder-actions'
+import { getPaymentReminderPayload, getInAppNotifications } from '@/lib/notifications/reminder-actions'
+import { buildInAppNotifications } from '@/lib/notifications/build-notifications'
+import { syncInAppNotifications } from '@/lib/notifications/in-app-store'
 import { getTomorrowDateString } from '@/lib/finance/payment-reminders'
 import {
   getPaymentReminderMode,
@@ -28,19 +30,28 @@ function buildWeeklyBody(
   return `${payments.length} pago${payments.length !== 1 ? 's' : ''} programado${payments.length !== 1 ? 's' : ''}:\n${preview}${extra}`
 }
 
+async function syncInboxFromServer() {
+  const items = await getInAppNotifications()
+  syncInAppNotifications(items)
+}
+
 export function PaymentReminderManager() {
   const checking = useRef(false)
 
   const runReminderCheck = useCallback(async () => {
     if (checking.current) return
-    if (!isPaymentRemindersEnabled()) return
-    if (typeof window === 'undefined' || !('Notification' in window)) return
-    if (Notification.permission !== 'granted') return
 
     checking.current = true
     try {
       const payload = await getPaymentReminderPayload()
-      if (!payload || payload.payments.length === 0) return
+      if (!payload) return
+
+      syncInAppNotifications(buildInAppNotifications(payload))
+
+      if (!isPaymentRemindersEnabled()) return
+      if (typeof window === 'undefined' || !('Notification' in window)) return
+      if (Notification.permission !== 'granted') return
+      if (payload.payments.length === 0) return
 
       const mode = getPaymentReminderMode()
       const today = new Date()
@@ -80,11 +91,19 @@ export function PaymentReminderManager() {
   }, [])
 
   useEffect(() => {
+    syncInboxFromServer()
     runReminderCheck()
 
-    const interval = window.setInterval(runReminderCheck, CHECK_INTERVAL_MS)
+    const interval = window.setInterval(() => {
+      syncInboxFromServer()
+      runReminderCheck()
+    }, CHECK_INTERVAL_MS)
+
     const onVisible = () => {
-      if (document.visibilityState === 'visible') runReminderCheck()
+      if (document.visibilityState === 'visible') {
+        syncInboxFromServer()
+        runReminderCheck()
+      }
     }
 
     document.addEventListener('visibilitychange', onVisible)

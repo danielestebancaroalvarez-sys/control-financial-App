@@ -117,7 +117,8 @@ export function PaymentReminderSetting() {
           Recordatorios de pagos
         </h2>
         <p className="text-[12px] text-[#636E72] mt-1">
-          Te avisamos de los gastos recurrentes de la próxima semana.
+          Te avisamos de los gastos recurrentes de la próxima semana. También verás
+          las alertas en la campana del encabezado.
         </p>
       </div>
 
