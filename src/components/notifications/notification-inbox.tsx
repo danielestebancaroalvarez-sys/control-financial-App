@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
-import { Bell, CalendarClock, X } from 'lucide-react'
+import { Bell, CalendarClock, Users, X } from 'lucide-react'
 import { getInAppNotifications } from '@/lib/notifications/reminder-actions'
 import type { InAppNotification } from '@/lib/notifications/build-notifications'
 import {
@@ -15,6 +15,14 @@ import {
 } from '@/lib/notifications/in-app-store'
 
 function NotificationIcon({ type }: { type: InAppNotification['type'] }) {
+  if (type === 'partner-expense') {
+    return (
+      <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-[#E8EAF6] text-[#5C6BC0] dark:bg-[#2a2d42] dark:text-[#9fa8da]">
+        <Users className="w-4 h-4" />
+      </div>
+    )
+  }
+
   return (
     <div
       className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
@@ -50,7 +58,7 @@ function NotificationPanel({
       <div className="flex items-center justify-between px-4 py-3 border-b border-[#F0F0F0]">
         <div>
           <p className="text-[14px] font-bold text-cc-primary">Notificaciones</p>
-          <p className="text-[10px] text-cc-secondary">Pagos recurrentes próximos</p>
+          <p className="text-[10px] text-cc-secondary">Pagos y actividad de tu pareja</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {unread > 0 && (

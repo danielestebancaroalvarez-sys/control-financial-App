@@ -23,14 +23,17 @@ export function buildProactiveInsight(
     }
   }
 
-  const mercado = predictions.consumptionPredictions.find(
-    c => c.categoryName === 'Mercado'
-  )
-  if (mercado && mercado.percentVsAverage >= 12) {
+  const topConsumption = [...predictions.consumptionPredictions].sort(
+    (a, b) => b.percentVsAverage - a.percentVsAverage
+  )[0]
+
+  if (topConsumption && topConsumption.percentVsAverage >= 12) {
     return {
-      message: `Mercado va ${mercado.percentVsAverage}% arriba de tu promedio. Revisa la lista de compra.`,
+      message: `${topConsumption.categoryName} va ${topConsumption.percentVsAverage}% arriba de tu promedio.${
+        topConsumption.categoryName === 'Mercado' ? ' Revisa la lista de compra.' : ''
+      }`,
       tone: 'warning',
-      href: '/mercado',
+      href: topConsumption.categoryName === 'Mercado' ? '/mercado' : '/predicciones',
     }
   }
 
@@ -67,10 +70,15 @@ export function buildProactiveInsight(
     }
   }
 
-  if (summary.guiltFreeMoney > 0 && mercado && mercado.daysRemaining <= 7) {
-    return {
-      message: `Te quedan ${mercado.daysRemaining} días de periodo con ${fmt(summary.guiltFreeMoney)} libres para ocio.`,
-      tone: 'positive',
+  if (summary.guiltFreeMoney > 0) {
+    const mercado = predictions.consumptionPredictions.find(
+      c => c.categoryName === 'Mercado'
+    )
+    if (mercado && mercado.daysRemaining <= 7) {
+      return {
+        message: `Te quedan ${mercado.daysRemaining} días de periodo con ${fmt(summary.guiltFreeMoney)} libres para ocio.`,
+        tone: 'positive',
+      }
     }
   }
 

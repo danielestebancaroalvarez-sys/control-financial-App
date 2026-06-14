@@ -49,6 +49,33 @@ export function syncInAppNotifications(incoming: InAppNotification[]) {
   window.dispatchEvent(new CustomEvent('couplecash-notifications-updated'))
 }
 
+export function appendInAppNotifications(incoming: InAppNotification[]) {
+  if (typeof window === 'undefined' || incoming.length === 0) return
+
+  const read = readIds()
+  const byId = new Map<string, InAppNotification>()
+
+  for (const item of getStoredNotifications()) {
+    byId.set(item.id, item)
+  }
+  for (const item of incoming) {
+    byId.set(item.id, item)
+  }
+
+  const merged = [...byId.values()].sort((a, b) => {
+    if (a.dueDate && b.dueDate) return a.dueDate.localeCompare(b.dueDate)
+    return b.createdAt.localeCompare(a.createdAt)
+  })
+
+  localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(merged))
+
+  const validIds = new Set(merged.map(n => n.id))
+  const prunedRead = [...read].filter(id => validIds.has(id))
+  localStorage.setItem(READ_KEY, JSON.stringify(prunedRead))
+
+  window.dispatchEvent(new CustomEvent('couplecash-notifications-updated'))
+}
+
 export function getUnreadCount(): number {
   const read = readIds()
   return getStoredNotifications().filter(n => !read.has(n.id)).length

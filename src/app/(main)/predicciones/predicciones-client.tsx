@@ -34,6 +34,12 @@ export function PrediccionesClient({
 
       {summary.consumptionPredictions.length > 0 && (
         <section className="space-y-3">
+          <div>
+            <h2 className="text-[14px] font-bold text-cc-primary">Predicción de consumo</h2>
+            <p className="text-[11px] text-cc-secondary mt-0.5">
+              Mercado, restaurantes y transporte al ritmo actual del periodo
+            </p>
+          </div>
           {summary.consumptionPredictions.map(prediction => (
             <ConsumptionPredictionCard
               key={prediction.categoryName}

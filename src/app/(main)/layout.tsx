@@ -6,6 +6,7 @@ import { AppHeader } from '@/components/layout/app-header'
 import { BottomTabBar } from '@/components/layout/bottom-tab-bar'
 import { HouseholdSync } from '@/components/realtime/household-sync'
 import { PaymentReminderManager } from '@/components/notifications/payment-reminder-manager'
+import { PartnerActivityWatcher } from '@/components/notifications/partner-activity-watcher'
 import { ApplyTheme } from '@/components/theme/apply-theme'
 import { getFirstName } from '@/lib/utils/name'
 
@@ -38,6 +39,11 @@ export default async function MainLayout({
     <div className="min-h-screen cc-app-bg">
       <ApplyTheme theme={theme} />
       <HouseholdSync householdId={household.id} />
+      <PartnerActivityWatcher
+        householdId={household.id}
+        currentUserId={user.id}
+        currency={household.base_currency}
+      />
       <PaymentReminderManager />
       <div className="mx-auto flex min-h-screen max-w-md flex-col px-5 pt-[max(0.5rem,env(safe-area-inset-top))] pb-[calc(7rem+env(safe-area-inset-bottom))]">
         <AppHeader firstName={firstName} email={user.email} avatarUrl={avatarUrl} />

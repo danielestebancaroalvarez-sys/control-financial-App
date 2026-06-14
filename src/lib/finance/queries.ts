@@ -394,7 +394,9 @@ export async function getPredictionsSummary(
     getCategories(householdId),
   ])
 
-  const mercado = categories.find(c => c.name === 'Mercado')
+  const expenseCategories = categories
+    .filter(c => c.type === 'expense')
+    .map(c => ({ id: c.id, name: c.name }))
 
   const recurring = (recurringResult.data ?? []).map(r => {
     const cat = Array.isArray(r.categories) ? r.categories[0] : r.categories
@@ -426,7 +428,7 @@ export async function getPredictionsSummary(
       line_items: tx.line_items,
       recurring_schedule_id: tx.recurring_schedule_id,
     })),
-    mercado?.id ?? null,
+    expenseCategories,
     period
   )
 }

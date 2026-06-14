@@ -2,7 +2,11 @@ import type { PaymentReminderPayload } from './reminder-actions'
 
 export type InAppNotification = {
   id: string
-  type: 'weekly-summary' | 'payment-upcoming' | 'payment-tomorrow'
+  type:
+    | 'weekly-summary'
+    | 'payment-upcoming'
+    | 'payment-tomorrow'
+    | 'partner-expense'
   title: string
   body: string
   href: string
