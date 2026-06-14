@@ -17,7 +17,7 @@ export function SavingsProjectionChart({
 
   if (target <= 0) {
     return (
-      <p className="text-[12px] text-[#636E72] text-center py-6">
+      <p className="text-[12px] text-cc-secondary text-center py-6">
         Ingresa un monto objetivo para ver la simulación
       </p>
     )
@@ -26,7 +26,7 @@ export function SavingsProjectionChart({
   const points = projectCompoundGrowth(goal, 60)
   if (points.length < 2) {
     return (
-      <p className="text-[12px] text-[#636E72] text-center py-6">
+      <p className="text-[12px] text-cc-secondary text-center py-6">
         Agrega un aporte periódico para simular el crecimiento
       </p>
     )
@@ -143,7 +143,7 @@ export function SavingsProjectionChart({
       </svg>
 
       <div className="flex items-center justify-between text-[11px]">
-        <span className="text-[#636E72]">
+        <span className="text-cc-secondary">
           Meta:{' '}
           <span className="font-bold" style={{ color: accentColor }}>
             {target.toLocaleString('es')}
@@ -154,7 +154,7 @@ export function SavingsProjectionChart({
             Meta en ~{reachMonth} mes{reachMonth === 1 ? '' : 'es'}
           </span>
         ) : (
-          <span className="text-[#636E72]">Proyección a 5 años</span>
+          <span className="text-cc-secondary">Proyección a 5 años</span>
         )}
       </div>
     </div>

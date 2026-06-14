@@ -11,6 +11,7 @@ import {
   getPreviousPeriodRanges,
 } from './format'
 import { buildConsumptionPrediction } from './consumption-prediction'
+import { CONSUMPTION_PREDICTION_CATEGORIES } from './consumption-categories'
 import { parseLineItems } from './category-radar'
 
 type RecurringRow = {
@@ -165,7 +166,7 @@ function mapRecurringPayment(
 export function buildPredictionsSummary(
   recurring: RecurringRow[],
   transactions: TxRow[],
-  mercadoCategoryId: string | null,
+  expenseCategories: { id: string; name: string }[],
   period: Period = 'monthly'
 ): PredictionsSummary {
   const nextRange = getNextPeriodRange(period)
@@ -194,6 +195,9 @@ export function buildPredictionsSummary(
       return b.amount - a.amount
     })
 
+  const mercadoCategoryId =
+    expenseCategories.find(c => c.name === 'Mercado')?.id ?? null
+
   const purchasePredictions = buildItemPurchasePredictions(
     transactions,
     mercadoCategoryId,
@@ -201,15 +205,23 @@ export function buildPredictionsSummary(
   )
 
   const consumptionPredictions: PredictionsSummary['consumptionPredictions'] = []
-  const mercadoPrediction = buildConsumptionPrediction(
-    transactions,
-    mercadoCategoryId,
-    'Mercado',
-    period
-  )
-  if (mercadoPrediction) {
-    consumptionPredictions.push(mercadoPrediction)
+
+  for (const categoryName of CONSUMPTION_PREDICTION_CATEGORIES) {
+    const category = expenseCategories.find(c => c.name === categoryName)
+    if (!category) continue
+
+    const prediction = buildConsumptionPrediction(
+      transactions,
+      category.id,
+      category.name,
+      period
+    )
+    if (prediction) {
+      consumptionPredictions.push(prediction)
+    }
   }
+
+  consumptionPredictions.sort((a, b) => b.percentVsAverage - a.percentVsAverage)
 
   return {
     upcomingPayments,

@@ -2,28 +2,28 @@
 
 import { useEffect, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import { BarChart2 } from 'lucide-react'
-import { updateDashboardPeriod } from '@/lib/profile/actions'
-import type { Period } from '@/lib/finance/types'
+import { Moon, Sun } from 'lucide-react'
+import { updateTheme } from '@/lib/profile/actions'
+import type { ThemePreference } from '@/components/theme/apply-theme'
 
-export function DashboardPeriodSetting({ current }: { current: Period }) {
+export function ThemeSetting({ current }: { current: ThemePreference }) {
   const router = useRouter()
-  const [period, setPeriod] = useState(current)
+  const [theme, setTheme] = useState(current)
   const [error, setError] = useState<string | null>(null)
   const [pending, startTransition] = useTransition()
 
   useEffect(() => {
-    setPeriod(current)
+    setTheme(current)
   }, [current])
 
-  function handleChange(value: Period) {
-    setPeriod(value)
+  function handleChange(value: ThemePreference) {
+    setTheme(value)
     setError(null)
     startTransition(async () => {
-      const result = await updateDashboardPeriod(value)
+      const result = await updateTheme(value)
       if (result.error) {
         setError(result.error)
-        setPeriod(current)
+        setTheme(current)
         return
       }
       router.refresh()
@@ -33,26 +33,31 @@ export function DashboardPeriodSetting({ current }: { current: Period }) {
   return (
     <section className="cc-surface rounded-[24px] p-5">
       <h2 className="text-[15px] font-bold text-cc-primary mb-1 flex items-center gap-2">
-        <BarChart2 className="w-4 h-4 text-[#00BFA5]" />
-        Vista del Dashboard
+        <Moon className="w-4 h-4 text-[#00BFA5]" />
+        Tema de la app
       </h2>
       <p className="text-[12px] text-cc-secondary mb-4">
-        Aplica a inicio, búsqueda, radar y predicciones.
+        Claro u oscuro en toda la interfaz.
       </p>
       <div className="flex rounded-2xl cc-surface-muted p-1">
-        {(['weekly', 'monthly'] as const).map(value => (
+        {(['light', 'dark'] as const).map(value => (
           <button
             key={value}
             type="button"
             disabled={pending}
             onClick={() => handleChange(value)}
-            className={`flex-1 py-2.5 rounded-xl text-[13px] font-bold transition-all disabled:opacity-60 ${
-              period === value
+            className={`flex-1 py-2.5 rounded-xl text-[13px] font-bold transition-all disabled:opacity-60 flex items-center justify-center gap-1.5 ${
+              theme === value
                 ? 'bg-gradient-to-r from-[#00BFA5] to-[#2DD4BF] text-white shadow-sm'
                 : 'text-cc-secondary'
             }`}
           >
-            {value === 'weekly' ? 'Semanal' : 'Mensual'}
+            {value === 'light' ? (
+              <Sun className="w-4 h-4" />
+            ) : (
+              <Moon className="w-4 h-4" />
+            )}
+            {value === 'light' ? 'Claro' : 'Oscuro'}
           </button>
         ))}
       </div>

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ServiceWorkerRegister } from "@/components/notifications/service-worker-register";
+import { getUserTheme } from "@/lib/profile/queries";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -31,13 +32,20 @@ export const viewport: Viewport = {
   themeColor: "#B2EBF2",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const theme = await getUserTheme();
+
   return (
-    <html lang="es" className={inter.variable}>
+    <html
+      lang="es"
+      className={`${inter.variable}${theme === "dark" ? " dark" : ""}`}
+      style={{ colorScheme: theme === "dark" ? "dark" : "light" }}
+      suppressHydrationWarning
+    >
       <body className="font-[var(--font-inter)]">
         <ServiceWorkerRegister />
         {children}

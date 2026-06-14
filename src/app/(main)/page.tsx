@@ -1,7 +1,8 @@
 import { redirect } from 'next/navigation'
 import { after } from 'next/server'
 import { getMainAppContextWithPeriod } from '@/lib/app/context'
-import { getDashboardSummary } from '@/lib/finance/queries'
+import { getDashboardSummary, getPredictionsSummary } from '@/lib/finance/queries'
+import { buildProactiveInsight } from '@/lib/insights/proactive-insight'
 import { processDueRecurringSchedules } from '@/lib/finance/recurring'
 import { getFirstName } from '@/lib/utils/name'
 import { DashboardView } from '@/components/dashboard/dashboard-view'
@@ -26,10 +27,15 @@ export default async function DashboardPage({
     Math.min(11, parseInt(params.block ?? '0', 10) || 0)
   )
 
-  const summary = await getDashboardSummary(
-    ctx.household.id,
-    ctx.period,
-    periodOffset
+  const [summary, predictions] = await Promise.all([
+    getDashboardSummary(ctx.household.id, ctx.period, periodOffset),
+    getPredictionsSummary(ctx.household.id, ctx.period),
+  ])
+
+  const proactiveInsight = buildProactiveInsight(
+    summary,
+    predictions,
+    ctx.household.base_currency
   )
 
   const displayName =
@@ -45,6 +51,7 @@ export default async function DashboardPage({
       householdId={ctx.household.id}
       currency={ctx.household.base_currency}
       summary={summary}
+      proactiveInsight={proactiveInsight}
     />
   )
 }

@@ -38,12 +38,12 @@ export function ResetDataButton({ householdId }: { householdId: string }) {
   }
 
   return (
-    <section className="rounded-[24px] bg-white/90 backdrop-blur-md shadow-sm border border-[#FFCDD2]/80 p-5">
+    <section className="cc-surface rounded-[24px] border border-[#FFCDD2]/80 p-5">
       <h2 className="text-[15px] font-bold text-[#C62828] mb-1 flex items-center gap-2">
         <AlertTriangle className="w-4 h-4" />
         Zona de peligro
       </h2>
-      <p className="text-[12px] text-[#636E72] mb-4">
+      <p className="text-[12px] text-cc-secondary mb-4">
         Borra transacciones, ahorros, recurrentes, reconciliaciones y categorías
         personalizadas. El hogar, miembros y categorías del sistema se mantienen.
       </p>
@@ -59,7 +59,7 @@ export function ResetDataButton({ householdId }: { householdId: string }) {
         </button>
       ) : (
         <div className="space-y-3 rounded-2xl bg-[#FFEBEE] border border-[#FFCDD2] p-4">
-          <p className="text-[12px] text-[#2D3436]">
+          <p className="text-[12px] text-cc-primary">
             Esta acción no se puede deshacer. Escribe{' '}
             <strong>{CONFIRM_TEXT}</strong> para confirmar.
           </p>
@@ -76,7 +76,7 @@ export function ResetDataButton({ householdId }: { householdId: string }) {
               type="button"
               onClick={handleCancel}
               disabled={pending}
-              className="flex-1 py-2.5 rounded-xl bg-white text-[#636E72] text-[13px] font-semibold disabled:opacity-60"
+              className="flex-1 py-2.5 rounded-xl bg-white text-cc-secondary text-[13px] font-semibold disabled:opacity-60"
             >
               Cancelar
             </button>

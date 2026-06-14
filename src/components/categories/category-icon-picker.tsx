@@ -19,7 +19,7 @@ export function CategoryIconPicker({
 }) {
   return (
     <div>
-      <p className="text-[12px] font-semibold text-[#636E72] mb-2">Icono</p>
+      <p className="text-[12px] font-semibold text-cc-secondary mb-2">Icono</p>
       <div
         className={`grid gap-2 pr-1 ${
           expanded
@@ -56,7 +56,7 @@ export function CategoryIconPicker({
           )
         })}
       </div>
-      <p className="text-[11px] text-[#B2BEC3] mt-1.5">
+      <p className="text-[11px] text-cc-muted mt-1.5">
         {CATEGORY_ICON_OPTIONS.find(o => o.id === value)?.label ?? 'Etiqueta'}
       </p>
     </div>

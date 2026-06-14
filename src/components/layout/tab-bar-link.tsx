@@ -82,14 +82,14 @@ export function TabBarLink({
       <motion.div whileTap={{ scale: 0.88 }}>
         <Icon
           className={`w-6 h-6 transition-colors ${
-            active ? 'text-[#00BFA5]' : 'text-[#B2BEC3]'
+            active ? 'text-[#00BFA5]' : 'text-cc-muted'
           }`}
           strokeWidth={active ? 2.5 : 2}
         />
       </motion.div>
       <span
         className={`text-[10px] font-semibold transition-colors ${
-          active ? 'text-[#00BFA5]' : 'text-[#B2BEC3]'
+          active ? 'text-[#00BFA5]' : 'text-cc-muted'
         }`}
       >
         {label}

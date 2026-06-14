@@ -15,7 +15,7 @@ export function SavingsCategoryPicker({
 }) {
   return (
     <div>
-      <p className="text-[12px] font-semibold text-[#636E72] mb-2">
+      <p className="text-[12px] font-semibold text-cc-secondary mb-2">
         Categoría del ahorro
       </p>
       <div className="grid grid-cols-2 gap-2">
@@ -48,7 +48,7 @@ export function SavingsCategoryPicker({
               </div>
               <span
                 className={`text-[11px] font-semibold leading-tight ${
-                  selected ? 'text-[#2D3436]' : 'text-[#636E72]'
+                  selected ? 'text-cc-primary' : 'text-cc-secondary'
                 }`}
               >
                 {option.label}

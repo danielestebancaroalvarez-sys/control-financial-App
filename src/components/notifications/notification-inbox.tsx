@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
-import { Bell, CalendarClock, X } from 'lucide-react'
+import { Bell, CalendarClock, Users, X } from 'lucide-react'
 import { getInAppNotifications } from '@/lib/notifications/reminder-actions'
 import type { InAppNotification } from '@/lib/notifications/build-notifications'
 import {
@@ -15,6 +15,14 @@ import {
 } from '@/lib/notifications/in-app-store'
 
 function NotificationIcon({ type }: { type: InAppNotification['type'] }) {
+  if (type === 'partner-expense') {
+    return (
+      <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-[#E8EAF6] text-[#5C6BC0] dark:bg-[#2a2d42] dark:text-[#9fa8da]">
+        <Users className="w-4 h-4" />
+      </div>
+    )
+  }
+
   return (
     <div
       className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
@@ -46,11 +54,11 @@ function NotificationPanel({
   onReadAll: () => void
 }) {
   return (
-    <div className="w-full max-w-md rounded-[20px] bg-white border border-[#EEEEEE] shadow-[0_12px_40px_rgba(0,0,0,0.15)] overflow-hidden">
+    <div className="w-full max-w-md rounded-[20px] cc-surface-solid border border-[#EEEEEE] shadow-[0_12px_40px_rgba(0,0,0,0.15)] overflow-hidden">
       <div className="flex items-center justify-between px-4 py-3 border-b border-[#F0F0F0]">
         <div>
-          <p className="text-[14px] font-bold text-[#2D3436]">Notificaciones</p>
-          <p className="text-[10px] text-[#636E72]">Pagos recurrentes próximos</p>
+          <p className="text-[14px] font-bold text-cc-primary">Notificaciones</p>
+          <p className="text-[10px] text-cc-secondary">Pagos y actividad de tu pareja</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {unread > 0 && (
@@ -68,18 +76,18 @@ function NotificationPanel({
             className="w-7 h-7 rounded-lg bg-[#F5F5F5] flex items-center justify-center"
             aria-label="Cerrar"
           >
-            <X className="w-3.5 h-3.5 text-[#636E72]" />
+            <X className="w-3.5 h-3.5 text-cc-secondary" />
           </button>
         </div>
       </div>
 
       <div className="max-h-[min(20rem,50vh)] overflow-y-auto overscroll-contain">
         {loading && notifications.length === 0 ? (
-          <p className="text-[13px] text-[#636E72] text-center py-8">Cargando...</p>
+          <p className="text-[13px] text-cc-secondary text-center py-8">Cargando...</p>
         ) : notifications.length === 0 ? (
           <div className="px-4 py-8 text-center">
-            <Bell className="w-8 h-8 text-[#B2BEC3] mx-auto mb-2" />
-            <p className="text-[13px] text-[#636E72]">
+            <Bell className="w-8 h-8 text-cc-muted mx-auto mb-2" />
+            <p className="text-[13px] text-cc-secondary">
               No hay pagos programados para la próxima semana.
             </p>
             <Link
@@ -104,10 +112,10 @@ function NotificationPanel({
                 >
                   <NotificationIcon type={item.type} />
                   <div className="flex-1 min-w-0">
-                    <p className="text-[13px] font-semibold text-[#2D3436] leading-snug">
+                    <p className="text-[13px] font-semibold text-cc-primary leading-snug">
                       {item.title}
                     </p>
-                    <p className="text-[11px] text-[#636E72] mt-0.5 line-clamp-2">
+                    <p className="text-[11px] text-cc-secondary mt-0.5 line-clamp-2">
                       {item.body}
                     </p>
                   </div>
@@ -230,7 +238,7 @@ export function NotificationInbox() {
       <button
         type="button"
         onClick={handleOpen}
-        className="relative w-10 h-10 rounded-full bg-white/80 border border-white/70 shadow-sm flex items-center justify-center text-[#636E72] hover:text-[#00BFA5] transition-colors shrink-0"
+        className="relative w-10 h-10 rounded-full bg-white/80 border border-white/70 shadow-sm flex items-center justify-center text-cc-secondary hover:text-[#00BFA5] transition-colors shrink-0"
         aria-label="Notificaciones"
         aria-expanded={open}
       >

@@ -9,6 +9,8 @@ export type TransactionRow = {
   amount_base: number
   transaction_date: string
   category_id?: string | null
+  created_by?: string | null
+  savings_goal_id?: string | null
 }
 
 export type Category = {
@@ -70,6 +72,14 @@ export type BalanceBreakdown = {
   balance: number
 }
 
+export type MemberSpendingStat = {
+  userId: string
+  name: string
+  amount: number
+  percent: number
+  avatarUrl: string | null
+}
+
 export type DashboardSummary = {
   realBalance: number
   monthlyIncome: number
@@ -79,9 +89,13 @@ export type DashboardSummary = {
   totalSavings: number
   guiltFreeMoney: number
   budgetDeficit: number
+  scheduledFixedExpenses: number
+  variableSpent: number
+  expenseChangePercent: number | null
   topCategories: { name: string; amount: number; color: string | null }[]
   expenseGroups: { name: string; amount: number; color: string }[]
   savingsGoals: { name: string; percent: number; current: number; target: number }[]
+  memberSpending: MemberSpendingStat[]
   period: Period
   periodOffset: number
   periodStart: string
@@ -189,6 +203,15 @@ export type CreateTransactionInput = {
   isRecurring?: boolean
   frequency?: 'weekly' | 'biweekly' | 'monthly'
   lineItems?: LineItem[]
+  savingsGoalId?: string
+}
+
+export type RecordSavingsContributionInput = {
+  householdId: string
+  goalId: string
+  amount: number
+  transactionDate?: string
+  note?: string
 }
 
 export type UpdateTransactionInput = {

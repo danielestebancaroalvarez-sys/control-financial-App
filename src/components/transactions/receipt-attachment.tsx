@@ -24,9 +24,9 @@ export function ReceiptAttachment({
     <div className="rounded-2xl bg-[#F5F5F5] p-4 space-y-3">
       <div className="flex items-center gap-2">
         <Camera className="w-4 h-4 text-[#00BFA5]" />
-        <span className="text-[13px] font-semibold text-[#2D3436]">Comprobante (opcional)</span>
+        <span className="text-[13px] font-semibold text-cc-primary">Comprobante (opcional)</span>
       </div>
-      <p className="text-[11px] text-[#636E72]">
+      <p className="text-[11px] text-cc-secondary">
         Guarda la foto del recibo con este gasto. No usa IA salvo que escanees en Mercado.
       </p>
 
@@ -51,7 +51,7 @@ export function ReceiptAttachment({
           <button
             type="button"
             onClick={() => cameraRef.current?.click()}
-            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-white text-[12px] font-bold text-[#2D3436]"
+            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-white text-[12px] font-bold text-cc-primary"
           >
             <Camera className="w-4 h-4 text-[#00BFA5]" />
             Tomar foto
@@ -59,7 +59,7 @@ export function ReceiptAttachment({
           <button
             type="button"
             onClick={() => galleryRef.current?.click()}
-            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-white text-[12px] font-bold text-[#2D3436]"
+            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-white text-[12px] font-bold text-cc-primary"
           >
             <ImageIcon className="w-4 h-4 text-[#00BFA5]" />
             Galería

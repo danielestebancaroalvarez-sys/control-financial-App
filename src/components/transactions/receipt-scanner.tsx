@@ -79,11 +79,11 @@ export function ReceiptScanner({
       <div className="rounded-2xl bg-gradient-to-br from-[#E0F2F1] to-[#F5F5F5] p-4 space-y-2 border border-[#00BFA5]/20">
         <div className="flex items-center gap-2">
           <ScanLine className="w-4 h-4 text-[#00BFA5]" />
-          <span className="text-[13px] font-semibold text-[#2D3436]">
+          <span className="text-[13px] font-semibold text-cc-primary">
             Escanear recibo con IA
           </span>
         </div>
-        <p className="text-[11px] text-[#636E72]">
+        <p className="text-[11px] text-cc-secondary">
           Extrae productos, total y fecha. Compara con tu lista de compra sugerida.
         </p>
         <button

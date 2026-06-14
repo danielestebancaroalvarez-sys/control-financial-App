@@ -12,6 +12,7 @@ import { formatMoney } from '@/lib/finance/format'
 import { formatEstimatedTime } from '@/lib/finance/savings'
 import { SavingsCategoryPicker } from '@/components/savings/savings-category-picker'
 import { SavingsSimulationCollapsible } from '@/components/savings/savings-simulation-collapsible'
+import { SavingsContributionButton } from '@/components/savings/savings-contribution-sheet'
 import { formToSavingsGoalInput } from '@/components/savings/savings-projection-chart'
 import { CategoryIcon } from '@/components/transactions/category-icon'
 import {
@@ -77,8 +78,8 @@ function Field({
 }) {
   return (
     <div>
-      <label className="text-[12px] font-semibold text-[#2D3436]">{label}</label>
-      {hint && <p className="text-[10px] text-[#B2BEC3] mt-0.5 mb-1">{hint}</p>}
+      <label className="text-[12px] font-semibold text-cc-primary">{label}</label>
+      {hint && <p className="text-[10px] text-cc-muted mt-0.5 mb-1">{hint}</p>}
       {children}
     </div>
   )
@@ -162,9 +163,9 @@ function SavingsGoalForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="rounded-[24px] bg-white/90 backdrop-blur-md border border-white/60 shadow-sm p-5 space-y-3"
+      className="cc-surface rounded-[24px] p-5 space-y-3"
     >
-      <h2 className="text-[15px] font-bold text-[#2D3436]">
+      <h2 className="text-[15px] font-bold text-cc-primary">
         {goalId ? 'Editar meta' : 'Nueva meta de ahorro'}
       </h2>
 
@@ -252,14 +253,14 @@ function SavingsGoalForm({
               className={`flex-1 py-2.5 rounded-xl text-[12px] font-bold ${
                 form.mode === m
                   ? 'bg-[#00BFA5] text-white'
-                  : 'bg-[#F5F5F5] text-[#636E72]'
+                  : 'bg-[#F5F5F5] text-cc-secondary'
               }`}
             >
               {m === 'static' ? 'Sin interés' : 'Con rentabilidad'}
             </button>
           ))}
         </div>
-        <p className="text-[10px] text-[#B2BEC3] mt-1">
+        <p className="text-[10px] text-cc-muted mt-1">
           {form.mode === 'static'
             ? 'El dinero no genera rendimiento.'
             : 'Incluye tasa anual para estimar más rápido.'}
@@ -294,7 +295,7 @@ function SavingsGoalForm({
         <button
           type="button"
           onClick={onCancel}
-          className="flex-1 py-3 rounded-xl bg-[#F5F5F5] text-[#636E72] font-semibold text-[14px]"
+          className="flex-1 py-3 rounded-xl bg-[#F5F5F5] text-cc-secondary font-semibold text-[14px]"
         >
           Cancelar
         </button>
@@ -354,8 +355,8 @@ export function AhorrosClient({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-[22px] font-bold text-[#2D3436]">Ahorros</h1>
-          <p className="text-[13px] text-[#636E72]">Metas y progreso del hogar</p>
+          <h1 className="text-[22px] font-bold text-cc-primary">Ahorros</h1>
+          <p className="text-[13px] text-cc-secondary">Metas y progreso del hogar</p>
         </div>
         {mode === 'list' && (
           <button
@@ -395,8 +396,8 @@ export function AhorrosClient({
       )}
 
       {mode === 'list' && goals.length === 0 && (
-        <div className="rounded-[24px] bg-white/90 backdrop-blur-md border border-white/60 p-8 text-center">
-          <p className="text-[14px] text-[#636E72]">
+        <div className="cc-surface rounded-[24px] p-8 text-center">
+          <p className="text-[14px] text-cc-secondary">
             Crea tu primera meta con el botón +. Define el monto objetivo y tu
             aporte periódico para ver el tiempo estimado.
           </p>
@@ -424,7 +425,7 @@ export function AhorrosClient({
           return (
             <div
               key={goal.id}
-              className="rounded-[24px] bg-white/90 backdrop-blur-md border border-white/60 shadow-sm p-5"
+              className="cc-surface rounded-[24px] p-5"
             >
               <div className="flex items-start justify-between gap-3 mb-3">
                 <div className="flex items-start gap-3 flex-1 min-w-0">
@@ -438,13 +439,13 @@ export function AhorrosClient({
                     <CategoryIcon icon={goal.icon} className="w-5 h-5" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[16px] font-bold text-[#2D3436] truncate">
+                    <p className="text-[16px] font-bold text-cc-primary truncate">
                       {goal.name}
                     </p>
-                    <p className="text-[11px] text-[#636E72] mt-0.5">
+                    <p className="text-[11px] text-cc-secondary mt-0.5">
                       {savingsCat.label}
                     </p>
-                    <p className="text-[12px] text-[#636E72] mt-0.5">
+                    <p className="text-[12px] text-cc-secondary mt-0.5">
                       {fmt(goal.current_amount)} de {fmt(goal.target_amount)}
                     </p>
                   </div>
@@ -456,7 +457,7 @@ export function AhorrosClient({
                       setEditingId(goal.id)
                       setMode('edit')
                     }}
-                    className="w-9 h-9 rounded-xl bg-[#F5F5F5] flex items-center justify-center text-[#636E72] hover:text-[#00BFA5] hover:bg-[#00BFA5]/10 transition-colors"
+                    className="w-9 h-9 rounded-xl bg-[#F5F5F5] flex items-center justify-center text-cc-secondary hover:text-[#00BFA5] hover:bg-[#00BFA5]/10 transition-colors"
                     aria-label={`Editar ${goal.name}`}
                   >
                     <Pencil className="w-4 h-4" />
@@ -465,7 +466,7 @@ export function AhorrosClient({
                     type="button"
                     onClick={() => handleDelete(goal.id, goal.name)}
                     disabled={deletingId === goal.id}
-                    className="w-9 h-9 rounded-xl bg-[#F5F5F5] flex items-center justify-center text-[#636E72] hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
+                    className="w-9 h-9 rounded-xl bg-[#F5F5F5] flex items-center justify-center text-cc-secondary hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
                     aria-label={`Eliminar ${goal.name}`}
                   >
                     {deletingId === goal.id ? (
@@ -492,17 +493,17 @@ export function AhorrosClient({
                   {pct}% completado
                 </span>
                 {goal.target_date && (
-                  <span className="text-[#636E72]">Meta: {goal.target_date}</span>
+                  <span className="text-cc-secondary">Meta: {goal.target_date}</span>
                 )}
               </div>
 
               <div className="mt-3 flex items-start gap-2 rounded-xl bg-[#F5F5F5] px-3 py-2.5">
                 <Clock className="w-4 h-4 text-[#00BFA5] shrink-0 mt-0.5" />
-                <p className="text-[12px] text-[#2D3436] font-medium">{estimate}</p>
+                <p className="text-[12px] text-cc-primary font-medium">{estimate}</p>
               </div>
 
               {goal.contribution_amount && (
-                <p className="text-[11px] text-[#636E72] mt-2">
+                <p className="text-[11px] text-cc-secondary mt-2">
                   Aporte: {fmt(goal.contribution_amount)}{' '}
                   {goal.contribution_frequency === 'weekly'
                     ? 'semanal'
@@ -514,6 +515,12 @@ export function AhorrosClient({
                     ` · ${(goal.annual_interest_rate * 100).toFixed(1)}% anual`}
                 </p>
               )}
+
+              <SavingsContributionButton
+                goal={goal}
+                householdId={householdId}
+                currency={currency}
+              />
 
               <SavingsSimulationCollapsible
                 goal={simulationGoal}

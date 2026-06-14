@@ -18,6 +18,8 @@ import {
   Coffee,
 } from 'lucide-react'
 import { formatMoney, formatShortDate } from '@/lib/finance/format'
+import { normalizeProductName } from '@/lib/finance/market-product-keywords'
+import { toggleShoppingListItem } from '@/lib/finance/shopping-list-actions'
 import { ConsumptionPredictionCard } from '@/components/predictions/consumption-prediction-card'
 import {
   MARKET_GROUP_LABELS,
@@ -49,24 +51,37 @@ function formatDaysLabel(days: number | null): string {
 export function MercadoClient({
   insights,
   currency,
+  householdId,
+  shoppingChecks,
 }: {
   insights: MarketInsights
   currency: CurrencyCode
+  householdId: string
+  shoppingChecks: Record<string, boolean>
 }) {
   const fmt = (n: number) => formatMoney(n, currency)
-  const [checked, setChecked] = useState<Set<string>>(new Set())
+  const [checked, setChecked] = useState<Set<string>>(() => {
+    const initial = new Set<string>()
+    for (const item of insights.shoppingList) {
+      const key = normalizeProductName(item.name)
+      if (shoppingChecks[key]) initial.add(item.name)
+    }
+    return initial
+  })
 
   const maxWeekly = Math.max(...insights.weeklySpends.map(w => w.amount), 1)
   const totalGroupSpend = insights.groupStats.reduce((s, g) => s + g.totalSpent, 0) || 1
   const listTotal = insights.shoppingList.reduce((s, i) => s + i.estimatedPrice, 0)
 
   function toggleItem(name: string) {
+    const willCheck = !checked.has(name)
     setChecked(prev => {
       const next = new Set(prev)
-      if (next.has(name)) next.delete(name)
-      else next.add(name)
+      if (willCheck) next.add(name)
+      else next.delete(name)
       return next
     })
+    toggleShoppingListItem(householdId, name, willCheck)
   }
 
   function exportShoppingList() {
@@ -124,24 +139,24 @@ export function MercadoClient({
       <div className="flex items-start gap-3">
         <Link
           href="/predicciones"
-          className="w-9 h-9 rounded-xl bg-white/90 border border-white/60 flex items-center justify-center shrink-0 text-[#636E72] hover:text-[#2D3436]"
+          className="w-9 h-9 rounded-xl cc-surface border border-white/60 flex items-center justify-center shrink-0 text-cc-secondary hover:text-cc-primary"
           aria-label="Volver a predicciones"
         >
           <ChevronLeft className="w-5 h-5" />
         </Link>
         <div>
-          <h1 className="text-[22px] font-bold text-[#2D3436]">Mercado inteligente</h1>
-          <p className="text-[13px] text-[#636E72]">Tu historial de compras, visualizado</p>
+          <h1 className="text-[22px] font-bold text-cc-primary">Mercado inteligente</h1>
+          <p className="text-[13px] text-cc-secondary">Tu historial de compras, visualizado</p>
         </div>
       </div>
 
       {!insights.hasMercadoData ? (
-        <section className="rounded-[24px] bg-white/90 backdrop-blur-md border border-white/60 shadow-sm p-6 text-center">
-          <ShoppingCart className="w-10 h-10 text-[#B2BEC3] mx-auto mb-3" />
-          <p className="text-[14px] font-semibold text-[#2D3436] mb-2">
+        <section className="cc-surface rounded-[24px] p-6 text-center">
+          <ShoppingCart className="w-10 h-10 text-cc-muted mx-auto mb-3" />
+          <p className="text-[14px] font-semibold text-cc-primary mb-2">
             Aún no hay compras de Mercado
           </p>
-          <p className="text-[13px] text-[#636E72] mb-4">
+          <p className="text-[13px] text-cc-secondary mb-4">
             Registra gastos en Mercado con productos individuales para ver estadísticas.
           </p>
           <Link
@@ -214,8 +229,8 @@ export function MercadoClient({
           </section>
 
           {insights.groupStats.length > 0 && (
-            <section className="rounded-[24px] bg-white/90 backdrop-blur-md border border-white/60 shadow-sm p-5">
-              <h2 className="text-[13px] font-bold text-[#2D3436] mb-3">
+            <section className="cc-surface rounded-[24px] p-5">
+              <h2 className="text-[13px] font-bold text-cc-primary mb-3">
                 ¿En qué gastas?
               </h2>
               <div className="grid grid-cols-2 gap-2 mb-4">
@@ -236,7 +251,7 @@ export function MercadoClient({
                         <Icon className="w-4 h-4" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-[11px] font-bold text-[#2D3436] truncate">
+                        <p className="text-[11px] font-bold text-cc-primary truncate">
                           {group.label}
                         </p>
                         <p className="text-[13px] font-bold" style={{ color: meta.color }}>
@@ -253,7 +268,7 @@ export function MercadoClient({
                   const pct = (group.totalSpent / totalGroupSpend) * 100
                   return (
                     <div key={group.group} className="flex items-center gap-2">
-                      <span className="text-[10px] text-[#636E72] w-20 truncate shrink-0">
+                      <span className="text-[10px] text-cc-secondary w-20 truncate shrink-0">
                         {group.label.split(' ')[0]}
                       </span>
                       <div className="flex-1 h-2 rounded-full bg-[#F5F5F5] overflow-hidden">
@@ -262,7 +277,7 @@ export function MercadoClient({
                           style={{ width: `${pct}%`, backgroundColor: meta.color }}
                         />
                       </div>
-                      <span className="text-[11px] font-bold text-[#2D3436] w-16 text-right shrink-0">
+                      <span className="text-[11px] font-bold text-cc-primary w-16 text-right shrink-0">
                         {fmt(group.totalSpent)}
                       </span>
                     </div>
@@ -272,11 +287,11 @@ export function MercadoClient({
             </section>
           )}
 
-          <section className="rounded-[24px] bg-white/90 backdrop-blur-md border border-white/60 shadow-sm p-5">
+          <section className="cc-surface rounded-[24px] p-5">
             <div className="flex items-center justify-between gap-2 mb-3">
               <div className="flex items-center gap-2">
                 <ListChecks className="w-4 h-4 text-[#00BFA5]" />
-                <h2 className="text-[13px] font-bold text-[#2D3436]">Lista sugerida</h2>
+                <h2 className="text-[13px] font-bold text-cc-primary">Lista sugerida</h2>
               </div>
               <div className="flex items-center gap-1">
                 {insights.shoppingList.length > 0 && (
@@ -287,7 +302,7 @@ export function MercadoClient({
                     <button
                       type="button"
                       onClick={shareShoppingList}
-                      className="w-7 h-7 rounded-lg bg-[#F5F5F5] flex items-center justify-center text-[#636E72]"
+                      className="w-7 h-7 rounded-lg bg-[#F5F5F5] flex items-center justify-center text-cc-secondary"
                       aria-label="Compartir"
                     >
                       <Share2 className="w-3 h-3" />
@@ -295,7 +310,7 @@ export function MercadoClient({
                     <button
                       type="button"
                       onClick={exportShoppingList}
-                      className="w-7 h-7 rounded-lg bg-[#F5F5F5] flex items-center justify-center text-[#636E72]"
+                      className="w-7 h-7 rounded-lg bg-[#F5F5F5] flex items-center justify-center text-cc-secondary"
                       aria-label="Exportar"
                     >
                       <Download className="w-3 h-3" />
@@ -306,7 +321,7 @@ export function MercadoClient({
             </div>
 
             {insights.shoppingList.length === 0 ? (
-              <p className="text-[12px] text-[#636E72]">
+              <p className="text-[12px] text-cc-secondary">
                 Agrega productos en tus compras para generar la lista.
               </p>
             ) : (
@@ -342,12 +357,12 @@ export function MercadoClient({
                         <span className={`w-2 h-2 rounded-full shrink-0 ${urgencyDot}`} />
                         <span
                           className={`flex-1 text-[13px] font-medium truncate ${
-                            isChecked ? 'line-through text-[#B2BEC3]' : 'text-[#2D3436]'
+                            isChecked ? 'line-through text-cc-muted' : 'text-cc-primary'
                           }`}
                         >
                           {item.name}
                         </span>
-                        <span className="text-[12px] font-bold text-[#636E72] shrink-0">
+                        <span className="text-[12px] font-bold text-cc-secondary shrink-0">
                           {fmt(item.estimatedPrice)}
                         </span>
                       </button>
@@ -359,8 +374,8 @@ export function MercadoClient({
           </section>
 
           {insights.topProducts.length > 0 && (
-            <section className="rounded-[24px] bg-white/90 backdrop-blur-md border border-white/60 shadow-sm p-5">
-              <h2 className="text-[13px] font-bold text-[#2D3436] mb-3">Top productos</h2>
+            <section className="cc-surface rounded-[24px] p-5">
+              <h2 className="text-[13px] font-bold text-cc-primary mb-3">Top productos</h2>
               <ul className="space-y-2">
                 {insights.topProducts.slice(0, 6).map((product, i) => {
                   const meta = GROUP_META[product.group]
@@ -375,7 +390,7 @@ export function MercadoClient({
                         {i + 1}
                       </span>
                       <div className="flex-1 min-w-0">
-                        <p className="text-[13px] font-semibold text-[#2D3436] truncate">
+                        <p className="text-[13px] font-semibold text-cc-primary truncate">
                           {product.name}
                         </p>
                         <div className="flex items-center gap-2 mt-0.5">
@@ -388,14 +403,14 @@ export function MercadoClient({
                               }}
                             />
                           </div>
-                          <span className="text-[10px] text-[#B2BEC3]">
+                          <span className="text-[10px] text-cc-muted">
                             {product.purchaseCount}x
                             {product.daysSinceLastPurchase !== null &&
                               ` · hace ${formatDaysLabel(product.daysSinceLastPurchase)}`}
                           </span>
                         </div>
                       </div>
-                      <span className="text-[13px] font-bold text-[#2D3436] shrink-0">
+                      <span className="text-[13px] font-bold text-cc-primary shrink-0">
                         {fmt(product.totalSpent)}
                       </span>
                     </li>

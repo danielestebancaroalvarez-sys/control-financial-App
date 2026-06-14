@@ -49,11 +49,11 @@ export function ReceiptReviewSheet({
 
   return (
     <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/40 px-4 pb-[calc(5rem+env(safe-area-inset-bottom))]">
-      <div className="w-full max-w-md max-h-[85vh] overflow-y-auto rounded-[24px] bg-white shadow-xl p-5 space-y-4">
+      <div className="w-full max-w-md max-h-[85vh] overflow-y-auto cc-surface-solid rounded-[24px] shadow-xl p-5 space-y-4">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h2 className="text-[16px] font-bold text-[#2D3436]">Revisar recibo</h2>
-            <p className="text-[11px] text-[#636E72]">
+            <h2 className="text-[16px] font-bold text-cc-primary">Revisar recibo</h2>
+            <p className="text-[11px] text-cc-secondary">
               Confianza: {receipt.confidence === 'high' ? 'Alta' : receipt.confidence === 'medium' ? 'Media' : 'Baja'}
             </p>
           </div>
@@ -87,7 +87,7 @@ export function ReceiptReviewSheet({
           <div className="rounded-xl bg-[#F5F5F5] p-3 space-y-2">
             <div className="flex items-center gap-2">
               <ShoppingCart className="w-4 h-4 text-[#00BFA5]" />
-              <p className="text-[12px] font-bold text-[#2D3436]">vs. lista sugerida</p>
+              <p className="text-[12px] font-bold text-cc-primary">vs. lista sugerida</p>
             </div>
             {diff.matched.length > 0 && (
               <p className="text-[11px] text-[#00BFA5] flex items-center gap-1">
@@ -101,7 +101,7 @@ export function ReceiptReviewSheet({
                   <AlertCircle className="w-3.5 h-3.5" />
                   Faltan ({diff.missing.length})
                 </p>
-                <ul className="text-[11px] text-[#636E72] space-y-0.5">
+                <ul className="text-[11px] text-cc-secondary space-y-0.5">
                   {diff.missing.slice(0, 5).map(item => (
                     <li key={item.name}>
                       · {item.name} ({MARKET_GROUP_LABELS[item.group]})
@@ -112,10 +112,10 @@ export function ReceiptReviewSheet({
             )}
             {diff.extra.length > 0 && (
               <div>
-                <p className="text-[11px] text-[#636E72] font-semibold mb-1">
+                <p className="text-[11px] text-cc-secondary font-semibold mb-1">
                   No estaban en la lista ({diff.extra.length})
                 </p>
-                <ul className="text-[11px] text-[#B2BEC3] space-y-0.5">
+                <ul className="text-[11px] text-cc-muted space-y-0.5">
                   {diff.extra.slice(0, 5).map(item => (
                     <li key={item.name}>· {item.name}</li>
                   ))}
@@ -126,7 +126,7 @@ export function ReceiptReviewSheet({
         )}
 
         <div>
-          <label className="text-[11px] font-semibold text-[#636E72]">Tienda</label>
+          <label className="text-[11px] font-semibold text-cc-secondary">Tienda</label>
           <input
             type="text"
             value={storeName}
@@ -136,7 +136,7 @@ export function ReceiptReviewSheet({
         </div>
 
         <div>
-          <label className="text-[11px] font-semibold text-[#636E72]">Fecha</label>
+          <label className="text-[11px] font-semibold text-cc-secondary">Fecha</label>
           <input
             type="date"
             value={date}
@@ -146,7 +146,7 @@ export function ReceiptReviewSheet({
         </div>
 
         <div className="space-y-2">
-          <p className="text-[11px] font-semibold text-[#636E72]">Productos</p>
+          <p className="text-[11px] font-semibold text-cc-secondary">Productos</p>
           {items.map((item, i) => (
             <div key={i} className="flex items-center gap-2">
               <input
@@ -169,7 +169,7 @@ export function ReceiptReviewSheet({
                 <button
                   type="button"
                   onClick={() => setItems(prev => prev.filter((_, idx) => idx !== i))}
-                  className="text-[#B2BEC3] hover:text-red-500"
+                  className="text-cc-muted hover:text-red-500"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>

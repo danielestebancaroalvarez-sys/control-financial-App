@@ -12,10 +12,14 @@ export function toMonthlyAmount(
   }
 }
 
+/** Presupuesto libre según APP_VISION: ingresos − fijos programados − metas de ahorro − gasto variable ya hecho */
 export function calculateGuiltFreeMoney(
   periodIncome: number,
-  periodExpenses: number,
-  periodSavings = 0
+  scheduledFixedExpenses: number,
+  periodSavings: number,
+  variableSpent: number
 ): number {
-  return periodIncome - periodExpenses - periodSavings
+  const discretionaryBudget =
+    periodIncome - scheduledFixedExpenses - periodSavings
+  return Math.round((discretionaryBudget - variableSpent) * 100) / 100
 }

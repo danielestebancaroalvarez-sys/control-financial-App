@@ -8,10 +8,10 @@ const TONE_STYLES: Record<
   NonNullable<InsightHighlight['tone']>,
   string
 > = {
-  positive: 'bg-[#E0F2F1] text-[#00796B]',
-  negative: 'bg-[#FCE4EC] text-[#C2185B]',
-  warning: 'bg-[#FFF8E1] text-[#F57F17]',
-  neutral: 'bg-white/70 text-[#636E72]',
+  positive: 'bg-[#E0F2F1] text-[#00796B] dark:bg-[#1a3330] dark:text-[#4db6ac]',
+  negative: 'bg-[#FCE4EC] text-[#C2185B] dark:bg-[#3a2830] dark:text-[#f48fb1]',
+  warning: 'bg-[#FFF8E1] text-[#F57F17] dark:bg-[#3a3220] dark:text-[#ffb74d]',
+  neutral: 'cc-chip-neutral',
 }
 
 export function WeeklyInsightsCard({ householdId }: { householdId: string }) {
@@ -48,8 +48,8 @@ export function WeeklyInsightsCard({ householdId }: { householdId: string }) {
 
   if (loading) {
     return (
-      <section className="rounded-[24px] bg-gradient-to-br from-[#E0F2F1] to-white border border-[#00BFA5]/20 shadow-sm p-5">
-        <div className="flex items-center gap-2 text-[#636E72]">
+      <section className="cc-insight-card rounded-[24px] p-5">
+        <div className="flex items-center gap-2 text-cc-secondary">
           <Loader2 className="w-4 h-4 animate-spin text-[#00BFA5]" />
           <span className="text-[13px]">Analizando tu mes...</span>
         </div>
@@ -59,8 +59,8 @@ export function WeeklyInsightsCard({ householdId }: { householdId: string }) {
 
   if (error) {
     return (
-      <section className="rounded-[24px] bg-white/90 border border-white/60 shadow-sm p-5">
-        <p className="text-[13px] text-[#636E72]">{error}</p>
+      <section className="cc-surface rounded-[24px] p-5">
+        <p className="text-[13px] text-cc-secondary">{error}</p>
         {!error.includes('GEMINI') && (
           <button
             type="button"
@@ -77,21 +77,21 @@ export function WeeklyInsightsCard({ householdId }: { householdId: string }) {
   if (!insight) return null
 
   return (
-    <section className="rounded-[24px] bg-gradient-to-br from-[#E0F2F1] to-white border border-[#00BFA5]/20 shadow-sm p-5 space-y-3">
+    <section className="cc-insight-card rounded-[24px] p-5 space-y-3">
       <div className="flex items-start justify-between gap-2">
         <div>
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-[#00BFA5]" />
-            <h2 className="text-[14px] font-bold text-[#2D3436]">Resumen del mes</h2>
+            <h2 className="text-[14px] font-bold text-cc-primary">Resumen del mes</h2>
           </div>
-          <p className="text-[10px] text-[#636E72] mt-0.5">
+          <p className="text-[10px] text-cc-secondary mt-0.5">
             Basado en ingresos, gastos, ahorros, mercado y pagos recurrentes
           </p>
         </div>
         <button
           type="button"
           onClick={() => load(true)}
-          className="w-8 h-8 rounded-lg bg-white/80 flex items-center justify-center text-[#636E72] hover:text-[#00BFA5]"
+          className="w-8 h-8 rounded-lg cc-surface-muted flex items-center justify-center text-cc-secondary hover:text-[#00BFA5]"
           aria-label="Actualizar insights"
         >
           <RefreshCw className="w-3.5 h-3.5" />
@@ -115,7 +115,7 @@ export function WeeklyInsightsCard({ householdId }: { householdId: string }) {
       )}
 
       {insight.summary && (
-        <p className="text-[13px] text-[#2D3436] leading-relaxed">{insight.summary}</p>
+        <p className="text-[13px] text-cc-primary leading-relaxed">{insight.summary}</p>
       )}
 
       {insight.tips.length > 0 && (
@@ -123,7 +123,7 @@ export function WeeklyInsightsCard({ householdId }: { householdId: string }) {
           {insight.tips.map((tip, i) => (
             <li
               key={i}
-              className="flex items-start gap-2 text-[12px] text-[#636E72] bg-white/60 rounded-xl px-3 py-2"
+              className="flex items-start gap-2 text-[12px] text-cc-secondary cc-surface-muted rounded-xl px-3 py-2"
             >
               <span className="w-5 h-5 rounded-full bg-[#00BFA5] text-white text-[10px] font-bold flex items-center justify-center shrink-0">
                 {i + 1}
@@ -149,10 +149,10 @@ export function WeeklyInsightsCard({ householdId }: { householdId: string }) {
               {highlights.map(h => (
                 <div
                   key={`full-${h.label}`}
-                  className="px-2.5 py-2 rounded-xl bg-white/50 text-[10px]"
+                  className="px-2.5 py-2 rounded-xl cc-surface-muted text-[10px]"
                 >
-                  <p className="text-[#B2BEC3] font-medium">{h.label}</p>
-                  <p className="font-bold text-[#2D3436] mt-0.5">{h.value}</p>
+                  <p className="text-cc-muted font-medium">{h.label}</p>
+                  <p className="font-bold text-cc-primary mt-0.5">{h.value}</p>
                 </div>
               ))}
             </div>

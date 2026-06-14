@@ -24,8 +24,8 @@ export function PrediccionesClient({
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-[22px] font-bold text-[#2D3436]">Radar y Predicciones</h1>
-        <p className="text-[13px] text-[#636E72]">
+        <h1 className="text-[22px] font-bold text-cc-primary">Radar y Predicciones</h1>
+        <p className="text-[13px] text-cc-secondary">
           {labels.current} · {summary.currentPeriodStart} → {summary.currentPeriodEnd}
         </p>
       </div>
@@ -34,6 +34,12 @@ export function PrediccionesClient({
 
       {summary.consumptionPredictions.length > 0 && (
         <section className="space-y-3">
+          <div>
+            <h2 className="text-[14px] font-bold text-cc-primary">Predicción de consumo</h2>
+            <p className="text-[11px] text-cc-secondary mt-0.5">
+              Mercado, restaurantes y transporte al ritmo actual del periodo
+            </p>
+          </div>
           {summary.consumptionPredictions.map(prediction => (
             <ConsumptionPredictionCard
               key={prediction.categoryName}
@@ -44,17 +50,17 @@ export function PrediccionesClient({
         </section>
       )}
 
-      <section className="rounded-[24px] bg-white/90 backdrop-blur-md border border-white/60 shadow-sm p-5">
-        <h2 className="text-[14px] font-bold text-[#2D3436] mb-1 flex items-center gap-2">
+      <section className="cc-surface rounded-[24px] p-5">
+        <h2 className="text-[14px] font-bold text-cc-primary mb-1 flex items-center gap-2">
           <CalendarClock className="w-4 h-4 text-[#00BFA5]" />
           Pagos de {labels.current}
         </h2>
-        <p className="text-[11px] text-[#636E72] mb-4">
+        <p className="text-[11px] text-cc-secondary mb-4">
           Gastos recurrentes del periodo. Se marcan como pagados al detectar un gasto
           similar.
         </p>
         {summary.currentPeriodPayments.length === 0 ? (
-          <p className="text-[13px] text-[#636E72]">
+          <p className="text-[13px] text-cc-secondary">
             Al registrar un gasto en Nuevo, activa &quot;Recurrente&quot; y elige la frecuencia
             para verlo en este radar.
           </p>
@@ -72,8 +78,8 @@ export function PrediccionesClient({
                   <CategoryIcon icon={payment.categoryIcon} className="w-4 h-4" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[14px] font-semibold text-[#2D3436]">{payment.name}</p>
-                  <p className="text-[11px] text-[#636E72]">
+                  <p className="text-[14px] font-semibold text-cc-primary">{payment.name}</p>
+                  <p className="text-[11px] text-cc-secondary">
                     {payment.categoryName && <span>{payment.categoryName} · </span>}
                     {fmt(payment.amount)}
                     {payment.occurrences && payment.occurrences > 1 && (
@@ -100,8 +106,8 @@ export function PrediccionesClient({
       </section>
 
       {summary.upcomingPayments.length > 0 && (
-        <section className="rounded-[24px] bg-white/90 backdrop-blur-md border border-white/60 shadow-sm p-5">
-          <h2 className="text-[14px] font-bold text-[#2D3436] mb-3 flex items-center gap-2">
+        <section className="cc-surface rounded-[24px] p-5">
+          <h2 className="text-[14px] font-bold text-cc-primary mb-3 flex items-center gap-2">
             <CalendarClock className="w-4 h-4 text-[#00BFA5]" />
             Vista {labels.next}
           </h2>
@@ -118,10 +124,10 @@ export function PrediccionesClient({
                   <CategoryIcon icon={payment.categoryIcon} className="w-4 h-4" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[13px] font-semibold text-[#2D3436] truncate">
+                  <p className="text-[13px] font-semibold text-cc-primary truncate">
                     {payment.name}
                   </p>
-                  <p className="text-[11px] text-[#636E72]">
+                  <p className="text-[11px] text-cc-secondary">
                     {payment.categoryName && <span>{payment.categoryName} · </span>}
                     {fmt(payment.amount)}
                   </p>
@@ -135,12 +141,12 @@ export function PrediccionesClient({
         </section>
       )}
 
-      <section className="rounded-[24px] bg-white/90 backdrop-blur-md border border-white/60 shadow-sm p-5">
+      <section className="cc-surface rounded-[24px] p-5">
         <div className="flex items-center gap-2 mb-2">
           <ShoppingBag className="w-4 h-4 text-[#00BFA5]" />
-          <h2 className="text-[14px] font-bold text-[#2D3436]">Mercado inteligente</h2>
+          <h2 className="text-[14px] font-bold text-cc-primary">Mercado inteligente</h2>
         </div>
-        <p className="text-[13px] text-[#636E72] mb-4">
+        <p className="text-[13px] text-cc-secondary mb-4">
           Gasto semanal, cuánto llevas en carne o aseo, frecuencia de compra y una lista
           sugerida según tu historial de Mercado.
         </p>

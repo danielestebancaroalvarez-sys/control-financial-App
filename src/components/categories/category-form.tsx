@@ -67,7 +67,7 @@ export function CategoryForm({
   return (
     <form onSubmit={handleCreate} className="space-y-4">
       <div>
-        <label className="text-[12px] font-semibold text-[#636E72] mb-1.5 block">
+        <label className="text-[12px] font-semibold text-cc-secondary mb-1.5 block">
           Nombre
         </label>
         <input
@@ -81,7 +81,7 @@ export function CategoryForm({
       </div>
 
       <div>
-        <p className="text-[12px] font-semibold text-[#636E72] mb-1.5">Tipo</p>
+        <p className="text-[12px] font-semibold text-cc-secondary mb-1.5">Tipo</p>
         <div className="flex gap-2">
           {(['expense', 'income'] as const).map(t => (
             <button
@@ -89,7 +89,7 @@ export function CategoryForm({
               type="button"
               onClick={() => setType(t)}
               className={`flex-1 py-2.5 rounded-xl text-[12px] font-bold ${
-                type === t ? 'bg-[#00BFA5] text-white' : 'bg-[#F5F5F5] text-[#636E72]'
+                type === t ? 'bg-[#00BFA5] text-white' : 'bg-[#F5F5F5] text-cc-secondary'
               }`}
             >
               {t === 'expense' ? 'Gasto' : 'Ingreso'}
@@ -99,7 +99,7 @@ export function CategoryForm({
       </div>
 
       {type === 'expense' && (
-        <label className="flex items-center gap-2 text-[12px] text-[#636E72] cursor-pointer">
+        <label className="flex items-center gap-2 text-[12px] text-cc-secondary cursor-pointer">
           <input
             type="checkbox"
             checked={isSubscription}
@@ -111,7 +111,7 @@ export function CategoryForm({
       )}
 
       <div>
-        <p className="text-[12px] font-semibold text-[#636E72] mb-1.5">Color</p>
+        <p className="text-[12px] font-semibold text-cc-secondary mb-1.5">Color</p>
         <div className="flex flex-wrap gap-2">
           {COLORS.map(c => (
             <button

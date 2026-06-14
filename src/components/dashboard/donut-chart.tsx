@@ -18,6 +18,7 @@ export function DonutChart({
   const circumference = 2 * Math.PI * radius
   const cx = size / 2
   const cy = size / 2
+  const trackStroke = 'var(--cc-track)'
 
   if (total <= 0) {
     return (
@@ -27,7 +28,7 @@ export function DonutChart({
           cy={cy}
           r={radius}
           fill="none"
-          stroke="#ECEFF1"
+          stroke={trackStroke}
           strokeWidth={stroke}
         />
         <text
@@ -35,7 +36,7 @@ export function DonutChart({
           y={cy}
           textAnchor="middle"
           dominantBaseline="middle"
-          className="fill-[#B2BEC3] text-[11px] font-semibold"
+          className="fill-[var(--cc-text-muted)] text-[11px] font-semibold"
         >
           Sin datos
         </text>
@@ -53,7 +54,7 @@ export function DonutChart({
           cy={cy}
           r={radius}
           fill="none"
-          stroke="#F5F5F5"
+          stroke={trackStroke}
           strokeWidth={stroke}
         />
         {slices.map(slice => {
@@ -85,7 +86,7 @@ export function DonutChart({
                 y={cy - (centerLabel ? 4 : 0)}
                 textAnchor="middle"
                 dominantBaseline="middle"
-                className="fill-[#2D3436] text-[13px] font-bold"
+                className="fill-[var(--cc-text-primary)] text-[13px] font-bold"
               >
                 {centerValue}
               </text>
@@ -96,7 +97,7 @@ export function DonutChart({
                 y={cy + (centerValue ? 12 : 0)}
                 textAnchor="middle"
                 dominantBaseline="middle"
-                className="fill-[#636E72] text-[9px] font-semibold"
+                className="fill-[var(--cc-text-secondary)] text-[9px] font-semibold"
               >
                 {centerLabel}
               </text>
@@ -111,7 +112,7 @@ export function DonutChart({
               className="w-2.5 h-2.5 rounded-full shrink-0"
               style={{ backgroundColor: slice.color }}
             />
-            <span className="text-[11px] text-[#636E72]">{slice.label}</span>
+            <span className="text-[11px] text-cc-secondary">{slice.label}</span>
           </div>
         ))}
       </div>
