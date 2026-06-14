@@ -11,7 +11,7 @@ export function CategoryBarChart({
 
   if (items.length === 0) {
     return (
-      <p className="text-[12px] text-[#636E72] text-center py-4">
+      <p className="text-[12px] text-cc-secondary text-center py-4">
         Sin gastos en este periodo
       </p>
     )
@@ -24,10 +24,10 @@ export function CategoryBarChart({
         return (
           <div key={item.name}>
             <div className="flex justify-between items-center mb-1 gap-2">
-              <span className="text-[12px] font-semibold text-[#2D3436] truncate">
+              <span className="text-[12px] font-semibold text-cc-primary truncate">
                 {item.name}
               </span>
-              <span className="text-[11px] font-bold text-[#2D3436] shrink-0">
+              <span className="text-[11px] font-bold text-cc-primary shrink-0">
                 {formatValue(item.amount)}
               </span>
             </div>

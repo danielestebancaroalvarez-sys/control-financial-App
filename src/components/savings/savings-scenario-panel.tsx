@@ -51,7 +51,7 @@ export function SavingsScenarioPanel({
     <div className="space-y-3">
       <div>
         <div className="flex items-center justify-between mb-1">
-          <p className="text-[11px] font-bold text-[#2D3436]">
+          <p className="text-[11px] font-bold text-cc-primary">
             ¿Y si aportas más al mes?
           </p>
           <span className="text-[12px] font-bold text-[#00BFA5]">
@@ -67,7 +67,7 @@ export function SavingsScenarioPanel({
           onChange={e => setExtraContribution(Number(e.target.value))}
           className="w-full accent-[#00BFA5]"
         />
-        <div className="flex justify-between text-[10px] text-[#B2BEC3] mt-0.5">
+        <div className="flex justify-between text-[10px] text-cc-muted mt-0.5">
           <span>$0</span>
           <span>+$500/mes</span>
         </div>
@@ -75,7 +75,7 @@ export function SavingsScenarioPanel({
 
       {extraContribution > 0 && (
         <div className="rounded-xl bg-white px-3 py-2 space-y-1">
-          <p className="text-[11px] text-[#636E72]">
+          <p className="text-[11px] text-cc-secondary">
             Base: <span className="font-semibold">{formatMonthsLabel(baseMonths)}</span>
             {' → '}
             Con +{fmt(extraContribution)}:{' '}
@@ -91,7 +91,7 @@ export function SavingsScenarioPanel({
           {remainingGuiltFree !== null && (
             <p
               className={`text-[11px] font-medium ${
-                remainingGuiltFree < 0 ? 'text-[#EC4899]' : 'text-[#636E72]'
+                remainingGuiltFree < 0 ? 'text-[#EC4899]' : 'text-cc-secondary'
               }`}
             >
               Dinero libre tras aportes: {fmt(remainingGuiltFree)}

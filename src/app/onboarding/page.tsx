@@ -40,35 +40,35 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#B2EBF2] via-[#C8F0DC] to-[#FFE0B2] flex flex-col items-center justify-center px-5 py-10">
+    <div className="min-h-screen cc-app-bg flex flex-col items-center justify-center px-5 py-10">
       <div className="flex flex-col items-center mb-6">
         <CoupleCashLogo className="w-16 h-16 mb-3" />
-        <h1 className="text-[26px] font-bold text-[#2D3436]">CoupleCash</h1>
-        <p className="text-[13px] text-[#636E72] mt-1">Configura tu hogar financiero</p>
+        <h1 className="text-[26px] font-bold text-cc-primary">CoupleCash</h1>
+        <p className="text-[13px] text-cc-secondary mt-1">Configura tu hogar financiero</p>
       </div>
 
-      <div className="w-full max-w-[380px] rounded-[40px] bg-white/90 backdrop-blur-md shadow-[0_20px_60px_rgba(0,0,0,0.10)] border border-white/60 px-7 py-8">
+      <div className="w-full max-w-[380px] rounded-[40px] cc-surface shadow-[0_20px_60px_rgba(0,0,0,0.10)] px-7 py-8">
 
         {step === 'choose' && (
           <>
-            <h2 className="text-[20px] font-bold text-[#2D3436] text-center mb-2">
+            <h2 className="text-[20px] font-bold text-cc-primary text-center mb-2">
               ¿Cómo quieres empezar?
             </h2>
-            <p className="text-[13px] text-[#636E72] text-center mb-6">
+            <p className="text-[13px] text-cc-secondary text-center mb-6">
               Crea un hogar nuevo o únete al de tu pareja con un código.
             </p>
 
             <button
               type="button"
               onClick={() => { setStep('create'); setError(null) }}
-              className="w-full flex items-center gap-4 p-4 rounded-2xl bg-[#F5F5F5] hover:bg-[#E8F8F5] border border-transparent hover:border-[#00BFA5]/30 transition-all mb-3 text-left"
+              className="w-full flex items-center gap-4 p-4 rounded-2xl cc-surface-muted hover:bg-[#E8F8F5] border border-transparent hover:border-[#00BFA5]/30 transition-all mb-3 text-left"
             >
               <div className="w-11 h-11 rounded-full bg-[#00BFA5]/15 flex items-center justify-center shrink-0">
                 <Home className="w-5 h-5 text-[#00BFA5]" />
               </div>
               <div className="flex-1">
-                <p className="font-semibold text-[#2D3436] text-[15px]">Crear un Hogar</p>
-                <p className="text-[12px] text-[#636E72]">Serás el administrador y obtendrás un código para invitar</p>
+                <p className="font-semibold text-cc-primary text-[15px]">Crear un Hogar</p>
+                <p className="text-[12px] text-cc-secondary">Serás el administrador y obtendrás un código para invitar</p>
               </div>
               <ArrowRight className="w-4 h-4 text-[#B2BEC3]" />
             </button>
@@ -76,14 +76,14 @@ export default function OnboardingPage() {
             <button
               type="button"
               onClick={() => { setStep('join'); setError(null) }}
-              className="w-full flex items-center gap-4 p-4 rounded-2xl bg-[#F5F5F5] hover:bg-[#E8F8F5] border border-transparent hover:border-[#00BFA5]/30 transition-all text-left"
+              className="w-full flex items-center gap-4 p-4 rounded-2xl cc-surface-muted hover:bg-[#E8F8F5] border border-transparent hover:border-[#00BFA5]/30 transition-all text-left"
             >
               <div className="w-11 h-11 rounded-full bg-[#2196F3]/15 flex items-center justify-center shrink-0">
                 <Users className="w-5 h-5 text-[#2196F3]" />
               </div>
               <div className="flex-1">
-                <p className="font-semibold text-[#2D3436] text-[15px]">Unirme a un Hogar</p>
-                <p className="text-[12px] text-[#636E72]">Ingresa el código que te compartió tu pareja</p>
+                <p className="font-semibold text-cc-primary text-[15px]">Unirme a un Hogar</p>
+                <p className="text-[12px] text-cc-secondary">Ingresa el código que te compartió tu pareja</p>
               </div>
               <ArrowRight className="w-4 h-4 text-[#B2BEC3]" />
             </button>
@@ -99,10 +99,10 @@ export default function OnboardingPage() {
             >
               ← Volver
             </button>
-            <h2 className="text-[20px] font-bold text-[#2D3436] mb-1">Crear tu Hogar</h2>
-            <p className="text-[13px] text-[#636E72] mb-5">Dale un nombre y elige la divisa principal.</p>
+            <h2 className="text-[20px] font-bold text-cc-primary mb-1">Crear tu Hogar</h2>
+            <p className="text-[13px] text-cc-secondary mb-5">Dale un nombre y elige la divisa principal.</p>
 
-            <label className="block text-[12px] font-medium text-[#636E72] mb-1.5">
+            <label className="block text-[12px] font-medium text-cc-secondary mb-1.5">
               Nombre del hogar
             </label>
             <input
@@ -111,10 +111,10 @@ export default function OnboardingPage() {
               onChange={e => setHouseholdName(e.target.value)}
               placeholder="Ej: Hogar Familia Pérez"
               required
-              className="w-full px-4 py-3.5 rounded-2xl bg-[#F5F5F5] text-[14px] text-[#2D3436] placeholder:text-[#BDBDBD] outline-none focus:ring-2 focus:ring-[#00BFA5]/30 mb-4"
+              className="w-full px-4 py-3.5 rounded-2xl cc-surface-muted text-[14px] text-cc-primary placeholder:text-[#BDBDBD] outline-none focus:ring-2 focus:ring-[#00BFA5]/30 mb-4"
             />
 
-            <label className="block text-[12px] font-medium text-[#636E72] mb-1.5">
+            <label className="block text-[12px] font-medium text-cc-secondary mb-1.5">
               Divisa base
             </label>
             <div className="flex gap-3 mb-5">
@@ -126,7 +126,7 @@ export default function OnboardingPage() {
                   className={`flex-1 py-3 rounded-2xl text-[14px] font-semibold transition-all ${
                     baseCurrency === cur
                       ? 'bg-[#00BFA5] text-white shadow-[0_4px_12px_rgba(0,191,165,0.3)]'
-                      : 'bg-[#F5F5F5] text-[#636E72] hover:bg-[#EEEEEE]'
+                      : 'cc-surface-muted text-cc-secondary hover:bg-[#EEEEEE]'
                   }`}
                 >
                   {cur}
@@ -159,12 +159,12 @@ export default function OnboardingPage() {
             >
               ← Volver
             </button>
-            <h2 className="text-[20px] font-bold text-[#2D3436] mb-1">Unirse a un Hogar</h2>
-            <p className="text-[13px] text-[#636E72] mb-5">
+            <h2 className="text-[20px] font-bold text-cc-primary mb-1">Unirse a un Hogar</h2>
+            <p className="text-[13px] text-cc-secondary mb-5">
               Pide el código de invitación a quien creó el hogar.
             </p>
 
-            <label className="block text-[12px] font-medium text-[#636E72] mb-1.5">
+            <label className="block text-[12px] font-medium text-cc-secondary mb-1.5">
               Código de invitación
             </label>
             <input
@@ -174,7 +174,7 @@ export default function OnboardingPage() {
               placeholder="Ej: A1B2C3D4"
               required
               maxLength={8}
-              className="w-full px-4 py-3.5 rounded-2xl bg-[#F5F5F5] text-[18px] text-[#2D3436] placeholder:text-[#BDBDBD] outline-none focus:ring-2 focus:ring-[#00BFA5]/30 tracking-[0.2em] text-center font-bold uppercase mb-5"
+              className="w-full px-4 py-3.5 rounded-2xl cc-surface-muted text-[18px] text-cc-primary placeholder:text-[#BDBDBD] outline-none focus:ring-2 focus:ring-[#00BFA5]/30 tracking-[0.2em] text-center font-bold uppercase mb-5"
             />
 
             {error && (

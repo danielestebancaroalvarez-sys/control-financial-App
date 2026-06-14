@@ -9,7 +9,7 @@ function formatCompact(n: number): string {
 export function TrendBarChart({ data }: { data: Bar[] }) {
   if (data.length === 0) {
     return (
-      <p className="text-[12px] text-[#636E72] text-center py-6">Sin datos de tendencia</p>
+      <p className="text-[12px] text-cc-secondary text-center py-6">Sin datos de tendencia</p>
     )
   }
 
@@ -148,7 +148,7 @@ export function TrendBarChart({ data }: { data: Bar[] }) {
         </defs>
       </svg>
 
-      <div className="flex justify-center gap-4 text-[10px] font-semibold text-[#636E72]">
+      <div className="flex justify-center gap-4 text-[10px] font-semibold text-cc-secondary">
         <span className="flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded-sm bg-[#00BFA5]" />
           Ingresos
@@ -157,7 +157,7 @@ export function TrendBarChart({ data }: { data: Bar[] }) {
           <span className="w-2.5 h-2.5 rounded-sm bg-[#EC4899]" />
           Gastos
         </span>
-        <span className="text-[#B2BEC3]">+/− = balance del periodo</span>
+        <span className="text-cc-muted">+/− = balance del periodo</span>
       </div>
     </div>
   )

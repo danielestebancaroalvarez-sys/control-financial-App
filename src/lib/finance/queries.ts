@@ -4,6 +4,8 @@ import { getAuthUser } from '@/lib/auth/session'
 import type { CurrencyCode } from '@/lib/household/types'
 import { calculateBalance, sumByTypeInPeriod } from './balance'
 import { calculateGuiltFreeMoney } from './guilt-free'
+import { calculateScheduledFixedExpenses } from './scheduled-expenses'
+import { sumVariableExpenses } from './variable-expenses'
 import { getPeriodRangeAtOffset, getPeriodBlockLabel } from './format'
 import { buildMarketInsights } from './market-analytics'
 import type { MarketInsights } from './market-analytics'
@@ -91,6 +93,21 @@ export const getSavingsGoals = cache(
   }
 )
 
+export const getRecurringSchedules = cache(
+  async (householdId: string) => {
+    const supabase = await createClient()
+    const { data } = await supabase
+      .from('recurring_schedules')
+      .select(
+        'type, amount_original, frequency, next_occurrence, is_active'
+      )
+      .eq('household_id', householdId)
+      .eq('is_active', true)
+
+    return data ?? []
+  }
+)
+
 export async function getDashboardSummary(
   householdId: string,
   period: Period = 'monthly',
@@ -99,12 +116,14 @@ export async function getDashboardSummary(
   const safeOffset = Math.max(0, Math.min(11, Math.floor(periodOffset)))
   const { start, end } = getPeriodRangeAtOffset(period, safeOffset)
 
-  const [transactions, savingsGoals, categories, members] = await Promise.all([
-    getHouseholdTransactions(householdId),
-    getSavingsGoals(householdId),
-    getCategories(householdId),
-    getHouseholdMembers(householdId),
-  ])
+  const [transactions, savingsGoals, categories, members, recurring] =
+    await Promise.all([
+      getHouseholdTransactions(householdId),
+      getSavingsGoals(householdId),
+      getCategories(householdId),
+      getHouseholdMembers(householdId),
+      getRecurringSchedules(householdId),
+    ])
 
   const balance = calculateBalance(transactions)
   const periodIncome = sumByTypeInPeriod(transactions, 'income', start, end)
@@ -115,13 +134,6 @@ export async function getDashboardSummary(
   )
   const { total: periodSavings, items: savingsBreakdown } =
     calculatePeriodSavingsAllocations(savingsGoals, period, start, end)
-  const guiltFreeMoney = calculateGuiltFreeMoney(
-    periodIncome,
-    periodExpenses,
-    periodSavings
-  )
-  const budgetDeficit =
-    guiltFreeMoney < 0 ? Math.round(Math.abs(guiltFreeMoney) * 100) / 100 : 0
 
   const expenseCategories = categories.filter(c => c.type === 'expense')
   const categoryMap = new Map(
@@ -136,6 +148,43 @@ export async function getDashboardSummary(
       },
     ])
   )
+
+  const scheduledFixedExpenses = calculateScheduledFixedExpenses(
+    recurring,
+    start,
+    end
+  )
+  const variableSpent = sumVariableExpenses(
+    transactions,
+    start,
+    end,
+    categoryMap
+  )
+  const guiltFreeMoney = calculateGuiltFreeMoney(
+    periodIncome,
+    scheduledFixedExpenses,
+    periodSavings,
+    variableSpent
+  )
+  const budgetDeficit =
+    guiltFreeMoney < 0 ? Math.round(Math.abs(guiltFreeMoney) * 100) / 100 : 0
+
+  let expenseChangePercent: number | null = null
+  if (safeOffset < 11) {
+    const prev = getPeriodRangeAtOffset(period, safeOffset + 1)
+    const prevExpenses = sumByTypeInPeriod(
+      transactions,
+      'expense',
+      prev.start,
+      prev.end
+    )
+    if (prevExpenses > 0) {
+      expenseChangePercent =
+        Math.round(
+          ((periodExpenses - prevExpenses) / prevExpenses) * 1000
+        ) / 10
+    }
+  }
 
   const categoryTotals = new Map<string, number>()
   for (const tx of transactions) {
@@ -197,6 +246,9 @@ export async function getDashboardSummary(
     totalSavings,
     guiltFreeMoney,
     budgetDeficit,
+    scheduledFixedExpenses,
+    variableSpent,
+    expenseChangePercent,
     topCategories,
     expenseGroups,
     savingsGoals: savingsProgress,

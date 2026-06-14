@@ -44,7 +44,7 @@ export function ReceiptThumbnail({
       <div
         className={`${className} rounded-lg bg-[#F5F5F5] flex items-center justify-center shrink-0`}
       >
-        <Receipt className="w-4 h-4 text-[#B2BEC3]" />
+        <Receipt className="w-4 h-4 text-cc-muted" />
       </div>
     )
   }

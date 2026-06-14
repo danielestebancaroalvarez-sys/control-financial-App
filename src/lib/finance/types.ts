@@ -89,6 +89,9 @@ export type DashboardSummary = {
   totalSavings: number
   guiltFreeMoney: number
   budgetDeficit: number
+  scheduledFixedExpenses: number
+  variableSpent: number
+  expenseChangePercent: number | null
   topCategories: { name: string; amount: number; color: string | null }[]
   expenseGroups: { name: string; amount: number; color: string }[]
   savingsGoals: { name: string; percent: number; current: number; target: number }[]

@@ -81,7 +81,7 @@ export function BottomTabBar() {
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 pb-[max(1rem,env(safe-area-inset-bottom))]">
       <div className="mx-auto max-w-md px-4">
-        <div className="relative flex items-end justify-around rounded-[28px] bg-white/75 backdrop-blur-2xl border border-white/70 shadow-[0_8px_40px_rgba(0,0,0,0.14)] px-2 py-2">
+        <div className="relative flex items-end justify-around rounded-[28px] cc-surface shadow-[0_8px_40px_rgba(0,0,0,0.14)] dark:shadow-[0_8px_40px_rgba(0,0,0,0.35)] px-2 py-2">
           {TABS.map((tab, index) => {
             const active = isActive(pathname, tab.href)
 
@@ -119,7 +119,7 @@ export function BottomTabBar() {
                 </motion.div>
                 <span
                   className={`text-[10px] font-semibold transition-colors ${
-                    active ? 'text-[#00BFA5]' : 'text-[#B2BEC3]'
+                    active ? 'text-[#00BFA5]' : 'text-cc-muted'
                   }`}
                 >
                   {tab.label}

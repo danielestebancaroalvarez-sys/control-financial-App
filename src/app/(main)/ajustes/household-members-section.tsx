@@ -56,8 +56,8 @@ export function HouseholdMembersSection({
   }
 
   return (
-    <section className="rounded-[24px] bg-white/90 backdrop-blur-md shadow-sm border border-white/60 p-5 space-y-3">
-      <h2 className="text-[15px] font-bold text-[#2D3436]">
+    <section className="cc-surface rounded-[24px] p-5 space-y-3">
+      <h2 className="text-[15px] font-bold text-cc-primary">
         Miembros ({members.length})
       </h2>
 
@@ -68,7 +68,7 @@ export function HouseholdMembersSection({
       )}
 
       {members.length === 0 ? (
-        <p className="text-[13px] text-[#636E72]">
+        <p className="text-[13px] text-cc-secondary">
           No se encontraron miembros. Si acabas de invitar a alguien, recarga la página.
         </p>
       ) : (
@@ -95,11 +95,11 @@ export function HouseholdMembersSection({
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <p className="text-[14px] font-semibold text-[#2D3436] truncate">
+                  <p className="text-[14px] font-semibold text-cc-primary truncate">
                     {displayName}
-                    {isSelf && <span className="text-[#636E72] font-normal"> (tú)</span>}
+                    {isSelf && <span className="text-cc-secondary font-normal"> (tú)</span>}
                   </p>
-                  <p className="text-[11px] text-[#636E72] capitalize">
+                  <p className="text-[11px] text-cc-secondary capitalize">
                     {member.role === 'owner' ? 'Administrador' : 'Miembro'}
                   </p>
                 </div>
@@ -109,7 +109,7 @@ export function HouseholdMembersSection({
                     type="button"
                     onClick={handleLeave}
                     disabled={busy}
-                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-[#636E72] hover:text-red-600 hover:bg-red-50 disabled:opacity-50"
+                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-cc-secondary hover:text-red-600 hover:bg-red-50 disabled:opacity-50"
                   >
                     {busy ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -123,7 +123,7 @@ export function HouseholdMembersSection({
                     type="button"
                     onClick={() => handleRemove(member.user_id, displayName)}
                     disabled={busy}
-                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-[#636E72] hover:text-red-600 hover:bg-red-50 disabled:opacity-50"
+                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-cc-secondary hover:text-red-600 hover:bg-red-50 disabled:opacity-50"
                   >
                     {busy ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />

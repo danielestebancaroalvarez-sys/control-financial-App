@@ -18,8 +18,8 @@ export default async function NuevoPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-[20px] font-bold text-[#2D3436]">Nuevo registro</h1>
-        <p className="text-[12px] text-[#636E72]">Ingreso o gasto del hogar</p>
+        <h1 className="text-[20px] font-bold text-cc-primary">Nuevo registro</h1>
+        <p className="text-[12px] text-cc-secondary">Ingreso o gasto del hogar</p>
       </div>
       <AddTransactionForm
         householdId={ctx.household.id}

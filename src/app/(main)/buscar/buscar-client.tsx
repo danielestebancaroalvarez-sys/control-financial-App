@@ -36,7 +36,7 @@ function FilterSection({
 }) {
   return (
     <div className="space-y-2">
-      <p className="text-[11px] font-semibold text-[#636E72] uppercase tracking-wide">
+      <p className="text-[11px] font-semibold text-cc-secondary uppercase tracking-wide">
         {label}
       </p>
       {children}
@@ -194,8 +194,8 @@ export function BuscarClient({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-[22px] font-bold text-[#2D3436]">Búsqueda</h1>
-          <p className="text-[13px] text-[#636E72]">
+          <h1 className="text-[22px] font-bold text-cc-primary">Búsqueda</h1>
+          <p className="text-[13px] text-cc-secondary">
             {displayResults.length} resultado{displayResults.length !== 1 ? 's' : ''} · {periodLabel}
             {pending && ' · actualizando...'}
           </p>
@@ -212,14 +212,14 @@ export function BuscarClient({
         )}
       </div>
 
-      <div className="rounded-[24px] bg-white/90 backdrop-blur-md border border-white/60 shadow-sm p-4 space-y-4 relative">
+      <div className="cc-surface rounded-[24px] p-4 space-y-4 relative">
         {pending && (
           <div className="absolute top-0 left-4 right-4 h-0.5 overflow-hidden rounded-full">
             <div className="h-full w-1/3 bg-[#00BFA5] animate-pulse" />
           </div>
         )}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#B2BEC3]" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cc-muted" />
           <input
             type="search"
             defaultValue={filters.q}
@@ -243,7 +243,7 @@ export function BuscarClient({
                 className={`flex-1 py-2 rounded-xl text-[12px] font-bold ${
                   (filters.type || 'all') === t.id
                     ? 'bg-[#2D3436] text-white'
-                    : 'bg-[#F5F5F5] text-[#636E72]'
+                    : 'bg-[#F5F5F5] text-cc-secondary'
                 }`}
               >
                 {t.label}
@@ -296,7 +296,7 @@ export function BuscarClient({
               className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-colors ${
                 filters.preset === 'period'
                   ? 'bg-[#00BFA5] text-white'
-                  : 'bg-[#F5F5F5] text-[#636E72]'
+                  : 'bg-[#F5F5F5] text-cc-secondary'
               }`}
             >
               {labels.current}
@@ -307,7 +307,7 @@ export function BuscarClient({
               className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-colors ${
                 filters.preset === 'last-week'
                   ? 'bg-[#00BFA5] text-white'
-                  : 'bg-[#F5F5F5] text-[#636E72]'
+                  : 'bg-[#F5F5F5] text-cc-secondary'
               }`}
             >
               Semana pasada
@@ -318,7 +318,7 @@ export function BuscarClient({
               className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-colors ${
                 filters.preset === 'custom'
                   ? 'bg-[#2D3436] text-white'
-                  : 'bg-[#F5F5F5] text-[#636E72]'
+                  : 'bg-[#F5F5F5] text-cc-secondary'
               }`}
             >
               Personalizado
@@ -332,7 +332,7 @@ export function BuscarClient({
             onClick={() => setAdvancedOpen(prev => !prev)}
             className="w-full flex items-center justify-between px-3 py-2.5 bg-[#FAFAFA] text-left"
           >
-            <span className="flex items-center gap-2 text-[12px] font-bold text-[#636E72]">
+            <span className="flex items-center gap-2 text-[12px] font-bold text-cc-secondary">
               <SlidersHorizontal className="w-3.5 h-3.5" />
               Avanzado
               {filters.preset === 'custom' && (
@@ -342,7 +342,7 @@ export function BuscarClient({
               )}
             </span>
             <ChevronDown
-              className={`w-4 h-4 text-[#B2BEC3] transition-transform ${
+              className={`w-4 h-4 text-cc-muted transition-transform ${
                 advancedOpen ? 'rotate-180' : ''
               }`}
             />
@@ -350,10 +350,10 @@ export function BuscarClient({
 
           {advancedOpen && (
             <div className="p-3 space-y-3 border-t border-[#EEEEEE] bg-white">
-              <p className="text-[11px] text-[#636E72]">Rango de fechas personalizado</p>
+              <p className="text-[11px] text-cc-secondary">Rango de fechas personalizado</p>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="text-[10px] font-semibold text-[#636E72] mb-1 block">
+                  <label className="text-[10px] font-semibold text-cc-secondary mb-1 block">
                     Desde
                   </label>
                   <input
@@ -364,7 +364,7 @@ export function BuscarClient({
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] font-semibold text-[#636E72] mb-1 block">
+                  <label className="text-[10px] font-semibold text-cc-secondary mb-1 block">
                     Hasta
                   </label>
                   <input
@@ -395,19 +395,19 @@ export function BuscarClient({
 
       <div className={`space-y-2 transition-opacity ${pending ? 'opacity-70' : 'opacity-100'}`}>
         {displayResults.length === 0 && !pending ? (
-          <div className="rounded-[24px] bg-white/90 backdrop-blur-md border border-white/60 p-8 text-center">
-            <p className="text-[14px] text-[#636E72]">No hay movimientos que coincidan.</p>
+          <div className="cc-surface rounded-[24px] p-8 text-center">
+            <p className="text-[14px] text-cc-secondary">No hay movimientos que coincidan.</p>
           </div>
         ) : displayResults.length === 0 && pending ? (
-          <div className="rounded-[24px] bg-white/90 backdrop-blur-md border border-white/60 p-8 text-center">
+          <div className="cc-surface rounded-[24px] p-8 text-center">
             <Loader2 className="w-6 h-6 text-[#00BFA5] animate-spin mx-auto mb-2" />
-            <p className="text-[14px] text-[#636E72]">Buscando movimientos...</p>
+            <p className="text-[14px] text-cc-secondary">Buscando movimientos...</p>
           </div>
         ) : (
           displayResults.map(tx => (
             <div
               key={tx.id}
-              className="rounded-2xl bg-white/90 backdrop-blur-md border border-white/60 shadow-sm p-4 flex items-center gap-3"
+              className="cc-surface rounded-2xl p-4 flex items-center gap-3"
             >
               <div
                 className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
@@ -419,10 +419,10 @@ export function BuscarClient({
                 <CategoryIcon icon={tx.category_icon} />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[14px] font-semibold text-[#2D3436] truncate">
+                <p className="text-[14px] font-semibold text-cc-primary truncate">
                   {tx.description}
                 </p>
-                <p className="text-[11px] text-[#636E72]">
+                <p className="text-[11px] text-cc-secondary">
                   {tx.category_name} · {tx.transaction_date}
                   {tx.author_name ? ` · ${tx.author_name}` : ''}
                 </p>
@@ -445,7 +445,7 @@ export function BuscarClient({
                 <button
                   type="button"
                   onClick={() => setEditing(tx)}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center text-[#B2BEC3] hover:text-[#00BFA5] hover:bg-[#E0F2F1]"
+                  className="w-8 h-8 rounded-lg flex items-center justify-center text-cc-muted hover:text-[#00BFA5] hover:bg-[#E0F2F1]"
                   aria-label={`Editar ${tx.description}`}
                 >
                   <Pencil className="w-4 h-4" />
@@ -454,7 +454,7 @@ export function BuscarClient({
                   type="button"
                   onClick={() => handleDelete(tx)}
                   disabled={deletingId === tx.id}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center text-[#B2BEC3] hover:text-red-500 hover:bg-red-50 disabled:opacity-50"
+                  className="w-8 h-8 rounded-lg flex items-center justify-center text-cc-muted hover:text-red-500 hover:bg-red-50 disabled:opacity-50"
                   aria-label={`Eliminar ${tx.description}`}
                 >
                   {deletingId === tx.id ? (

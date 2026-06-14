@@ -117,7 +117,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden flex items-center justify-center p-6 bg-gradient-to-br from-[#A8EDEA] via-[#CBF5D3] to-[#FFD6A5]">
+    <div className="relative min-h-screen w-full overflow-hidden flex items-center justify-center p-6 cc-app-bg">
 
       <div className="pointer-events-none select-none absolute inset-0 overflow-hidden">
         <CoupleCashMark className="absolute top-[7%] left-[5%] w-10 h-10 -rotate-[15deg] opacity-20" />
@@ -130,7 +130,7 @@ export default function LoginPage() {
       </div>
 
       <div className="relative z-10 w-full max-w-[380px]">
-        <div className="rounded-[32px] overflow-hidden bg-white shadow-[0_24px_64px_rgba(0,0,0,0.13),0_4px_16px_rgba(0,0,0,0.07)]">
+        <div className="rounded-[32px] overflow-hidden cc-surface-solid shadow-[0_24px_64px_rgba(0,0,0,0.13),0_4px_16px_rgba(0,0,0,0.07)]">
 
           <div className="px-7 pt-7 pb-5 bg-gradient-to-br from-[#A8EDEA]/55 via-[#CBF5D3]/40 to-[#FFD6A5]/40">
             <div className="flex items-center gap-2.5 mb-5">

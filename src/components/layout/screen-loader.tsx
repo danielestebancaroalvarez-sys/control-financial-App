@@ -7,7 +7,7 @@ export function ScreenLoader({ label = 'Cargando...' }: { label?: string }) {
         <CoupleCashMark className="w-12 h-12 animate-pulse" />
         <span className="absolute inset-0 rounded-full border-[3px] border-[#00BFA5]/20 border-t-[#00BFA5] animate-spin" />
       </div>
-      <p className="text-[12px] font-medium text-[#636E72]">{label}</p>
+      <p className="text-[12px] font-medium text-cc-secondary">{label}</p>
     </div>
   )
 }

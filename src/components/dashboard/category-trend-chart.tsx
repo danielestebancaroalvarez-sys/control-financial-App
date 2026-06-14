@@ -20,7 +20,7 @@ export function CategoryTrendChart({ data }: { data: Point[] }) {
 
   if (data.every(p => p.categories.length === 0)) {
     return (
-      <p className="text-[12px] text-[#636E72] text-center py-4">
+      <p className="text-[12px] text-cc-secondary text-center py-4">
         Sin gastos por categoría en este rango
       </p>
     )
@@ -110,7 +110,7 @@ export function CategoryTrendChart({ data }: { data: Point[] }) {
                   className="w-2 h-2 rounded-sm shrink-0"
                   style={{ backgroundColor: color }}
                 />
-                <span className="text-[9px] text-[#636E72] font-medium">{name}</span>
+                <span className="text-[9px] text-cc-secondary font-medium">{name}</span>
               </div>
             )
           })}

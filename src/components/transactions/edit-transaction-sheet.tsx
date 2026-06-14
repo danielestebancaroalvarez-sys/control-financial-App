@@ -70,16 +70,16 @@ export function EditTransactionSheet({
 
   return (
     <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/40 px-4 pb-[calc(5rem+env(safe-area-inset-bottom))]">
-      <div className="w-full max-w-md rounded-[24px] bg-white shadow-xl border border-white/80 p-5 max-h-[80vh] overflow-y-auto">
+      <div className="w-full max-w-md cc-surface-solid rounded-[24px] shadow-xl border border-[var(--cc-border)] p-5 max-h-[80vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-[16px] font-bold text-[#2D3436]">Editar movimiento</h3>
+          <h3 className="text-[16px] font-bold text-cc-primary">Editar movimiento</h3>
           <button
             type="button"
             onClick={onClose}
             className="w-8 h-8 rounded-full bg-[#F5F5F5] flex items-center justify-center"
             aria-label="Cerrar"
           >
-            <X className="w-4 h-4 text-[#636E72]" />
+            <X className="w-4 h-4 text-cc-secondary" />
           </button>
         </div>
 
@@ -90,7 +90,7 @@ export function EditTransactionSheet({
               householdId={householdId}
               className="w-16 h-16"
             />
-            <p className="text-[11px] text-[#636E72]">Recibo adjunto a este gasto</p>
+            <p className="text-[11px] text-cc-secondary">Recibo adjunto a este gasto</p>
           </div>
         )}
 
@@ -105,7 +105,7 @@ export function EditTransactionSheet({
                   setCategoryId('')
                 }}
                 className={`flex-1 py-2 rounded-xl text-[12px] font-bold ${
-                  txType === t ? 'bg-[#00BFA5] text-white' : 'bg-[#F5F5F5] text-[#636E72]'
+                  txType === t ? 'bg-[#00BFA5] text-white' : 'bg-[#F5F5F5] text-cc-secondary'
                 }`}
               >
                 {t === 'expense' ? 'Gasto' : 'Ingreso'}

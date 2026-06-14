@@ -229,7 +229,7 @@ export function AddTransactionForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <p className="text-[12px] font-semibold text-[#636E72] text-center mb-2">
+        <p className="text-[12px] font-semibold text-cc-secondary text-center mb-2">
           Tipo de movimiento
         </p>
         <div className="flex rounded-2xl bg-[#F5F5F5] p-1">
@@ -241,7 +241,7 @@ export function AddTransactionForm({
               className={`flex-1 py-2.5 rounded-xl text-[13px] font-bold transition-all ${
                 txType === type
                   ? 'bg-gradient-to-r from-[#00BFA5] to-[#2DD4BF] text-white shadow-sm'
-                  : 'text-[#636E72]'
+                  : 'text-cc-secondary'
               }`}
             >
               {type === 'income' ? 'Ingreso' : 'Gasto'}
@@ -249,7 +249,7 @@ export function AddTransactionForm({
           ))}
         </div>
         {isRecurring && selectedCategory && (
-          <p className="text-[11px] text-[#636E72] mt-2">
+          <p className="text-[11px] text-cc-secondary mt-2">
             {getCategoryRadarKind(selectedCategory) === 'service' &&
               'Radar: aparecerá en Servicios (pagos fijos).'}
             {getCategoryRadarKind(selectedCategory) === 'subscription' &&
@@ -263,13 +263,13 @@ export function AddTransactionForm({
       </div>
 
       <div className="text-center py-2">
-        <p className="text-[36px] font-bold text-[#2D3436] tracking-tight">
+        <p className="text-[36px] font-bold text-cc-primary tracking-tight">
           {baseCurrency === 'COP' ? '$' : '$ '}
           {displayAmount.toFixed(baseCurrency === 'COP' ? 0 : 2)}
         </p>
         {!lineItemsEnabled && (
           <div>
-            <label className="text-[11px] text-[#636E72] font-medium">Monto</label>
+            <label className="text-[11px] text-cc-secondary font-medium">Monto</label>
             <input
               type="number"
               step="0.01"
@@ -284,7 +284,7 @@ export function AddTransactionForm({
       </div>
 
       <div>
-        <p className="text-[11px] font-semibold text-[#636E72] mb-2">Categoría</p>
+        <p className="text-[11px] font-semibold text-cc-secondary mb-2">Categoría</p>
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none -mx-1 px-1">
           {filteredCategories.map(cat => {
             const active = (categoryId || filteredCategories[0]?.id) === cat.id
@@ -299,7 +299,7 @@ export function AddTransactionForm({
                 className={`shrink-0 flex flex-col items-center gap-1.5 w-[4.5rem] py-3 rounded-2xl transition-all ${
                   active
                     ? 'bg-gradient-to-br from-[#00BFA5] to-[#2DD4BF] text-white shadow-md'
-                    : 'bg-[#F5F5F5] text-[#636E72]'
+                    : 'bg-[#F5F5F5] text-cc-secondary'
                 }`}
               >
                 <CategoryIcon icon={cat.icon} className="w-5 h-5" />
@@ -338,7 +338,7 @@ export function AddTransactionForm({
           </div>
         )}
         {isRecurring && selectedCategory && (
-          <p className="text-[11px] text-[#636E72] mt-2">
+          <p className="text-[11px] text-cc-secondary mt-2">
             {getCategoryRadarKind(selectedCategory) === 'service' &&
               'Radar: aparecerá en Servicios (pagos fijos).'}
             {getCategoryRadarKind(selectedCategory) === 'subscription' &&
@@ -352,7 +352,7 @@ export function AddTransactionForm({
       </div>
 
       <div>
-        <label className="text-[11px] font-semibold text-[#636E72]">Descripción</label>
+        <label className="text-[11px] font-semibold text-cc-secondary">Descripción</label>
         <input
           type="text"
           value={description}
@@ -367,10 +367,10 @@ export function AddTransactionForm({
       </div>
 
       <div>
-        <label className="text-[11px] font-semibold text-[#636E72]">
+        <label className="text-[11px] font-semibold text-cc-secondary">
           Fecha del movimiento
         </label>
-        <p className="text-[10px] text-[#B2BEC3] mb-1">
+        <p className="text-[10px] text-cc-muted mb-1">
           Solo hoy o fechas pasadas. Para repetir, usa recurrente.
         </p>
         <input
@@ -405,7 +405,7 @@ export function AddTransactionForm({
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <ShoppingCart className="w-4 h-4 text-[#00BFA5]" />
-              <span className="text-[13px] font-semibold text-[#2D3436]">
+              <span className="text-[13px] font-semibold text-cc-primary">
                 Detalle por producto
               </span>
             </div>
@@ -428,7 +428,7 @@ export function AddTransactionForm({
 
           {lineItemsEnabled && (
             <div className="space-y-2">
-              <p className="text-[11px] text-[#636E72]">
+              <p className="text-[11px] text-cc-secondary">
                 Total calculado: {displayAmount.toFixed(2)} {baseCurrency}
               </p>
               {lineItems.map((item, i) => (
@@ -453,7 +453,7 @@ export function AddTransactionForm({
                     <button
                       type="button"
                       onClick={() => removeLineItem(i)}
-                      className="text-[#B2BEC3] hover:text-red-500"
+                      className="text-cc-muted hover:text-red-500"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -476,7 +476,7 @@ export function AddTransactionForm({
       <div className="rounded-2xl bg-[#F5F5F5] p-4 space-y-3">
         <div className="flex items-center gap-2">
           <Repeat className="w-4 h-4 text-[#00BFA5]" />
-          <label className="flex items-center gap-2 text-[13px] font-semibold text-[#2D3436] cursor-pointer">
+          <label className="flex items-center gap-2 text-[13px] font-semibold text-cc-primary cursor-pointer">
             <input
               type="checkbox"
               checked={isRecurring}
@@ -490,12 +490,12 @@ export function AddTransactionForm({
         </div>
         {isRecurring && (
           <>
-            <p className="text-[11px] text-[#636E72]">
+            <p className="text-[11px] text-cc-secondary">
               Se repetirá automáticamente. El primer registro es el de hoy; los
               siguientes se crearán solos.
             </p>
             <div>
-              <label className="text-[11px] font-semibold text-[#636E72]">Frecuencia</label>
+              <label className="text-[11px] font-semibold text-cc-secondary">Frecuencia</label>
               <select
                 value={frequency}
                 onChange={e =>
@@ -512,7 +512,7 @@ export function AddTransactionForm({
         )}
       </div>
 
-      <p className="text-[11px] text-[#636E72] text-center">
+      <p className="text-[11px] text-cc-secondary text-center">
         Registrado por: {authorName}
       </p>
 

@@ -97,12 +97,12 @@ export function PaymentReminderSetting() {
 
   if (!supported) {
     return (
-      <section className="rounded-[24px] bg-white/90 backdrop-blur-md shadow-sm border border-white/60 p-5">
-        <h2 className="text-[15px] font-bold text-[#2D3436] mb-2 flex items-center gap-2">
+      <section className="cc-surface rounded-[24px] p-5">
+        <h2 className="text-[15px] font-bold text-cc-primary mb-2 flex items-center gap-2">
           <Bell className="w-4 h-4 text-[#00BFA5]" />
           Recordatorios de pagos
         </h2>
-        <p className="text-[13px] text-[#636E72]">
+        <p className="text-[13px] text-cc-secondary">
           Tu navegador no soporta notificaciones. Prueba instalando la app en Chrome o Safari.
         </p>
       </section>
@@ -110,13 +110,13 @@ export function PaymentReminderSetting() {
   }
 
   return (
-    <section className="rounded-[24px] bg-white/90 backdrop-blur-md shadow-sm border border-white/60 p-5 space-y-4">
+    <section className="cc-surface rounded-[24px] p-5 space-y-4">
       <div>
-        <h2 className="text-[15px] font-bold text-[#2D3436] flex items-center gap-2">
+        <h2 className="text-[15px] font-bold text-cc-primary flex items-center gap-2">
           <BellRing className="w-4 h-4 text-[#00BFA5]" />
           Recordatorios de pagos
         </h2>
-        <p className="text-[12px] text-[#636E72] mt-1">
+        <p className="text-[12px] text-cc-secondary mt-1">
           Te avisamos de los gastos recurrentes de la próxima semana. También verás
           las alertas en la campana del encabezado.
         </p>
@@ -145,14 +145,14 @@ export function PaymentReminderSetting() {
             <button
               type="button"
               onClick={handleDisable}
-              className="text-[12px] font-bold text-[#636E72] underline"
+              className="text-[12px] font-bold text-cc-secondary underline"
             >
               Desactivar
             </button>
           </div>
 
           <div className="space-y-2">
-            <p className="text-[12px] font-semibold text-[#636E72]">Cuándo avisar</p>
+            <p className="text-[12px] font-semibold text-cc-secondary">Cuándo avisar</p>
             <div className="flex flex-col gap-2">
               <button
                 type="button"
@@ -160,7 +160,7 @@ export function PaymentReminderSetting() {
                 className={`text-left p-3 rounded-xl text-[12px] ${
                   mode === 'weekly-summary'
                     ? 'bg-[#00BFA5] text-white font-bold'
-                    : 'bg-[#F5F5F5] text-[#636E72]'
+                    : 'bg-[#F5F5F5] text-cc-secondary'
                 }`}
               >
                 Resumen el domingo o lunes
@@ -174,7 +174,7 @@ export function PaymentReminderSetting() {
                 className={`text-left p-3 rounded-xl text-[12px] ${
                   mode === 'day-before'
                     ? 'bg-[#00BFA5] text-white font-bold'
-                    : 'bg-[#F5F5F5] text-[#636E72]'
+                    : 'bg-[#F5F5F5] text-cc-secondary'
                 }`}
               >
                 Un día antes de cada pago
@@ -189,7 +189,7 @@ export function PaymentReminderSetting() {
             type="button"
             onClick={handleTestNotification}
             disabled={loading}
-            className="w-full py-2.5 rounded-xl bg-[#F5F5F5] text-[#2D3436] font-bold text-[12px] disabled:opacity-60"
+            className="w-full py-2.5 rounded-xl bg-[#F5F5F5] text-cc-primary font-bold text-[12px] disabled:opacity-60"
           >
             {loading ? 'Enviando...' : 'Probar notificación ahora'}
           </button>
@@ -202,7 +202,7 @@ export function PaymentReminderSetting() {
         </p>
       )}
 
-      {message && <p className="text-[12px] text-[#636E72]">{message}</p>}
+      {message && <p className="text-[12px] text-cc-secondary">{message}</p>}
     </section>
   )
 }

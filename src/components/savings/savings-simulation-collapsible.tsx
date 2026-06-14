@@ -33,12 +33,12 @@ export function SavingsSimulationCollapsible({
         className="w-full flex items-center justify-between gap-2 px-3 py-2.5 text-left"
         aria-expanded={open}
       >
-        <span className="flex items-center gap-2 text-[11px] font-bold text-[#2D3436]">
+        <span className="flex items-center gap-2 text-[11px] font-bold text-cc-primary">
           <LineChart className="w-3.5 h-3.5 text-[#00BFA5]" />
           Simulación
         </span>
         <ChevronDown
-          className={`w-4 h-4 text-[#B2BEC3] transition-transform ${open ? 'rotate-180' : ''}`}
+          className={`w-4 h-4 text-cc-muted transition-transform ${open ? 'rotate-180' : ''}`}
         />
       </button>
 

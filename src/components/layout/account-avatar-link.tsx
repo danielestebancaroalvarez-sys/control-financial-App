@@ -25,7 +25,7 @@ export function AccountAvatarLink({
       aria-label="Cuenta y ajustes"
       title={email ?? 'Cuenta y ajustes'}
     >
-      <span className="text-[13px] font-semibold text-[#2D3436]">{firstName}</span>
+      <span className="text-[13px] font-semibold text-cc-primary">{firstName}</span>
       {avatarUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img

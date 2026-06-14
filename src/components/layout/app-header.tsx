@@ -18,7 +18,7 @@ export function AppHeader({
     <header className="flex items-center justify-between py-2">
       <Link href="/" className="flex items-center gap-2">
         <CoupleCashLogo className="w-8 h-8" />
-        <span className="text-[17px] font-bold text-[#2D3436] tracking-tight">
+        <span className="text-[17px] font-bold text-cc-primary tracking-tight">
           CoupleCash
         </span>
       </Link>

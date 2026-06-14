@@ -73,12 +73,12 @@ export function SavingsContributionSheet({
 
   const sheet = (
     <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/40 px-4 pt-4 pb-[calc(5rem+env(safe-area-inset-bottom))]">
-      <div className="w-full max-w-md max-h-[min(85dvh,calc(100dvh-7rem))] overflow-y-auto rounded-[24px] bg-white shadow-xl p-5 space-y-4">
+      <div className="w-full max-w-md max-h-[min(85dvh,calc(100dvh-7rem))] overflow-y-auto cc-surface-solid rounded-[24px] shadow-xl p-5 space-y-4">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h3 className="text-[16px] font-bold text-[#2D3436]">Registrar aporte</h3>
-            <p className="text-[12px] text-[#636E72]">{goal.name}</p>
-            <p className="text-[11px] text-[#B2BEC3] mt-0.5">
+            <h3 className="text-[16px] font-bold text-cc-primary">Registrar aporte</h3>
+            <p className="text-[12px] text-cc-secondary">{goal.name}</p>
+            <p className="text-[11px] text-cc-muted mt-0.5">
               {fmt(goal.current_amount)} de {fmt(goal.target_amount)}
               {remaining > 0 && ` · faltan ${fmt(remaining)}`}
             </p>
@@ -95,7 +95,7 @@ export function SavingsContributionSheet({
 
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>
-            <label className="text-[11px] font-semibold text-[#636E72]">Monto del aporte</label>
+            <label className="text-[11px] font-semibold text-cc-secondary">Monto del aporte</label>
             <input
               type="number"
               step="0.01"
@@ -109,7 +109,7 @@ export function SavingsContributionSheet({
           </div>
 
           <div>
-            <label className="text-[11px] font-semibold text-[#636E72]">Nota (opcional)</label>
+            <label className="text-[11px] font-semibold text-cc-secondary">Nota (opcional)</label>
             <input
               type="text"
               value={note}
@@ -120,7 +120,7 @@ export function SavingsContributionSheet({
           </div>
 
           <div>
-            <label className="text-[11px] font-semibold text-[#636E72]">Fecha</label>
+            <label className="text-[11px] font-semibold text-cc-secondary">Fecha</label>
             <input
               type="date"
               value={date}
@@ -131,7 +131,7 @@ export function SavingsContributionSheet({
             />
           </div>
 
-          <p className="text-[10px] text-[#B2BEC3]">
+          <p className="text-[10px] text-cc-muted">
             Se registra como gasto en &quot;Otros gastos&quot; y actualiza el progreso de la meta.
           </p>
 

@@ -24,11 +24,11 @@ export function CategoriesManager({
   }
 
   return (
-    <section className="rounded-[24px] bg-white/90 backdrop-blur-md shadow-sm border border-white/60 p-5 space-y-4">
+    <section className="cc-surface rounded-[24px] p-5 space-y-4">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Tag className="w-4 h-4 text-[#00BFA5]" />
-          <h2 className="text-[15px] font-bold text-[#2D3436]">Categorías personalizadas</h2>
+          <h2 className="text-[15px] font-bold text-cc-primary">Categorías personalizadas</h2>
         </div>
         <Link
           href="/ajustes/categorias/nueva"
@@ -40,7 +40,7 @@ export function CategoriesManager({
       </div>
 
       {userCustom.length === 0 ? (
-        <p className="text-[13px] text-[#636E72]">
+        <p className="text-[13px] text-cc-secondary">
           Crea categorías propias para gastos e ingresos que no vienen por defecto.
         </p>
       ) : (
@@ -57,8 +57,8 @@ export function CategoriesManager({
                 <CategoryIcon icon={cat.icon} className="w-4 h-4" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[13px] font-semibold text-[#2D3436] truncate">{cat.name}</p>
-                <p className="text-[11px] text-[#636E72] capitalize">
+                <p className="text-[13px] font-semibold text-cc-primary truncate">{cat.name}</p>
+                <p className="text-[11px] text-cc-secondary capitalize">
                   {cat.type === 'income' ? 'Ingreso' : 'Gasto'}
                   {cat.is_subscription ? ' · Suscripción' : ''}
                   {cat.is_fixed ? ' · Servicio' : ''}
@@ -67,7 +67,7 @@ export function CategoriesManager({
               <button
                 type="button"
                 onClick={() => handleDelete(cat.id)}
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-[#B2BEC3] hover:text-red-500 hover:bg-red-50"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-cc-muted hover:text-red-500 hover:bg-red-50"
                 aria-label={`Eliminar ${cat.name}`}
               >
                 <Trash2 className="w-4 h-4" />

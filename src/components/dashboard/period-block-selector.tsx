@@ -24,7 +24,7 @@ export function PeriodBlockSelector({
             className={`shrink-0 px-3.5 py-2 rounded-xl text-[11px] font-bold transition-all ${
               active
                 ? 'bg-gradient-to-r from-[#00BFA5] to-[#2DD4BF] text-white shadow-sm'
-                : 'bg-white/80 text-[#636E72] border border-white/60 hover:bg-white'
+                : 'bg-white/80 text-cc-secondary border border-white/60 hover:bg-white'
             }`}
           >
             {block.label}
