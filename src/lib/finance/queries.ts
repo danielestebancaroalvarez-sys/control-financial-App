@@ -33,6 +33,7 @@ import type {
   SearchFilters,
   TransactionListItem,
   TransactionRow,
+  RecurringScheduleItem,
 } from './types'
 
 export const getHouseholdTransactions = cache(
@@ -113,6 +114,45 @@ export const getRecurringSchedules = cache(
       .eq('is_active', true)
 
     return data ?? []
+  }
+)
+
+export const getRecurringScheduleItems = cache(
+  async (householdId: string): Promise<RecurringScheduleItem[]> => {
+    const supabase = await createClient()
+    const { data } = await supabase
+      .from('recurring_schedules')
+      .select(
+        `
+        id, type, description, amount_original, currency_original,
+        frequency, next_occurrence,
+        categories ( name, icon, color )
+      `
+      )
+      .eq('household_id', householdId)
+      .eq('is_active', true)
+      .order('type')
+      .order('next_occurrence')
+
+    return (data ?? []).map(row => {
+      const cat = Array.isArray(row.categories)
+        ? row.categories[0]
+        : row.categories
+      return {
+        id: row.id,
+        type: row.type as 'income' | 'expense',
+        description: row.description,
+        amount: Number(row.amount_original),
+        currency: row.currency_original as CurrencyCode,
+        frequency: row.frequency as 'weekly' | 'biweekly' | 'monthly',
+        nextOccurrence: row.next_occurrence,
+        categoryName: cat?.name ?? 'Sin categoría',
+        categoryIcon: cat?.icon ?? null,
+        categoryColor: cat?.color
+          ? getCategoryColor(cat.name, cat.color)
+          : null,
+      }
+    })
   }
 )
 

@@ -197,6 +197,19 @@ export type InsightHighlight = {
   tone?: 'positive' | 'negative' | 'neutral' | 'warning'
 }
 
+export type RecurringScheduleItem = {
+  id: string
+  type: 'income' | 'expense'
+  description: string
+  amount: number
+  currency: CurrencyCode
+  frequency: 'weekly' | 'biweekly' | 'monthly'
+  nextOccurrence: string
+  categoryName: string
+  categoryIcon: string | null
+  categoryColor: string | null
+}
+
 export type CreateRecurringScheduleInput = {
   householdId: string
   type: 'income' | 'expense'

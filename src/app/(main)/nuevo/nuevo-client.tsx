@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { CalendarPlus, Repeat } from 'lucide-react'
 import { AddTransactionForm } from '@/components/transactions/add-transaction-form'
 import { FixedScheduleForm } from '@/components/transactions/fixed-schedule-form'
@@ -68,11 +69,19 @@ export function NuevoClient({
           authorName={authorName}
         />
       ) : (
-        <FixedScheduleForm
-          householdId={householdId}
-          baseCurrency={baseCurrency}
-          categories={categories}
-        />
+        <>
+          <FixedScheduleForm
+            householdId={householdId}
+            baseCurrency={baseCurrency}
+            categories={categories}
+          />
+          <Link
+            href="/fijos"
+            className="block text-center text-[12px] font-semibold text-[#00BFA5]"
+          >
+            Ver todos los fijos configurados →
+          </Link>
+        </>
       )}
     </div>
   )

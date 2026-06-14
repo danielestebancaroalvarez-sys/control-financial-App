@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { CalendarClock, ShoppingBag } from 'lucide-react'
+import { CalendarClock, Repeat, ShoppingBag } from 'lucide-react'
 import { ConsumptionPredictionCard } from '@/components/predictions/consumption-prediction-card'
 import { WeeklyInsightsCard } from '@/components/predictions/weekly-insights-card'
 import { CategoryIcon } from '@/components/transactions/category-icon'
@@ -33,6 +33,28 @@ export function PrediccionesClient({
       </div>
 
       <WeeklyInsightsCard householdId={householdId} period={period} />
+
+      <Link
+        href="/fijos"
+        className="flex items-center justify-between gap-3 cc-surface rounded-[24px] px-5 py-4 active:opacity-80"
+      >
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 rounded-xl bg-[#E0F2F1] flex items-center justify-center shrink-0">
+            <Repeat className="w-5 h-5 text-[#00BFA5]" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[14px] font-bold text-cc-primary">
+              Ingresos y gastos fijos
+            </p>
+            <p className="text-[11px] text-cc-secondary truncate">
+              Ver y gestionar lo programado {labels.ofPeriod}
+            </p>
+          </div>
+        </div>
+        <span className="text-[12px] font-semibold text-[#00BFA5] shrink-0">
+          Ver →
+        </span>
+      </Link>
 
       {summary.consumptionPredictions.length > 0 && (
         <section className="space-y-3">

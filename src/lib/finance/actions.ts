@@ -24,7 +24,7 @@ import type {
   UpdateTransactionInput,
 } from './types'
 
-const REVALIDATE_PATHS = ['/', '/buscar', '/ahorros', '/predicciones', '/nuevo', '/ajustes']
+const REVALIDATE_PATHS = ['/', '/buscar', '/ahorros', '/predicciones', '/nuevo', '/ajustes', '/fijos']
 
 function revalidateAll() {
   for (const path of REVALIDATE_PATHS) revalidatePath(path)
@@ -139,6 +139,30 @@ export async function createRecurringSchedule(
 
   revalidateAll()
   return { id: schedule.id }
+}
+
+export async function deactivateRecurringSchedule(
+  householdId: string,
+  scheduleId: string
+): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) return { error: 'Debes iniciar sesión.' }
+
+  const { error } = await supabase
+    .from('recurring_schedules')
+    .update({ is_active: false })
+    .eq('id', scheduleId)
+    .eq('household_id', householdId)
+
+  if (error) return { error: error.message }
+
+  revalidateAll()
+  revalidatePath('/fijos')
+  return {}
 }
 
 export async function createTransaction(

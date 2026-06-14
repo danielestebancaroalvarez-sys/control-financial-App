@@ -13,24 +13,28 @@ import Link from 'next/link'
 
 function buildBudgetSlices(summary: DashboardSummary) {
   const slices: { value: number; color: string; label: string }[] = []
-  const operatingExpenses = Math.max(
-    0,
-    summary.monthlyExpenses - summary.periodRealSavings
-  )
 
-  if (operatingExpenses > 0) {
+  if (summary.scheduledFixedExpenses > 0) {
     slices.push({
-      value: operatingExpenses,
-      color: '#EC4899',
-      label: 'Gastos',
+      value: summary.scheduledFixedExpenses,
+      color: '#81D4FA',
+      label: 'Fijos',
     })
   }
 
-  if (summary.periodRealSavings > 0) {
+  if (summary.variableSpent > 0) {
     slices.push({
-      value: summary.periodRealSavings,
+      value: summary.variableSpent,
+      color: '#EC4899',
+      label: 'Variable',
+    })
+  }
+
+  if (summary.periodSavings > 0) {
+    slices.push({
+      value: summary.periodSavings,
       color: '#F59E0B',
-      label: 'Ahorros',
+      label: 'Metas',
     })
   }
 
@@ -142,6 +146,10 @@ export function DashboardView({
               <span>
                 Gastos fijos ({labels.current}): {fmt(summary.scheduledFixedExpenses)}
               </span>
+              <span>·</span>
+              <Link href="/fijos" className="text-[#00BFA5] font-semibold">
+                Ver fijos
+              </Link>
               <span>·</span>
               <span>Variable: {fmt(summary.variableSpent)}</span>
               <span>·</span>
@@ -275,7 +283,7 @@ export function DashboardView({
               Distribución del ingreso
             </p>
             <p className="text-[10px] text-cc-secondary mb-4">
-              Ingresos, gastos, ahorro depositado y dinero libre
+              Fijos, variable, metas de ahorro y dinero libre {labels.ofPeriod}
             </p>
             <DonutChart
               slices={budgetSlices}
@@ -287,16 +295,25 @@ export function DashboardView({
                 <ArrowUpRight className="w-3 h-3" />
                 <span className="font-bold">{fmt(summary.monthlyIncome)}</span>
               </div>
-              <div className="flex items-center gap-1 text-[#EC4899]">
+              <div className="flex items-center gap-1 text-[#81D4FA]">
                 <ArrowDownRight className="w-3 h-3" />
-                <span className="font-bold">{fmt(summary.monthlyExpenses)}</span>
+                <span className="font-bold">{fmt(summary.scheduledFixedExpenses)}</span>
+                <span className="text-cc-muted font-normal">fijos</span>
+              </div>
+              <div className="text-[#EC4899] font-bold">
+                Variable: {fmt(summary.variableSpent)}
               </div>
               <div className="text-[#F59E0B] font-bold">
-                Ahorro depositado: {fmt(summary.periodRealSavings)}
+                Metas: {fmt(summary.periodSavings)}
               </div>
-              <div className="text-cc-secondary font-bold">
+              <div className="text-cc-secondary font-bold col-span-2">
                 Libre: {fmt(Math.max(0, summary.guiltFreeMoney))}
               </div>
+              {summary.periodRealSavings > 0 && (
+                <div className="text-[10px] text-cc-muted col-span-2">
+                  Ahorro depositado en el periodo: {fmt(summary.periodRealSavings)}
+                </div>
+              )}
             </div>
             {summary.periodRealSavings > 0 && (
               <p className="text-[10px] text-cc-secondary mt-2">
