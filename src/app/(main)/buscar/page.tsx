@@ -11,7 +11,6 @@ type SearchParams = Promise<{
   createdBy?: string
   startDate?: string
   endDate?: string
-  period?: string
 }>
 
 export default async function BuscarPage({

@@ -22,9 +22,3 @@ export function getTabDirection(from: string, to: string): 1 | -1 {
   if (fromIdx === toIdx) return 1
   return toIdx > fromIdx ? 1 : -1
 }
-
-export const PERIOD_ROUTES = ['/', '/buscar', '/predicciones'] as const
-
-export function showsPeriodToggle(pathname: string): boolean {
-  return (PERIOD_ROUTES as readonly string[]).includes(pathname)
-}

@@ -1,4 +1,3 @@
-import { Suspense } from 'react'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 import { getUserHousehold } from '@/lib/household/queries'
@@ -6,7 +5,6 @@ import { processDueRecurringSchedules } from '@/lib/finance/recurring'
 import { AppHeader } from '@/components/layout/app-header'
 import { BottomTabBar } from '@/components/layout/bottom-tab-bar'
 import { PageTransition } from '@/components/layout/page-transition'
-import { ShellToolbar } from '@/components/layout/shell-toolbar'
 import { HouseholdSync } from '@/components/realtime/household-sync'
 
 export default async function MainLayout({
@@ -41,9 +39,6 @@ export default async function MainLayout({
       <HouseholdSync householdId={household.id} />
       <div className="mx-auto flex min-h-screen max-w-md flex-col px-5 pt-[max(0.5rem,env(safe-area-inset-top))] pb-[calc(7rem+env(safe-area-inset-bottom))]">
         <AppHeader displayName={displayName} email={user.email} avatarUrl={avatarUrl} />
-        <Suspense fallback={null}>
-          <ShellToolbar />
-        </Suspense>
         <main className="flex-1">
           <PageTransition>{children}</PageTransition>
         </main>

@@ -4,8 +4,12 @@ import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { getRealBalance, getHouseholdBaseCurrency } from './queries'
 import { fetchExchangeRate, prepareTransactionAmounts } from './currency'
-import { addFrequency } from './format'
-import type { CreateSavingsGoalInput, CreateTransactionInput } from './types'
+import { addFrequency, getTodayString } from './format'
+import type {
+  CreateSavingsGoalInput,
+  CreateTransactionInput,
+  UpdateSavingsGoalInput,
+} from './types'
 
 const REVALIDATE_PATHS = ['/', '/buscar', '/ahorros', '/predicciones', '/nuevo']
 
@@ -92,6 +96,14 @@ export async function createTransaction(
 
   if (!user) return { error: 'Debes iniciar sesión.' }
 
+  const today = getTodayString()
+  if (input.transactionDate > today) {
+    return {
+      error:
+        'No puedes registrar movimientos con fecha futura. Marca como recurrente para que se repita automáticamente.',
+    }
+  }
+
   const baseCurrency = await getHouseholdBaseCurrency(input.householdId)
   const currency = input.currency ?? baseCurrency
 
@@ -131,7 +143,7 @@ export async function createTransaction(
       .single()
 
     if (schedError || !schedule) {
-      return { error: schedError?.message ?? 'No se pudo crear el gasto recurrente.' }
+      return { error: schedError?.message ?? 'No se pudo crear el movimiento recurrente.' }
     }
     recurringScheduleId = schedule.id
   }
@@ -197,4 +209,62 @@ export async function createSavingsGoal(
   revalidatePath('/ahorros')
   revalidatePath('/')
   return { id: data.id }
+}
+
+export async function updateSavingsGoal(
+  input: UpdateSavingsGoalInput
+): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) return { error: 'Debes iniciar sesión.' }
+  if (input.targetAmount <= 0) return { error: 'La meta debe ser mayor a cero.' }
+
+  const { error } = await supabase
+    .from('savings_goals')
+    .update({
+      name: input.name,
+      target_amount: input.targetAmount,
+      current_amount: input.currentAmount ?? 0,
+      target_date: input.targetDate ?? null,
+      contribution_amount: input.contributionAmount ?? null,
+      contribution_frequency: input.contributionFrequency ?? null,
+      savings_mode: input.savingsMode ?? 'static',
+      annual_interest_rate:
+        input.savingsMode === 'compound' ? (input.annualInterestRate ?? 0) : 0,
+    })
+    .eq('id', input.id)
+    .eq('household_id', input.householdId)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/ahorros')
+  revalidatePath('/')
+  return {}
+}
+
+export async function deleteSavingsGoal(
+  goalId: string,
+  householdId: string
+): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) return { error: 'Debes iniciar sesión.' }
+
+  const { error } = await supabase
+    .from('savings_goals')
+    .update({ is_active: false })
+    .eq('id', goalId)
+    .eq('household_id', householdId)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/ahorros')
+  revalidatePath('/')
+  return {}
 }

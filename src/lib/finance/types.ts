@@ -146,3 +146,7 @@ export type CreateSavingsGoalInput = {
   savingsMode?: 'static' | 'compound'
   annualInterestRate?: number
 }
+
+export type UpdateSavingsGoalInput = CreateSavingsGoalInput & {
+  id: string
+}

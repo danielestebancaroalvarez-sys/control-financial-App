@@ -39,6 +39,10 @@ function toDateString(date: Date): string {
   return date.toISOString().slice(0, 10)
 }
 
+export function getTodayString(): string {
+  return toDateString(new Date())
+}
+
 export function addFrequency(
   dateStr: string,
   frequency: 'weekly' | 'biweekly' | 'monthly'

@@ -1,4 +1,4 @@
-import type { CompoundProjectionPoint, SavingsGoalInput } from './types'
+import type { CompoundProjectionPoint, SavingsGoalInput, SavingsGoal } from './types'
 import { toMonthlyAmount } from './guilt-free'
 
 export function estimateMonthsToGoalStatic(
@@ -47,4 +47,48 @@ export function monthsToReachTargetCompound(
   const target = Number(goal.target_amount)
   const hit = projection.find(p => p.balance >= target)
   return hit ? hit.month : null
+}
+
+export function formatEstimatedTime(goal: SavingsGoal): string {
+  if (goal.current_amount >= goal.target_amount) return 'Meta alcanzada'
+
+  const monthly = goal.contribution_amount
+    ? toMonthlyAmount(
+        goal.contribution_amount,
+        goal.contribution_frequency ?? 'monthly'
+      )
+    : 0
+
+  let months: number | null
+  if (goal.savings_mode === 'compound' && goal.annual_interest_rate) {
+    months = monthsToReachTargetCompound({
+      target_amount: goal.target_amount,
+      current_amount: goal.current_amount,
+      contribution_amount: goal.contribution_amount,
+      contribution_frequency: goal.contribution_frequency,
+      savings_mode: goal.savings_mode,
+      annual_interest_rate: goal.annual_interest_rate,
+      target_date: goal.target_date,
+    })
+  } else {
+    months = estimateMonthsToGoalStatic(
+      goal.target_amount,
+      goal.current_amount,
+      monthly
+    )
+  }
+
+  if (months === null) return 'Agrega un aporte periódico para estimar el tiempo'
+  if (months === 0) return 'Meta alcanzada'
+
+  if (months < 12) {
+    return `Tiempo estimado: ${months} mes${months === 1 ? '' : 'es'}`
+  }
+
+  const years = Math.floor(months / 12)
+  const rem = months % 12
+  if (rem === 0) {
+    return `Tiempo estimado: ${years} año${years === 1 ? '' : 's'}`
+  }
+  return `Tiempo estimado: ${years} año${years === 1 ? '' : 's'} y ${rem} mes${rem === 1 ? '' : 'es'}`
 }

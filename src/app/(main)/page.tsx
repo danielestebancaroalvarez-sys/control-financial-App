@@ -1,24 +1,15 @@
 import { createClient } from '@/utils/supabase/server'
 import { getUserHousehold } from '@/lib/household/queries'
+import { getUserDashboardPeriod } from '@/lib/profile/queries'
 import { getDashboardSummary } from '@/lib/finance/queries'
 import { formatMoney } from '@/lib/finance/format'
 import { ReconcileForm } from './reconcile-form'
-import type { Period } from '@/lib/finance/types'
 import {
   DollarSign, PiggyBank, BarChart2, Sparkles,
   ArrowDownRight, ArrowUpRight,
 } from 'lucide-react'
 
-type SearchParams = Promise<{ period?: string }>
-
-export default async function DashboardPage({
-  searchParams,
-}: {
-  searchParams: SearchParams
-}) {
-  const params = await searchParams
-  const period: Period = params.period === 'weekly' ? 'weekly' : 'monthly'
-
+export default async function DashboardPage() {
   const supabase = await createClient()
   const {
     data: { user },
@@ -27,9 +18,11 @@ export default async function DashboardPage({
   const household = await getUserHousehold()
   if (!household || !user) return null
 
+  const period = await getUserDashboardPeriod()
   const summary = await getDashboardSummary(household.id, period)
   const currency = household.base_currency
   const fmt = (n: number) => formatMoney(n, currency)
+  const periodLabel = period === 'weekly' ? 'Esta semana' : 'Este mes'
 
   const incomeVsExpenseTotal = summary.monthlyIncome + summary.monthlyExpenses
   const incomePercent =
@@ -42,7 +35,7 @@ export default async function DashboardPage({
       <div>
         <h1 className="text-[22px] font-bold text-[#2D3436]">Dashboard</h1>
         <p className="text-[13px] text-[#636E72]">
-          {household.name} · {period === 'weekly' ? 'Esta semana' : 'Este mes'}
+          {household.name} · {periodLabel}
         </p>
       </div>
 
@@ -50,7 +43,7 @@ export default async function DashboardPage({
         <div className="rounded-2xl bg-gradient-to-br from-[#00BFA5] to-[#2DD4BF] m-4 p-5 text-white shadow-lg">
           <p className="text-[12px] font-medium opacity-90 mb-1">Saldo real</p>
           <p className="text-[32px] font-bold tracking-tight">{fmt(summary.realBalance)}</p>
-          <p className="text-[11px] opacity-75 mt-1">Ingresos − Gastos + Ajustes</p>
+          <p className="text-[11px] opacity-75 mt-1">Ingresos − Gastos + Ajustes (histórico)</p>
         </div>
 
         <div className="px-4 pb-4 space-y-4">
@@ -71,7 +64,7 @@ export default async function DashboardPage({
               {fmt(summary.guiltFreeMoney)}
             </p>
             <p className="text-[11px] text-[#636E72] mt-1">
-              Ingresos del mes − gastos fijos − aportes a ahorro
+              Ingresos del periodo − gastos fijos − aportes a ahorro
             </p>
           </div>
 
@@ -93,9 +86,7 @@ export default async function DashboardPage({
           </div>
 
           <div className="rounded-2xl bg-[#F5F5F5] p-4">
-            <p className="text-[12px] font-semibold text-[#2D3436] mb-3">
-              {period === 'weekly' ? 'Esta semana' : 'Este mes'}
-            </p>
+            <p className="text-[12px] font-semibold text-[#2D3436] mb-3">{periodLabel}</p>
             <div className="flex h-3 rounded-full overflow-hidden mb-3">
               <div className="bg-[#00BFA5]" style={{ width: `${incomePercent}%` }} />
               <div className="bg-[#EC4899]" style={{ width: `${100 - incomePercent}%` }} />
@@ -115,7 +106,7 @@ export default async function DashboardPage({
           {summary.topCategories.length > 0 && (
             <div className="rounded-2xl bg-[#F5F5F5] p-4">
               <p className="text-[12px] font-semibold text-[#2D3436] mb-3">
-                Top categorías {period === 'weekly' ? 'de la semana' : 'del mes'}
+                Top categorías — {periodLabel.toLowerCase()}
               </p>
               <div className="space-y-2">
                 {summary.topCategories.map(cat => (

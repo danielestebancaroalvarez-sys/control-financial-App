@@ -1,7 +1,9 @@
 import { createClient } from '@/utils/supabase/server'
 import { getUserHousehold, getHouseholdMembers } from '@/lib/household/queries'
+import { getUserDashboardPeriod } from '@/lib/profile/queries'
 import SignOutButton from '@/app/sign-out-button'
 import { CopyButton } from './copy-button'
+import { DashboardPeriodSetting } from './dashboard-period-setting'
 import { Users, Coins } from 'lucide-react'
 
 export default async function AjustesPage() {
@@ -13,7 +15,10 @@ export default async function AjustesPage() {
   const household = await getUserHousehold()
   if (!household || !user) return null
 
-  const members = await getHouseholdMembers(household.id)
+  const [members, dashboardPeriod] = await Promise.all([
+    getHouseholdMembers(household.id),
+    getUserDashboardPeriod(),
+  ])
 
   return (
     <div className="space-y-4">
@@ -21,6 +26,8 @@ export default async function AjustesPage() {
         <h1 className="text-[22px] font-bold text-[#2D3436]">Cuenta y Ajustes</h1>
         <p className="text-[13px] text-[#636E72]">Gestiona tu hogar y preferencias</p>
       </div>
+
+      <DashboardPeriodSetting current={dashboardPeriod} />
 
       <section className="rounded-[24px] bg-white/90 backdrop-blur-md shadow-sm border border-white/60 p-5">
         <h2 className="text-[15px] font-bold text-[#2D3436] mb-3 flex items-center gap-2">

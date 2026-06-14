@@ -2,73 +2,280 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2, Plus, TrendingUp } from 'lucide-react'
-import { createSavingsGoal } from '@/lib/finance/actions'
+import { Loader2, Plus, Pencil, Trash2, Clock } from 'lucide-react'
+import {
+  createSavingsGoal,
+  updateSavingsGoal,
+  deleteSavingsGoal,
+} from '@/lib/finance/actions'
 import { formatMoney } from '@/lib/finance/format'
-import { projectCompoundGrowth } from '@/lib/finance/savings'
+import { formatEstimatedTime } from '@/lib/finance/savings'
 import type { SavingsGoal } from '@/lib/finance/types'
 import type { CurrencyCode } from '@/lib/household/types'
 
-function ProjectionChart({
-  points,
-  target,
-  currency,
+type FormState = {
+  name: string
+  target: string
+  current: string
+  contribution: string
+  contributionFrequency: 'weekly' | 'biweekly' | 'monthly'
+  mode: 'static' | 'compound'
+  rate: string
+  targetDate: string
+}
+
+const emptyForm = (): FormState => ({
+  name: '',
+  target: '',
+  current: '0',
+  contribution: '',
+  contributionFrequency: 'monthly',
+  mode: 'static',
+  rate: '',
+  targetDate: '',
+})
+
+function goalToForm(goal: SavingsGoal): FormState {
+  return {
+    name: goal.name,
+    target: String(goal.target_amount),
+    current: String(goal.current_amount),
+    contribution: goal.contribution_amount ? String(goal.contribution_amount) : '',
+    contributionFrequency: goal.contribution_frequency ?? 'monthly',
+    mode: goal.savings_mode,
+    rate: goal.annual_interest_rate
+      ? String(goal.annual_interest_rate * 100)
+      : '',
+    targetDate: goal.target_date ?? '',
+  }
+}
+
+function Field({
+  label,
+  hint,
+  children,
 }: {
-  points: { month: number; balance: number }[]
-  target: number
-  currency: CurrencyCode
+  label: string
+  hint?: string
+  children: React.ReactNode
 }) {
-  if (points.length < 2) return null
+  return (
+    <div>
+      <label className="text-[12px] font-semibold text-[#2D3436]">{label}</label>
+      {hint && <p className="text-[10px] text-[#B2BEC3] mt-0.5 mb-1">{hint}</p>}
+      {children}
+    </div>
+  )
+}
 
-  const maxY = Math.max(target, ...points.map(p => p.balance))
-  const w = 280
-  const h = 100
-  const pad = 8
+function SavingsGoalForm({
+  householdId,
+  currency,
+  initial,
+  goalId,
+  onDone,
+  onCancel,
+}: {
+  householdId: string
+  currency: CurrencyCode
+  initial: FormState
+  goalId?: string
+  onDone: () => void
+  onCancel: () => void
+}) {
+  const router = useRouter()
+  const [form, setForm] = useState(initial)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const coords = points.map((p, i) => {
-    const x = pad + (i / (points.length - 1)) * (w - pad * 2)
-    const y = h - pad - (p.balance / maxY) * (h - pad * 2)
-    return `${x},${y}`
-  })
+  function set(field: keyof FormState, value: string) {
+    setForm(prev => ({ ...prev, [field]: value }))
+  }
 
-  const areaCoords = [
-    `${pad},${h - pad}`,
-    ...coords,
-    `${pad + ((points.length - 1) / (points.length - 1)) * (w - pad * 2)},${h - pad}`,
-  ].join(' ')
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setLoading(true)
+    setError(null)
+
+    const payload = {
+      householdId,
+      name: form.name.trim(),
+      targetAmount: parseFloat(form.target),
+      currentAmount: parseFloat(form.current) || 0,
+      targetDate: form.targetDate || undefined,
+      contributionAmount: form.contribution
+        ? parseFloat(form.contribution)
+        : undefined,
+      contributionFrequency: form.contribution
+        ? form.contributionFrequency
+        : undefined,
+      savingsMode: form.mode,
+      annualInterestRate:
+        form.mode === 'compound' && form.rate
+          ? parseFloat(form.rate) / 100
+          : undefined,
+    }
+
+    const result = goalId
+      ? await updateSavingsGoal({ ...payload, id: goalId })
+      : await createSavingsGoal(payload)
+
+    if (result.error) {
+      setError(result.error)
+      setLoading(false)
+      return
+    }
+
+    setLoading(false)
+    onDone()
+    router.refresh()
+  }
 
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-24">
-      <defs>
-        <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#00BFA5" stopOpacity="0.3" />
-          <stop offset="100%" stopColor="#00BFA5" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <polygon points={areaCoords} fill="url(#chartGrad)" />
-      <polyline
-        points={coords.join(' ')}
-        fill="none"
-        stroke="#00BFA5"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <line
-        x1={pad}
-        y1={h - pad - (target / maxY) * (h - pad * 2)}
-        x2={w - pad}
-        y2={h - pad - (target / maxY) * (h - pad * 2)}
-        stroke="#F59E0B"
-        strokeWidth="1"
-        strokeDasharray="4 4"
-      />
-    </svg>
+    <form
+      onSubmit={handleSubmit}
+      className="rounded-[24px] bg-white/90 backdrop-blur-md border border-white/60 shadow-sm p-5 space-y-3"
+    >
+      <h2 className="text-[15px] font-bold text-[#2D3436]">
+        {goalId ? 'Editar meta' : 'Nueva meta de ahorro'}
+      </h2>
+
+      <Field label="Nombre de la meta" hint="Ej: Vacaciones, Fondo de emergencia">
+        <input
+          type="text"
+          value={form.name}
+          onChange={e => set('name', e.target.value)}
+          required
+          className="w-full px-4 py-3 rounded-xl bg-[#F5F5F5] text-[14px] outline-none"
+        />
+      </Field>
+
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Monto objetivo" hint="Cuánto quieres reunir">
+          <input
+            type="number"
+            value={form.target}
+            onChange={e => set('target', e.target.value)}
+            required
+            min="1"
+            step="0.01"
+            className="w-full px-4 py-3 rounded-xl bg-[#F5F5F5] text-[14px] outline-none"
+          />
+        </Field>
+        <Field label="Ya ahorrado" hint="Lo que llevas hoy">
+          <input
+            type="number"
+            value={form.current}
+            onChange={e => set('current', e.target.value)}
+            min="0"
+            step="0.01"
+            className="w-full px-4 py-3 rounded-xl bg-[#F5F5F5] text-[14px] outline-none"
+          />
+        </Field>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Aporte periódico" hint="Cuánto aportarás">
+          <input
+            type="number"
+            value={form.contribution}
+            onChange={e => set('contribution', e.target.value)}
+            min="0"
+            step="0.01"
+            className="w-full px-4 py-3 rounded-xl bg-[#F5F5F5] text-[14px] outline-none"
+          />
+        </Field>
+        <Field label="Cada cuánto">
+          <select
+            value={form.contributionFrequency}
+            onChange={e =>
+              set('contributionFrequency', e.target.value)
+            }
+            className="w-full px-4 py-3 rounded-xl bg-[#F5F5F5] text-[14px] outline-none"
+          >
+            <option value="weekly">Semanal</option>
+            <option value="biweekly">Quincenal</option>
+            <option value="monthly">Mensual</option>
+          </select>
+        </Field>
+      </div>
+
+      <Field label="Fecha objetivo (opcional)" hint="Cuándo te gustaría lograrlo">
+        <input
+          type="date"
+          value={form.targetDate}
+          onChange={e => set('targetDate', e.target.value)}
+          className="w-full px-4 py-3 rounded-xl bg-[#F5F5F5] text-[14px] outline-none"
+        />
+      </Field>
+
+      <Field label="Tipo de ahorro">
+        <div className="flex gap-2 mt-1">
+          {(['static', 'compound'] as const).map(m => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => set('mode', m)}
+              className={`flex-1 py-2.5 rounded-xl text-[12px] font-bold ${
+                form.mode === m
+                  ? 'bg-[#00BFA5] text-white'
+                  : 'bg-[#F5F5F5] text-[#636E72]'
+              }`}
+            >
+              {m === 'static' ? 'Sin interés' : 'Con rentabilidad'}
+            </button>
+          ))}
+        </div>
+        <p className="text-[10px] text-[#B2BEC3] mt-1">
+          {form.mode === 'static'
+            ? 'El dinero no genera rendimiento.'
+            : 'Incluye tasa anual para estimar más rápido.'}
+        </p>
+      </Field>
+
+      {form.mode === 'compound' && (
+        <Field label="Tasa de interés anual (%)" hint="Ej: 5 para 5% anual">
+          <input
+            type="number"
+            value={form.rate}
+            onChange={e => set('rate', e.target.value)}
+            step="0.1"
+            min="0"
+            className="w-full px-4 py-3 rounded-xl bg-[#F5F5F5] text-[14px] outline-none"
+          />
+        </Field>
+      )}
+
+      {error && <p className="text-[12px] text-red-600">{error}</p>}
+
+      <div className="flex gap-2 pt-1">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="flex-1 py-3 rounded-xl bg-[#F5F5F5] text-[#636E72] font-semibold text-[14px]"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          disabled={loading}
+          className="flex-1 py-3 rounded-xl bg-[#00BFA5] text-white font-bold text-[14px] disabled:opacity-60 flex items-center justify-center gap-2"
+        >
+          {loading ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : goalId ? (
+            'Guardar'
+          ) : (
+            'Crear meta'
+          )}
+        </button>
+      </div>
+    </form>
   )
 }
 
 export function AhorrosClient({
-  goals: initialGoals,
+  goals,
   householdId,
   currency,
 }: {
@@ -77,60 +284,24 @@ export function AhorrosClient({
   currency: CurrencyCode
 }) {
   const router = useRouter()
-  const [showForm, setShowForm] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [selectedId, setSelectedId] = useState<string | null>(
-    initialGoals[0]?.id ?? null
-  )
-
-  const [name, setName] = useState('')
-  const [target, setTarget] = useState('')
-  const [current, setCurrent] = useState('0')
-  const [contribution, setContribution] = useState('')
-  const [mode, setMode] = useState<'static' | 'compound'>('static')
-  const [rate, setRate] = useState('')
+  const [mode, setMode] = useState<'list' | 'create' | 'edit'>('list')
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const fmt = (n: number) => formatMoney(n, currency)
-  const selected = initialGoals.find(g => g.id === selectedId)
+  const editingGoal = goals.find(g => g.id === editingId)
 
-  const projection = selected
-    ? projectCompoundGrowth({
-        target_amount: selected.target_amount,
-        current_amount: selected.current_amount,
-        contribution_amount: selected.contribution_amount,
-        contribution_frequency: selected.contribution_frequency,
-        savings_mode: selected.savings_mode,
-        annual_interest_rate: selected.annual_interest_rate,
-        target_date: selected.target_date,
-      })
-    : []
-
-  async function handleCreate(e: React.FormEvent) {
-    e.preventDefault()
-    setLoading(true)
-    setError(null)
-
-    const result = await createSavingsGoal({
-      householdId,
-      name: name.trim(),
-      targetAmount: parseFloat(target),
-      currentAmount: parseFloat(current) || 0,
-      contributionAmount: contribution ? parseFloat(contribution) : undefined,
-      contributionFrequency: contribution ? 'monthly' : undefined,
-      savingsMode: mode,
-      annualInterestRate: rate ? parseFloat(rate) / 100 : undefined,
-    })
-
-    if (result.error) {
-      setError(result.error)
-      setLoading(false)
-      return
-    }
-
-    setShowForm(false)
-    setLoading(false)
+  async function handleDelete(goalId: string, name: string) {
+    if (!confirm(`¿Eliminar la meta "${name}"?`)) return
+    setDeletingId(goalId)
+    await deleteSavingsGoal(goalId, householdId)
+    setDeletingId(null)
     router.refresh()
+  }
+
+  function closeForm() {
+    setMode('list')
+    setEditingId(null)
   }
 
   return (
@@ -138,174 +309,135 @@ export function AhorrosClient({
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-[22px] font-bold text-[#2D3436]">Ahorros</h1>
-          <p className="text-[13px] text-[#636E72]">Metas y proyección de riqueza</p>
+          <p className="text-[13px] text-[#636E72]">Metas y progreso del hogar</p>
         </div>
-        <button
-          type="button"
-          onClick={() => setShowForm(v => !v)}
-          className="w-10 h-10 rounded-full bg-[#00BFA5] text-white flex items-center justify-center shadow-md"
-        >
-          <Plus className="w-5 h-5" />
-        </button>
+        {mode === 'list' && (
+          <button
+            type="button"
+            onClick={() => setMode('create')}
+            className="w-10 h-10 rounded-full bg-[#00BFA5] text-white flex items-center justify-center shadow-md"
+            aria-label="Nueva meta"
+          >
+            <Plus className="w-5 h-5" />
+          </button>
+        )}
       </div>
 
-      {showForm && (
-        <form
-          onSubmit={handleCreate}
-          className="rounded-[24px] bg-white/90 backdrop-blur-md border border-white/60 shadow-sm p-5 space-y-3"
-        >
-          <h2 className="text-[15px] font-bold text-[#2D3436]">Nueva meta</h2>
-          <input
-            type="text"
-            value={name}
-            onChange={e => setName(e.target.value)}
-            placeholder="Nombre de la meta"
-            required
-            className="w-full px-4 py-3 rounded-xl bg-[#F5F5F5] text-[14px] outline-none"
-          />
-          <div className="grid grid-cols-2 gap-2">
-            <input
-              type="number"
-              value={target}
-              onChange={e => setTarget(e.target.value)}
-              placeholder="Meta ($)"
-              required
-              min="1"
-              className="px-4 py-3 rounded-xl bg-[#F5F5F5] text-[14px] outline-none"
-            />
-            <input
-              type="number"
-              value={current}
-              onChange={e => setCurrent(e.target.value)}
-              placeholder="Actual ($)"
-              min="0"
-              className="px-4 py-3 rounded-xl bg-[#F5F5F5] text-[14px] outline-none"
-            />
-          </div>
-          <input
-            type="number"
-            value={contribution}
-            onChange={e => setContribution(e.target.value)}
-            placeholder="Aporte mensual (opcional)"
-            min="0"
-            className="w-full px-4 py-3 rounded-xl bg-[#F5F5F5] text-[14px] outline-none"
-          />
-          <div className="flex gap-2">
-            {(['static', 'compound'] as const).map(m => (
-              <button
-                key={m}
-                type="button"
-                onClick={() => setMode(m)}
-                className={`flex-1 py-2 rounded-xl text-[12px] font-bold ${
-                  mode === m
-                    ? 'bg-[#00BFA5] text-white'
-                    : 'bg-[#F5F5F5] text-[#636E72]'
-                }`}
-              >
-                {m === 'static' ? 'Quieto' : 'Con rentabilidad'}
-              </button>
-            ))}
-          </div>
-          {mode === 'compound' && (
-            <input
-              type="number"
-              value={rate}
-              onChange={e => setRate(e.target.value)}
-              placeholder="Tasa anual % (ej. 5)"
-              step="0.1"
-              className="w-full px-4 py-3 rounded-xl bg-[#F5F5F5] text-[14px] outline-none"
-            />
-          )}
-          {error && <p className="text-[12px] text-red-600">{error}</p>}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 rounded-xl bg-[#00BFA5] text-white font-bold text-[14px] disabled:opacity-60 flex items-center justify-center gap-2"
-          >
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Crear meta'}
-          </button>
-        </form>
+      {mode === 'create' && (
+        <SavingsGoalForm
+          householdId={householdId}
+          currency={currency}
+          initial={emptyForm()}
+          onDone={closeForm}
+          onCancel={closeForm}
+        />
       )}
 
-      {initialGoals.length === 0 ? (
+      {mode === 'edit' && editingGoal && (
+        <SavingsGoalForm
+          householdId={householdId}
+          currency={currency}
+          initial={goalToForm(editingGoal)}
+          goalId={editingGoal.id}
+          onDone={closeForm}
+          onCancel={closeForm}
+        />
+      )}
+
+      {mode === 'list' && goals.length === 0 && (
         <div className="rounded-[24px] bg-white/90 backdrop-blur-md border border-white/60 p-8 text-center">
           <p className="text-[14px] text-[#636E72]">
-            Crea tu primera meta de ahorro con el botón +
+            Crea tu primera meta con el botón +. Define el monto objetivo y tu
+            aporte periódico para ver el tiempo estimado.
           </p>
         </div>
-      ) : (
-        <>
-          <div className="space-y-3">
-            {initialGoals.map(goal => {
-              const pct = Math.min(
-                100,
-                Math.round((goal.current_amount / goal.target_amount) * 100)
-              )
-              const active = selectedId === goal.id
-              return (
-                <button
-                  key={goal.id}
-                  type="button"
-                  onClick={() => setSelectedId(goal.id)}
-                  className={`w-full rounded-[24px] backdrop-blur-md border shadow-sm p-5 text-left transition-all ${
-                    active
-                      ? 'bg-white/95 border-[#00BFA5]/40 ring-2 ring-[#00BFA5]/20'
-                      : 'bg-white/90 border-white/60'
-                  }`}
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <p className="text-[16px] font-bold text-[#2D3436]">{goal.name}</p>
-                      {goal.target_date && (
-                        <p className="text-[11px] text-[#636E72]">
-                          Objetivo: {goal.target_date}
-                        </p>
-                      )}
-                    </div>
-                    <span className="text-[18px] font-bold text-[#F59E0B]">{pct}%</span>
-                  </div>
-                  <div className="h-2.5 rounded-full bg-[#F5F5F5] overflow-hidden mb-2">
-                    <div
-                      className="h-full rounded-full bg-gradient-to-r from-[#F59E0B] to-[#FBBF24]"
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-                  <p className="text-[12px] text-[#636E72]">
-                    {fmt(goal.current_amount)} de {fmt(goal.target_amount)}
-                    {goal.savings_mode === 'compound' && (
-                      <span className="ml-2 text-[#00BFA5] font-semibold">
-                        · Con interés
-                      </span>
-                    )}
-                  </p>
-                </button>
-              )
-            })}
-          </div>
-
-          {selected && (
-            <div className="rounded-[24px] bg-white/90 backdrop-blur-md border border-white/60 shadow-sm p-5">
-              <div className="flex items-center gap-2 mb-3">
-                <TrendingUp className="w-4 h-4 text-[#00BFA5]" />
-                <h3 className="text-[14px] font-bold text-[#2D3436]">
-                  Proyección — {selected.name}
-                </h3>
-              </div>
-              <ProjectionChart
-                points={projection}
-                target={selected.target_amount}
-                currency={currency}
-              />
-              <p className="text-[11px] text-[#636E72] mt-2 text-center">
-                Línea punteada = meta ·{' '}
-                {projection.length > 1
-                  ? `~${projection.length - 1} meses estimados`
-                  : 'Sin aporte definido'}
-              </p>
-            </div>
-          )}
-        </>
       )}
+
+      {mode === 'list' &&
+        goals.map(goal => {
+          const pct = Math.min(
+            100,
+            Math.round((goal.current_amount / goal.target_amount) * 100)
+          )
+          const estimate = formatEstimatedTime(goal)
+
+          return (
+            <div
+              key={goal.id}
+              className="rounded-[24px] bg-white/90 backdrop-blur-md border border-white/60 shadow-sm p-5"
+            >
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-[16px] font-bold text-[#2D3436] truncate">
+                    {goal.name}
+                  </p>
+                  <p className="text-[12px] text-[#636E72] mt-0.5">
+                    {fmt(goal.current_amount)} de {fmt(goal.target_amount)}
+                  </p>
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingId(goal.id)
+                      setMode('edit')
+                    }}
+                    className="w-9 h-9 rounded-xl bg-[#F5F5F5] flex items-center justify-center text-[#636E72] hover:text-[#00BFA5] hover:bg-[#00BFA5]/10 transition-colors"
+                    aria-label={`Editar ${goal.name}`}
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(goal.id, goal.name)}
+                    disabled={deletingId === goal.id}
+                    className="w-9 h-9 rounded-xl bg-[#F5F5F5] flex items-center justify-center text-[#636E72] hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
+                    aria-label={`Eliminar ${goal.name}`}
+                  >
+                    {deletingId === goal.id ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <div className="h-2.5 rounded-full bg-[#F5F5F5] overflow-hidden mb-3">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-[#F59E0B] to-[#FBBF24]"
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+
+              <div className="flex items-center justify-between text-[12px]">
+                <span className="font-bold text-[#F59E0B]">{pct}% completado</span>
+                {goal.target_date && (
+                  <span className="text-[#636E72]">Meta: {goal.target_date}</span>
+                )}
+              </div>
+
+              <div className="mt-3 flex items-start gap-2 rounded-xl bg-[#F5F5F5] px-3 py-2.5">
+                <Clock className="w-4 h-4 text-[#00BFA5] shrink-0 mt-0.5" />
+                <p className="text-[12px] text-[#2D3436] font-medium">{estimate}</p>
+              </div>
+
+              {goal.contribution_amount && (
+                <p className="text-[11px] text-[#636E72] mt-2">
+                  Aporte: {fmt(goal.contribution_amount)}{' '}
+                  {goal.contribution_frequency === 'weekly'
+                    ? 'semanal'
+                    : goal.contribution_frequency === 'biweekly'
+                      ? 'quincenal'
+                      : 'mensual'}
+                  {goal.savings_mode === 'compound' &&
+                    goal.annual_interest_rate &&
+                    ` · ${(goal.annual_interest_rate * 100).toFixed(1)}% anual`}
+                </p>
+              )}
+            </div>
+          )
+        })}
     </div>
   )
 }

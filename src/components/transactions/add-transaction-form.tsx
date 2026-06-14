@@ -3,14 +3,17 @@
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
-  Loader2, Plus, Trash2, Check, Sparkles, ShoppingCart,
+  Loader2, Plus, Trash2, Check, Sparkles, ShoppingCart, Repeat,
 } from 'lucide-react'
 import { createTransaction } from '@/lib/finance/actions'
+import { getTodayString } from '@/lib/finance/format'
 import { CategoryIcon } from './category-icon'
 import type { Category, LineItem } from '@/lib/finance/types'
 import type { CurrencyCode } from '@/lib/household/types'
 
 type TxType = 'income' | 'expense'
+
+const TODAY = getTodayString()
 
 export function AddTransactionForm({
   householdId,
@@ -30,7 +33,7 @@ export function AddTransactionForm({
   const [categoryId, setCategoryId] = useState('')
   const [description, setDescription] = useState('')
   const [amount, setAmount] = useState('')
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
+  const [date, setDate] = useState(TODAY)
   const [isRecurring, setIsRecurring] = useState(false)
   const [frequency, setFrequency] = useState<'weekly' | 'biweekly' | 'monthly'>('monthly')
   const [lineItemsEnabled, setLineItemsEnabled] = useState(false)
@@ -43,7 +46,9 @@ export function AddTransactionForm({
     [categories, txType]
   )
 
-  const selectedCategory = filteredCategories.find(c => c.id === categoryId)
+  const selectedCategory = filteredCategories.find(
+    c => c.id === (categoryId || filteredCategories[0]?.id)
+  )
   const isMercado = selectedCategory?.name === 'Mercado'
 
   const displayAmount = useMemo(() => {
@@ -82,6 +87,14 @@ export function AddTransactionForm({
     setLoading(true)
     setError(null)
 
+    if (date > TODAY) {
+      setError(
+        'No puedes registrar movimientos con fecha futura. Usa recurrente para repetir automáticamente.'
+      )
+      setLoading(false)
+      return
+    }
+
     const catId = categoryId || filteredCategories[0]?.id
     if (!catId) {
       setError('Selecciona una categoría.')
@@ -106,7 +119,7 @@ export function AddTransactionForm({
       amount: parsedAmount,
       currency: baseCurrency,
       transactionDate: date,
-      isRecurring: isRecurring && txType === 'expense',
+      isRecurring,
       frequency: isRecurring ? frequency : undefined,
       lineItems:
         lineItemsEnabled && isMercado
@@ -143,7 +156,7 @@ export function AddTransactionForm({
 
       <div>
         <p className="text-[12px] font-semibold text-[#636E72] text-center mb-2">
-          Tipo de Movimiento
+          Tipo de movimiento
         </p>
         <div className="flex rounded-2xl bg-[#F5F5F5] p-1">
           {(['income', 'expense'] as const).map(type => (
@@ -169,21 +182,24 @@ export function AddTransactionForm({
           {displayAmount.toFixed(baseCurrency === 'COP' ? 0 : 2)}
         </p>
         {!lineItemsEnabled && (
-          <input
-            type="number"
-            step="0.01"
-            min="0"
-            value={amount}
-            onChange={e => setAmount(e.target.value)}
-            placeholder="0.00"
-            className="mt-2 w-40 mx-auto block text-center text-[14px] px-3 py-2 rounded-xl bg-[#F5F5F5] outline-none focus:ring-2 focus:ring-[#00BFA5]/30"
-          />
+          <div>
+            <label className="text-[11px] text-[#636E72] font-medium">Monto</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              value={amount}
+              onChange={e => setAmount(e.target.value)}
+              placeholder="0.00"
+              className="mt-1 w-40 mx-auto block text-center text-[14px] px-3 py-2 rounded-xl bg-[#F5F5F5] outline-none focus:ring-2 focus:ring-[#00BFA5]/30"
+            />
+          </div>
         )}
       </div>
 
       <div>
         <p className="text-[11px] font-semibold text-[#636E72] mb-2">Categoría</p>
-        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+        <div className="flex gap-2 overflow-x-auto pb-1">
           {filteredCategories.map(cat => {
             const active = (categoryId || filteredCategories[0]?.id) === cat.id
             return (
@@ -210,20 +226,32 @@ export function AddTransactionForm({
         </div>
       </div>
 
-      <input
-        type="text"
-        value={description}
-        onChange={e => setDescription(e.target.value)}
-        placeholder="Descripción (opcional)"
-        className="w-full px-4 py-3 rounded-xl bg-[#F5F5F5] text-[14px] outline-none focus:ring-2 focus:ring-[#00BFA5]/30"
-      />
+      <div>
+        <label className="text-[11px] font-semibold text-[#636E72]">Descripción</label>
+        <input
+          type="text"
+          value={description}
+          onChange={e => setDescription(e.target.value)}
+          placeholder="Ej: Cena, Salario marzo..."
+          className="mt-1 w-full px-4 py-3 rounded-xl bg-[#F5F5F5] text-[14px] outline-none focus:ring-2 focus:ring-[#00BFA5]/30"
+        />
+      </div>
 
-      <input
-        type="date"
-        value={date}
-        onChange={e => setDate(e.target.value)}
-        className="w-full px-4 py-3 rounded-xl bg-[#F5F5F5] text-[14px] outline-none focus:ring-2 focus:ring-[#00BFA5]/30"
-      />
+      <div>
+        <label className="text-[11px] font-semibold text-[#636E72]">
+          Fecha del movimiento
+        </label>
+        <p className="text-[10px] text-[#B2BEC3] mb-1">
+          Solo hoy o fechas pasadas. Para repetir, usa recurrente.
+        </p>
+        <input
+          type="date"
+          value={date}
+          max={TODAY}
+          onChange={e => setDate(e.target.value)}
+          className="w-full px-4 py-3 rounded-xl bg-[#F5F5F5] text-[14px] outline-none focus:ring-2 focus:ring-[#00BFA5]/30"
+        />
+      </div>
 
       {isMercado && txType === 'expense' && (
         <div className="rounded-2xl bg-[#F5F5F5] p-4">
@@ -231,7 +259,7 @@ export function AddTransactionForm({
             <div className="flex items-center gap-2">
               <ShoppingCart className="w-4 h-4 text-[#00BFA5]" />
               <span className="text-[13px] font-semibold text-[#2D3436]">
-                Añadir por producto
+                Detalle por producto
               </span>
             </div>
             <button
@@ -254,7 +282,7 @@ export function AddTransactionForm({
           {lineItemsEnabled && (
             <div className="space-y-2">
               <p className="text-[11px] text-[#636E72]">
-                Detalle del Mercado (Total: ${displayAmount.toFixed(2)})
+                Total calculado: {displayAmount.toFixed(2)} {baseCurrency}
               </p>
               {lineItems.map((item, i) => (
                 <div key={i} className="flex items-center gap-2">
@@ -268,6 +296,7 @@ export function AddTransactionForm({
                   <input
                     type="number"
                     step="0.01"
+                    min="0"
                     value={item.price || ''}
                     onChange={e => updateLineItem(i, 'price', e.target.value)}
                     placeholder="0.00"
@@ -290,42 +319,54 @@ export function AddTransactionForm({
                 className="flex items-center gap-1 text-[12px] font-semibold text-[#00BFA5]"
               >
                 <Plus className="w-3.5 h-3.5" />
-                Añadir otro producto
+                Añadir producto
               </button>
             </div>
           )}
         </div>
       )}
 
-      {txType === 'expense' && (
-        <div className="flex items-center gap-3 flex-wrap">
-          <label className="flex items-center gap-2 text-[12px] text-[#2D3436] cursor-pointer">
+      <div className="rounded-2xl bg-[#F5F5F5] p-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <Repeat className="w-4 h-4 text-[#00BFA5]" />
+          <label className="flex items-center gap-2 text-[13px] font-semibold text-[#2D3436] cursor-pointer">
             <input
               type="checkbox"
               checked={isRecurring}
               onChange={e => setIsRecurring(e.target.checked)}
               className="rounded accent-[#00BFA5]"
             />
-            Gasto fijo recurrente
+            {txType === 'income'
+              ? 'Ingreso fijo recurrente'
+              : 'Gasto fijo recurrente'}
           </label>
-          {isRecurring && (
-            <select
-              value={frequency}
-              onChange={e =>
-                setFrequency(e.target.value as 'weekly' | 'biweekly' | 'monthly')
-              }
-              className="px-3 py-1.5 rounded-xl bg-[#F5F5F5] text-[12px] font-semibold outline-none"
-            >
-              <option value="weekly">Semanal</option>
-              <option value="biweekly">Quincenal</option>
-              <option value="monthly">Mensual</option>
-            </select>
-          )}
         </div>
-      )}
+        {isRecurring && (
+          <>
+            <p className="text-[11px] text-[#636E72]">
+              Se repetirá automáticamente. El primer registro es el de hoy; los
+              siguientes se crearán solos.
+            </p>
+            <div>
+              <label className="text-[11px] font-semibold text-[#636E72]">Frecuencia</label>
+              <select
+                value={frequency}
+                onChange={e =>
+                  setFrequency(e.target.value as 'weekly' | 'biweekly' | 'monthly')
+                }
+                className="mt-1 w-full px-3 py-2.5 rounded-xl bg-white text-[13px] font-semibold outline-none"
+              >
+                <option value="weekly">Semanal</option>
+                <option value="biweekly">Quincenal</option>
+                <option value="monthly">Mensual</option>
+              </select>
+            </div>
+          </>
+        )}
+      </div>
 
       <p className="text-[11px] text-[#636E72] text-center">
-        Creado por: {authorName}
+        Registrado por: {authorName}
       </p>
 
       {error && (
