@@ -5,6 +5,8 @@ import type { CurrencyCode } from '@/lib/household/types'
 import { calculateBalance, sumByTypeInPeriod } from './balance'
 import { calculateGuiltFreeMoney } from './guilt-free'
 import { getPeriodRangeAtOffset, getPeriodBlockLabel } from './format'
+import { buildMarketInsights } from './market-analytics'
+import type { MarketInsights } from './market-analytics'
 import { getCategoryColor } from './categories'
 import { buildTrendSeries } from './dashboard-stats'
 import { buildExpenseGroupTotals } from './category-groups'
@@ -329,6 +331,38 @@ export async function getPredictionsSummary(
 
   return buildPredictionsSummary(
     recurring,
+    (txResult.data ?? []).map(tx => ({
+      category_id: tx.category_id,
+      amount_base: tx.amount_base,
+      transaction_date: tx.transaction_date,
+      description: tx.description,
+      line_items: tx.line_items,
+    })),
+    mercado?.id ?? null,
+    period
+  )
+}
+
+export async function getMarketInsights(
+  householdId: string,
+  period: Period = 'weekly'
+): Promise<MarketInsights> {
+  const supabase = await createClient()
+  const lookbackStart = getPeriodRangeAtOffset('weekly', 12).start
+
+  const [txResult, categories] = await Promise.all([
+    supabase
+      .from('transactions')
+      .select('category_id, amount_base, transaction_date, description, line_items')
+      .eq('household_id', householdId)
+      .eq('type', 'expense')
+      .gte('transaction_date', lookbackStart),
+    getCategories(householdId),
+  ])
+
+  const mercado = categories.find(c => c.name === 'Mercado')
+
+  return buildMarketInsights(
     (txResult.data ?? []).map(tx => ({
       category_id: tx.category_id,
       amount_base: tx.amount_base,

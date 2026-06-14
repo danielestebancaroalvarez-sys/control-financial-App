@@ -10,15 +10,23 @@ export function CategoryIconPicker({
   value,
   onChange,
   accentColor,
+  expanded = false,
 }: {
   value: CategoryIconId
   onChange: (icon: CategoryIconId) => void
   accentColor: string
+  expanded?: boolean
 }) {
   return (
     <div>
       <p className="text-[12px] font-semibold text-[#636E72] mb-2">Icono</p>
-      <div className="grid grid-cols-6 gap-2 max-h-36 overflow-y-auto pr-1">
+      <div
+        className={`grid gap-2 pr-1 ${
+          expanded
+            ? 'grid-cols-6 max-h-none'
+            : 'grid-cols-6 max-h-36 overflow-y-auto'
+        }`}
+      >
         {CATEGORY_ICON_OPTIONS.map(option => {
           const selected = value === option.id
           return (

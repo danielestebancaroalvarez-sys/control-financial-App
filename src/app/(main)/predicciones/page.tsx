@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import { getMainAppContextWithPeriod } from '@/lib/app/context'
 import { getPredictionsSummary } from '@/lib/finance/queries'
 import { formatMoney, formatFrequency, getPeriodLabels } from '@/lib/finance/format'
@@ -68,41 +69,21 @@ export default async function PrediccionesPage() {
       </section>
 
       <section className="rounded-[24px] bg-white/90 backdrop-blur-md border border-white/60 shadow-sm p-5">
-        <div className="flex items-center gap-2 mb-3">
+        <div className="flex items-center gap-2 mb-2">
           <ShoppingBag className="w-4 h-4 text-[#00BFA5]" />
-          <h2 className="text-[14px] font-bold text-[#2D3436]">
-            Predicción de compras · {labels.next}
-          </h2>
+          <h2 className="text-[14px] font-bold text-[#2D3436]">Mercado inteligente</h2>
         </div>
-        {summary.purchasePredictions.length === 0 ? (
-          <p className="text-[13px] text-[#636E72]">
-            Registra compras en Mercado (con o sin ítems detallados) para ver qué productos
-            podrías volver a comprar {labels.inNext}.
-          </p>
-        ) : (
-          <ul className="space-y-2">
-            {summary.purchasePredictions.map(item => (
-              <li
-                key={item.itemName}
-                className="flex items-center gap-3 p-3 rounded-2xl bg-[#F5F5F5]"
-              >
-                <div className="flex-1 min-w-0">
-                  <p className="text-[14px] font-semibold text-[#2D3436] truncate">
-                    {item.itemName}
-                  </p>
-                  <p className="text-[11px] text-[#636E72]">
-                    ~{item.expectedPurchases} compra
-                    {item.expectedPurchases !== 1 ? 's' : ''} · {fmt(item.avgUnitPrice)} c/u
-                    {item.lastPurchased && ` · última ${item.lastPurchased}`}
-                  </p>
-                </div>
-                <span className="text-[14px] font-bold text-[#2D3436] shrink-0">
-                  {fmt(item.projectedSpend)}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
+        <p className="text-[13px] text-[#636E72] mb-4">
+          Gasto semanal, cuánto llevas en carne o aseo, frecuencia de compra y una lista
+          sugerida según tu historial de Mercado.
+        </p>
+        <Link
+          href="/mercado"
+          className="inline-flex w-full items-center justify-center gap-2 py-3 rounded-xl bg-[#00BFA5] text-white font-bold text-[13px]"
+        >
+          <ShoppingBag className="w-4 h-4" />
+          Ver análisis de mercado
+        </Link>
       </section>
     </div>
   )

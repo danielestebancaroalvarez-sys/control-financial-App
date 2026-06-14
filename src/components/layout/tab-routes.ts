@@ -10,6 +10,9 @@ export type TabRoute = (typeof TAB_ROUTES)[number]
 
 export function getTabIndex(pathname: string): number {
   if (pathname.startsWith('/ajustes')) return -1
+  if (pathname.startsWith('/mercado')) {
+    return TAB_ROUTES.indexOf('/predicciones')
+  }
 
   const idx = TAB_ROUTES.findIndex(
     route => route === pathname || (route !== '/' && pathname.startsWith(route))
