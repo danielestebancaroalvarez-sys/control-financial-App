@@ -1,22 +1,16 @@
 import { redirect } from 'next/navigation'
 import { getMainAppContextWithPeriod } from '@/lib/app/context'
 import { getCategories, searchTransactions } from '@/lib/finance/queries'
-import { getSearchPresetRange, type SearchDatePreset } from '@/lib/finance/format'
+import { getSearchPresetRange } from '@/lib/finance/format'
 import { BuscarClient } from './buscar-client'
 
 type SearchParams = Promise<{
   q?: string
   type?: string
   preset?: string
+  startDate?: string
+  endDate?: string
 }>
-
-const VALID_PRESETS: SearchDatePreset[] = [
-  'this-week',
-  'last-week',
-  'this-month',
-  'last-month',
-  'period',
-]
 
 export default async function BuscarPage({
   searchParams,
@@ -27,11 +21,17 @@ export default async function BuscarPage({
   const ctx = await getMainAppContextWithPeriod()
   if (!ctx) redirect('/login')
 
-  const preset = VALID_PRESETS.includes(params.preset as SearchDatePreset)
-    ? (params.preset as SearchDatePreset)
-    : 'period'
+  const hasCustomRange = !!(params.startDate && params.endDate)
+  const preset =
+    hasCustomRange
+      ? 'custom'
+      : params.preset === 'last-week'
+        ? 'last-week'
+        : 'period'
 
-  const { start, end } = getSearchPresetRange(preset, ctx.period)
+  const { start, end } = hasCustomRange
+    ? { start: params.startDate!, end: params.endDate! }
+    : getSearchPresetRange(preset === 'last-week' ? 'last-week' : 'period', ctx.period)
 
   const [results, categories] = await Promise.all([
     searchTransactions(ctx.household.id, {
@@ -52,9 +52,13 @@ export default async function BuscarPage({
       filters={{
         q: params.q ?? '',
         type: params.type ?? 'all',
-        preset,
+        preset: preset as 'period' | 'last-week' | 'custom',
+        startDate: params.startDate ?? '',
+        endDate: params.endDate ?? '',
       }}
       period={ctx.period}
+      rangeStart={start}
+      rangeEnd={end}
     />
   )
 }
