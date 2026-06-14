@@ -18,6 +18,8 @@ import {
   Coffee,
 } from 'lucide-react'
 import { formatMoney, formatShortDate } from '@/lib/finance/format'
+import { normalizeProductName } from '@/lib/finance/market-product-keywords'
+import { toggleShoppingListItem } from '@/lib/finance/shopping-list-actions'
 import { ConsumptionPredictionCard } from '@/components/predictions/consumption-prediction-card'
 import {
   MARKET_GROUP_LABELS,
@@ -49,24 +51,37 @@ function formatDaysLabel(days: number | null): string {
 export function MercadoClient({
   insights,
   currency,
+  householdId,
+  shoppingChecks,
 }: {
   insights: MarketInsights
   currency: CurrencyCode
+  householdId: string
+  shoppingChecks: Record<string, boolean>
 }) {
   const fmt = (n: number) => formatMoney(n, currency)
-  const [checked, setChecked] = useState<Set<string>>(new Set())
+  const [checked, setChecked] = useState<Set<string>>(() => {
+    const initial = new Set<string>()
+    for (const item of insights.shoppingList) {
+      const key = normalizeProductName(item.name)
+      if (shoppingChecks[key]) initial.add(item.name)
+    }
+    return initial
+  })
 
   const maxWeekly = Math.max(...insights.weeklySpends.map(w => w.amount), 1)
   const totalGroupSpend = insights.groupStats.reduce((s, g) => s + g.totalSpent, 0) || 1
   const listTotal = insights.shoppingList.reduce((s, i) => s + i.estimatedPrice, 0)
 
   function toggleItem(name: string) {
+    const willCheck = !checked.has(name)
     setChecked(prev => {
       const next = new Set(prev)
-      if (next.has(name)) next.delete(name)
-      else next.add(name)
+      if (willCheck) next.add(name)
+      else next.delete(name)
       return next
     })
+    toggleShoppingListItem(householdId, name, willCheck)
   }
 
   function exportShoppingList() {

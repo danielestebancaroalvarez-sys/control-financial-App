@@ -11,7 +11,9 @@ import { getCategoryColor } from './categories'
 import { buildTrendSeries } from './dashboard-stats'
 import { buildExpenseGroupTotals } from './category-groups'
 import { calculatePeriodSavingsAllocations } from './savings-dashboard'
+import { buildMemberSpendingStats } from './member-spending'
 import { buildPredictionsSummary } from './predictions'
+import { getHouseholdMembers } from '@/lib/household/queries'
 import type {
   Category,
   DashboardSummary,
@@ -28,7 +30,7 @@ export const getHouseholdTransactions = cache(
     const supabase = await createClient()
     const { data } = await supabase
       .from('transactions')
-      .select('type, amount_base, transaction_date, category_id')
+      .select('type, amount_base, transaction_date, category_id, created_by, savings_goal_id')
       .eq('household_id', householdId)
 
     return (data ?? []) as TransactionRow[]
@@ -97,10 +99,11 @@ export async function getDashboardSummary(
   const safeOffset = Math.max(0, Math.min(11, Math.floor(periodOffset)))
   const { start, end } = getPeriodRangeAtOffset(period, safeOffset)
 
-  const [transactions, savingsGoals, categories] = await Promise.all([
+  const [transactions, savingsGoals, categories, members] = await Promise.all([
     getHouseholdTransactions(householdId),
     getSavingsGoals(householdId),
     getCategories(householdId),
+    getHouseholdMembers(householdId),
   ])
 
   const balance = calculateBalance(transactions)
@@ -173,6 +176,18 @@ export async function getDashboardSummary(
     ),
   }))
 
+  const memberSpending = buildMemberSpendingStats(
+    transactions,
+    start,
+    end,
+    members.map(m => ({
+      user_id: m.user_id,
+      full_name: m.full_name,
+      avatar_url: m.avatar_url,
+    })),
+    categoryMap
+  )
+
   return {
     realBalance: balance.balance,
     monthlyIncome: periodIncome,
@@ -185,6 +200,7 @@ export async function getDashboardSummary(
     topCategories,
     expenseGroups,
     savingsGoals: savingsProgress,
+    memberSpending,
     period,
     periodOffset: safeOffset,
     periodStart: start,
@@ -281,6 +297,22 @@ export async function searchTransactions(
       receipt_image_path: row.receipt_image_path ?? null,
     }
   })
+}
+
+export async function getShoppingListChecks(
+  householdId: string
+): Promise<Record<string, boolean>> {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('household_shopping_checks')
+    .select('item_key, is_checked')
+    .eq('household_id', householdId)
+
+  const map: Record<string, boolean> = {}
+  for (const row of data ?? []) {
+    map[row.item_key] = row.is_checked
+  }
+  return map
 }
 
 export async function getPredictionsSummary(

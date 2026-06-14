@@ -6,7 +6,8 @@ import { BalanceEditButton } from '@/app/(main)/balance-edit-button'
 import { formatMoney, getPeriodLabels } from '@/lib/finance/format'
 import type { DashboardSummary } from '@/lib/finance/types'
 import type { CurrencyCode } from '@/lib/household/types'
-import { Sparkles, ArrowDownRight, ArrowUpRight } from 'lucide-react'
+import { Sparkles, ArrowDownRight, ArrowUpRight, Users, AlertTriangle } from 'lucide-react'
+import Link from 'next/link'
 
 function buildBudgetSlices(summary: DashboardSummary) {
   const slices: { value: number; color: string; label: string }[] = []
@@ -126,7 +127,87 @@ export function DashboardView({
                 Déficit: {fmt(summary.budgetDeficit)} por encima del ingreso
               </p>
             )}
+            {summary.guiltFreeMoney < 0 && (
+              <div className="mt-3 p-3 rounded-xl bg-[#FFEBEE] border border-[#FFCDD2]">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 text-[#E53935] shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[11px] font-bold text-[#C62828]">
+                      Vas por encima del presupuesto
+                    </p>
+                    <p className="text-[10px] text-[#636E72] mt-1">
+                      Revisa predicciones y mercado para ajustar el mes.
+                    </p>
+                    <div className="flex gap-2 mt-2">
+                      <Link
+                        href="/predicciones"
+                        className="text-[10px] font-bold text-[#00BFA5] px-2 py-1 rounded-lg bg-white"
+                      >
+                        Predicciones
+                      </Link>
+                      <Link
+                        href="/mercado"
+                        className="text-[10px] font-bold text-[#00BFA5] px-2 py-1 rounded-lg bg-white"
+                      >
+                        Mercado
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
+
+          {summary.memberSpending.length > 0 && (
+            <div className="rounded-2xl bg-[#F5F5F5] p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Users className="w-4 h-4 text-[#00BFA5]" />
+                <p className="text-[12px] font-bold text-[#2D3436]">
+                  Gasto variable por miembro
+                </p>
+              </div>
+              <p className="text-[10px] text-[#636E72] mb-3">
+                Restaurantes, mercado, transporte y otros gastos no fijos. Sin arriendo,
+                servicios ni suscripciones.
+              </p>
+              <div className="space-y-3">
+                {summary.memberSpending.map(member => (
+                  <div key={member.userId}>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2 min-w-0">
+                        {member.avatarUrl ? (
+                          <img
+                            src={member.avatarUrl}
+                            alt=""
+                            className="w-6 h-6 rounded-full object-cover shrink-0"
+                          />
+                        ) : (
+                          <span className="w-6 h-6 rounded-full bg-[#00BFA5]/20 text-[#00BFA5] text-[10px] font-bold flex items-center justify-center shrink-0">
+                            {member.name.charAt(0).toUpperCase()}
+                          </span>
+                        )}
+                        <span className="text-[12px] font-medium text-[#2D3436] truncate">
+                          {member.name}
+                        </span>
+                      </div>
+                      <span className="text-[12px] font-bold text-[#2D3436] shrink-0 ml-2">
+                        {fmt(member.amount)}
+                      </span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-white overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-[#EC4899]"
+                        style={{ width: `${member.percent}%` }}
+                      />
+                    </div>
+                    <p className="text-[10px] text-[#B2BEC3] mt-0.5">
+                      {member.percent}% del gasto variable del periodo
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="rounded-2xl bg-[#F5F5F5] p-4">
             <p className="text-[12px] font-bold text-[#2D3436] mb-1">

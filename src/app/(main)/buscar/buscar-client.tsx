@@ -23,6 +23,7 @@ import {
 } from '@/lib/finance/search-cache'
 import type { Category, Period, TransactionListItem } from '@/lib/finance/types'
 import type { CurrencyCode } from '@/lib/household/types'
+import type { HouseholdMember } from '@/lib/household/types'
 
 type DateFilterPreset = 'period' | 'last-week' | 'custom'
 
@@ -46,6 +47,7 @@ function FilterSection({
 export function BuscarClient({
   results,
   categories,
+  members,
   householdId,
   currency,
   filters,
@@ -55,6 +57,7 @@ export function BuscarClient({
 }: {
   results: TransactionListItem[]
   categories: Category[]
+  members: HouseholdMember[]
   householdId: string
   currency: CurrencyCode
   filters: {
@@ -63,6 +66,8 @@ export function BuscarClient({
     preset: DateFilterPreset
     startDate: string
     endDate: string
+    categoryId: string
+    createdBy: string
   }
   period: Period
   rangeStart: string
@@ -246,6 +251,42 @@ export function BuscarClient({
             ))}
           </div>
         </FilterSection>
+
+        <FilterSection label="Categoría">
+          <select
+            value={filters.categoryId}
+            onChange={e =>
+              updateFilter({ categoryId: e.target.value || null })
+            }
+            className="w-full px-3 py-2 rounded-xl bg-[#F5F5F5] text-[12px] outline-none"
+          >
+            <option value="">Todas las categorías</option>
+            {categories.map(cat => (
+              <option key={cat.id} value={cat.id}>
+                {cat.name} ({cat.type === 'income' ? 'Ingreso' : 'Gasto'})
+              </option>
+            ))}
+          </select>
+        </FilterSection>
+
+        {members.length > 0 && (
+          <FilterSection label="Registrado por">
+            <select
+              value={filters.createdBy}
+              onChange={e =>
+                updateFilter({ createdBy: e.target.value || null })
+              }
+              className="w-full px-3 py-2 rounded-xl bg-[#F5F5F5] text-[12px] outline-none"
+            >
+              <option value="">Todos los miembros</option>
+              {members.map(member => (
+                <option key={member.user_id} value={member.user_id}>
+                  {member.full_name?.trim() || 'Miembro'}
+                </option>
+              ))}
+            </select>
+          </FilterSection>
+        )}
 
         <FilterSection label="Periodo">
           <div className="flex flex-wrap gap-1.5">

@@ -10,10 +10,15 @@ import {
 import { syncUserProfileFromMetadata } from '@/lib/profile/sync'
 import { getRealBalance, getHouseholdBaseCurrency } from './queries'
 import { fetchExchangeRate, prepareTransactionAmounts } from './currency'
+import {
+  applySavingsGoalDelta,
+  getSavingsContributionCategoryId,
+} from './savings-contribution'
 import { addFrequency, getTodayString } from './format'
 import type {
   CreateSavingsGoalInput,
   CreateTransactionInput,
+  RecordSavingsContributionInput,
   UpdateSavingsGoalInput,
   UpdateTransactionInput,
 } from './types'
@@ -170,12 +175,22 @@ export async function createTransaction(
       line_items: input.lineItems?.length ? input.lineItems : null,
       recurring_schedule_id: recurringScheduleId,
       is_recurring_instance: !!recurringScheduleId,
+      savings_goal_id: input.savingsGoalId ?? null,
     })
     .select('id')
     .single()
 
   if (txError || !tx) {
     return { error: txError?.message ?? 'No se pudo guardar la transacción.' }
+  }
+
+  if (input.savingsGoalId) {
+    await applySavingsGoalDelta(
+      supabase,
+      input.savingsGoalId,
+      input.householdId,
+      amounts.amount_base
+    )
   }
 
   revalidateAll()
@@ -263,7 +278,7 @@ export async function deleteTransaction(
 
   const { data: existing, error: fetchError } = await supabase
     .from('transactions')
-    .select('id, type, is_auto_adjustment')
+    .select('id, type, is_auto_adjustment, savings_goal_id, amount_base')
     .eq('id', id)
     .eq('household_id', householdId)
     .single()
@@ -284,8 +299,57 @@ export async function deleteTransaction(
 
   if (error) return { error: error.message }
 
+  if (existing.savings_goal_id) {
+    await applySavingsGoalDelta(
+      supabase,
+      existing.savings_goal_id,
+      householdId,
+      -Number(existing.amount_base)
+    )
+  }
+
   revalidateAll()
   return {}
+}
+
+export async function recordSavingsContribution(
+  input: RecordSavingsContributionInput
+): Promise<{ error?: string; id?: string }> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) return { error: 'Debes iniciar sesión.' }
+
+  if (input.amount <= 0) return { error: 'El monto debe ser mayor a cero.' }
+
+  const { data: goal } = await supabase
+    .from('savings_goals')
+    .select('id, name, current_amount, target_amount')
+    .eq('id', input.goalId)
+    .eq('household_id', input.householdId)
+    .eq('is_active', true)
+    .single()
+
+  if (!goal) return { error: 'Meta de ahorro no encontrada.' }
+
+  const categoryId = await getSavingsContributionCategoryId(supabase, input.householdId)
+  if (!categoryId) return { error: 'No hay categoría de gasto disponible.' }
+
+  const transactionDate = input.transactionDate ?? getTodayString()
+  const description =
+    input.note?.trim() || `Aporte a ${goal.name}`
+
+  return createTransaction({
+    householdId: input.householdId,
+    type: 'expense',
+    categoryId,
+    description,
+    amount: input.amount,
+    transactionDate,
+    savingsGoalId: input.goalId,
+  })
 }
 
 export async function createSavingsGoal(

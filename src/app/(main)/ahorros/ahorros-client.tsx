@@ -12,6 +12,7 @@ import { formatMoney } from '@/lib/finance/format'
 import { formatEstimatedTime } from '@/lib/finance/savings'
 import { SavingsCategoryPicker } from '@/components/savings/savings-category-picker'
 import { SavingsSimulationCollapsible } from '@/components/savings/savings-simulation-collapsible'
+import { SavingsContributionButton } from '@/components/savings/savings-contribution-sheet'
 import { formToSavingsGoalInput } from '@/components/savings/savings-projection-chart'
 import { CategoryIcon } from '@/components/transactions/category-icon'
 import {
@@ -514,6 +515,12 @@ export function AhorrosClient({
                     ` · ${(goal.annual_interest_rate * 100).toFixed(1)}% anual`}
                 </p>
               )}
+
+              <SavingsContributionButton
+                goal={goal}
+                householdId={householdId}
+                currency={currency}
+              />
 
               <SavingsSimulationCollapsible
                 goal={simulationGoal}
