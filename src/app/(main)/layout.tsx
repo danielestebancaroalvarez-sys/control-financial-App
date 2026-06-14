@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 import { getUserHousehold } from '@/lib/household/queries'
-import { processDueRecurringSchedules } from '@/lib/finance/recurring'
 import { syncUserProfileFromMetadata } from '@/lib/profile/sync'
 import { AppHeader } from '@/components/layout/app-header'
 import { BottomTabBar } from '@/components/layout/bottom-tab-bar'
@@ -25,7 +24,6 @@ export default async function MainLayout({
   if (!household) redirect('/onboarding')
 
   await syncUserProfileFromMetadata()
-  await processDueRecurringSchedules()
 
   const displayName =
     user.user_metadata?.full_name ??

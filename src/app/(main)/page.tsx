@@ -2,6 +2,7 @@ import { createClient } from '@/utils/supabase/server'
 import { getUserHousehold } from '@/lib/household/queries'
 import { getUserDashboardPeriod } from '@/lib/profile/queries'
 import { getDashboardSummary } from '@/lib/finance/queries'
+import { processDueRecurringSchedules } from '@/lib/finance/recurring'
 import { formatMoney, getPeriodLabels } from '@/lib/finance/format'
 import { getFirstName } from '@/lib/utils/name'
 import { BalanceEditButton } from './balance-edit-button'
@@ -18,6 +19,8 @@ export default async function DashboardPage() {
 
   const household = await getUserHousehold()
   if (!household || !user) return null
+
+  await processDueRecurringSchedules()
 
   const period = await getUserDashboardPeriod()
   const summary = await getDashboardSummary(household.id, period)

@@ -18,14 +18,9 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
   return (
     <motion.div
       key={pathname}
-      initial={{ opacity: 0, x: direction * 28 }}
+      initial={{ opacity: 0, x: direction * 12 }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{
-        type: 'spring',
-        stiffness: 380,
-        damping: 32,
-        mass: 0.8,
-      }}
+      transition={{ duration: 0.18, ease: 'easeOut' }}
     >
       {children}
     </motion.div>

@@ -66,7 +66,7 @@ export function BalanceEditButton({
           />
           <form
             onSubmit={handleSubmit}
-            className="absolute right-0 top-10 z-50 w-64 rounded-2xl bg-white shadow-xl border border-[#EEEEEE] p-4 space-y-3"
+            className="absolute right-0 top-10 z-50 w-64 rounded-2xl bg-white text-[#2D3436] shadow-xl border border-[#EEEEEE] p-4 space-y-3"
           >
             <p className="text-[12px] font-bold text-[#2D3436]">Ajustar saldo</p>
             <p className="text-[11px] text-[#636E72]">
@@ -78,7 +78,7 @@ export function BalanceEditButton({
               value={bankBalance}
               onChange={e => setBankBalance(e.target.value)}
               placeholder={`Saldo en ${currency}`}
-              className="w-full px-3 py-2.5 rounded-xl bg-[#F5F5F5] text-[13px] outline-none"
+              className="w-full px-3 py-2.5 rounded-xl bg-[#F5F5F5] text-[#2D3436] placeholder:text-[#B2BEC3] text-[13px] outline-none focus:ring-2 focus:ring-[#00BFA5]/30"
               autoFocus
             />
             {error && <p className="text-[11px] text-red-600">{error}</p>}
