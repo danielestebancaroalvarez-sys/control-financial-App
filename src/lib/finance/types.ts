@@ -172,6 +172,12 @@ export type WeeklyInsight = {
   generatedAt: string
 }
 
+export type InsightHighlight = {
+  label: string
+  value: string
+  tone?: 'positive' | 'negative' | 'neutral' | 'warning'
+}
+
 export type CreateTransactionInput = {
   householdId: string
   type: 'income' | 'expense'

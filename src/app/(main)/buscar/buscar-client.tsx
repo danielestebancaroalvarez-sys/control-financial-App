@@ -248,34 +248,39 @@ export function BuscarClient({
         </FilterSection>
 
         <FilterSection label="Periodo">
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-1.5">
             <button
               type="button"
               onClick={() => selectPeriodPreset('period')}
-              className={`flex-1 py-2.5 rounded-xl text-[12px] font-bold ${
+              className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-colors ${
                 filters.preset === 'period'
                   ? 'bg-[#00BFA5] text-white'
                   : 'bg-[#F5F5F5] text-[#636E72]'
               }`}
             >
-              Periodo actual
-              <span className="block text-[10px] font-normal opacity-80 mt-0.5">
-                {labels.current}
-              </span>
+              {labels.current}
             </button>
             <button
               type="button"
               onClick={() => selectPeriodPreset('last-week')}
-              className={`flex-1 py-2.5 rounded-xl text-[12px] font-bold ${
+              className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-colors ${
                 filters.preset === 'last-week'
                   ? 'bg-[#00BFA5] text-white'
                   : 'bg-[#F5F5F5] text-[#636E72]'
               }`}
             >
               Semana pasada
-              <span className="block text-[10px] font-normal opacity-80 mt-0.5">
-                Lun – dom anterior
-              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setAdvancedOpen(true)}
+              className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-colors ${
+                filters.preset === 'custom'
+                  ? 'bg-[#2D3436] text-white'
+                  : 'bg-[#F5F5F5] text-[#636E72]'
+              }`}
+            >
+              Personalizado
             </button>
           </div>
         </FilterSection>

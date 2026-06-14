@@ -101,18 +101,33 @@ export function PrediccionesClient({
 
       {summary.upcomingPayments.length > 0 && (
         <section className="rounded-[24px] bg-white/90 backdrop-blur-md border border-white/60 shadow-sm p-5">
-          <h2 className="text-[14px] font-bold text-[#2D3436] mb-3">
+          <h2 className="text-[14px] font-bold text-[#2D3436] mb-3 flex items-center gap-2">
+            <CalendarClock className="w-4 h-4 text-[#00BFA5]" />
             Vista {labels.next}
           </h2>
           <ul className="space-y-2">
             {summary.upcomingPayments.slice(0, 5).map(payment => (
               <li
                 key={`next-${payment.id}`}
-                className="flex items-center justify-between p-3 rounded-2xl bg-[#F5F5F5] text-[12px]"
+                className="flex items-center gap-3 p-3 rounded-2xl bg-[#F5F5F5]"
               >
-                <span className="font-medium text-[#2D3436] truncate">{payment.name}</span>
-                <span className="font-bold text-[#636E72] shrink-0 ml-2">
-                  {fmt(payment.amount)}
+                <div
+                  className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-white"
+                  style={{ color: '#636E72' }}
+                >
+                  <CategoryIcon icon={payment.categoryIcon} className="w-4 h-4" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[13px] font-semibold text-[#2D3436] truncate">
+                    {payment.name}
+                  </p>
+                  <p className="text-[11px] text-[#636E72]">
+                    {payment.categoryName && <span>{payment.categoryName} · </span>}
+                    {fmt(payment.amount)}
+                  </p>
+                </div>
+                <span className="text-[11px] font-bold px-2 py-1 rounded-lg bg-[#E0F2F1] text-[#00BFA5] shrink-0">
+                  Próximo
                 </span>
               </li>
             ))}

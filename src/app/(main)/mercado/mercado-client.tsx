@@ -9,10 +9,13 @@ import {
   Sparkles,
   ListChecks,
   TrendingUp,
-  CalendarDays,
   Package,
   Download,
   Share2,
+  Milk,
+  Apple,
+  Croissant,
+  Coffee,
 } from 'lucide-react'
 import { formatMoney, formatShortDate } from '@/lib/finance/format'
 import { ConsumptionPredictionCard } from '@/components/predictions/consumption-prediction-card'
@@ -23,9 +26,17 @@ import {
 } from '@/lib/finance/market-analytics'
 import type { CurrencyCode } from '@/lib/household/types'
 
-const GROUP_ICONS: Partial<Record<MarketProductGroup, typeof Beef>> = {
-  carne: Beef,
-  aseo: Sparkles,
+const GROUP_META: Record<
+  MarketProductGroup,
+  { icon: typeof Beef; color: string; bg: string }
+> = {
+  carne: { icon: Beef, color: '#E53935', bg: '#FFEBEE' },
+  aseo: { icon: Sparkles, color: '#7E57C2', bg: '#EDE7F6' },
+  'frutas-verduras': { icon: Apple, color: '#43A047', bg: '#E8F5E9' },
+  lacteos: { icon: Milk, color: '#1E88E5', bg: '#E3F2FD' },
+  panaderia: { icon: Croissant, color: '#FB8C00', bg: '#FFF3E0' },
+  bebidas: { icon: Coffee, color: '#6D4C41', bg: '#EFEBE9' },
+  otros: { icon: Package, color: '#636E72', bg: '#F5F5F5' },
 }
 
 function formatDaysLabel(days: number | null): string {
@@ -33,14 +44,6 @@ function formatDaysLabel(days: number | null): string {
   if (days === 0) return 'hoy'
   if (days === 1) return '1 día'
   return `${days} días`
-}
-
-function formatFrequency(days: number | null): string {
-  if (days === null) return 'Sin patrón claro'
-  if (days <= 7) return `cada ~${days} días`
-  const weeks = Math.round(days / 7)
-  if (weeks === 1) return 'cada ~1 semana'
-  return `cada ~${weeks} semanas`
 }
 
 export function MercadoClient({
@@ -54,6 +57,8 @@ export function MercadoClient({
   const [checked, setChecked] = useState<Set<string>>(new Set())
 
   const maxWeekly = Math.max(...insights.weeklySpends.map(w => w.amount), 1)
+  const totalGroupSpend = insights.groupStats.reduce((s, g) => s + g.totalSpent, 0) || 1
+  const listTotal = insights.shoppingList.reduce((s, i) => s + i.estimatedPrice, 0)
 
   function toggleItem(name: string) {
     setChecked(prev => {
@@ -93,8 +98,7 @@ export function MercadoClient({
     const text = [
       '🛒 Lista de compra CoupleCash',
       ...unchecked.map(
-        (item, i) =>
-          `${i + 1}. ${item.name} (~${fmt(item.estimatedPrice)})`
+        (item, i) => `${i + 1}. ${item.name} (~${fmt(item.estimatedPrice)})`
       ),
       `\nTotal estimado: ~${fmt(unchecked.reduce((s, i) => s + i.estimatedPrice, 0))}`,
     ].join('\n')
@@ -106,8 +110,14 @@ export function MercadoClient({
     }
   }
 
-  const aseoGroup = insights.groupStats.find(g => g.group === 'aseo')
-  const carneGroup = insights.groupStats.find(g => g.group === 'carne')
+  const weekTrend =
+    insights.avgWeeklySpend > 0
+      ? Math.round(
+          ((insights.currentWeekSpend - insights.avgWeeklySpend) /
+            insights.avgWeeklySpend) *
+            100
+        )
+      : 0
 
   return (
     <div className="space-y-4">
@@ -121,9 +131,7 @@ export function MercadoClient({
         </Link>
         <div>
           <h1 className="text-[22px] font-bold text-[#2D3436]">Mercado inteligente</h1>
-          <p className="text-[13px] text-[#636E72]">
-            Gastos, hábitos y lista de compra según tu historial
-          </p>
+          <p className="text-[13px] text-[#636E72]">Tu historial de compras, visualizado</p>
         </div>
       </div>
 
@@ -134,8 +142,7 @@ export function MercadoClient({
             Aún no hay compras de Mercado
           </p>
           <p className="text-[13px] text-[#636E72] mb-4">
-            Registra gastos en la categoría Mercado y, si puedes, agrega los productos
-            individuales para ver estadísticas y una lista sugerida.
+            Registra gastos en Mercado con productos individuales para ver estadísticas.
           </p>
           <Link
             href="/nuevo"
@@ -154,78 +161,110 @@ export function MercadoClient({
             />
           )}
 
-          <section className="rounded-[24px] bg-white/90 backdrop-blur-md border border-white/60 shadow-sm p-5 space-y-4">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-[#00BFA5]" />
-              <h2 className="text-[14px] font-bold text-[#2D3436]">Gasto semanal en mercado</h2>
+          <section className="rounded-[24px] bg-gradient-to-br from-[#00BFA5] to-[#2DD4BF] shadow-lg p-5 text-white">
+            <div className="flex items-center gap-2 mb-4 opacity-90">
+              <TrendingUp className="w-4 h-4" />
+              <span className="text-[12px] font-semibold">Gasto semanal</span>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="p-3 rounded-2xl bg-[#F5F5F5]">
-                <p className="text-[11px] text-[#636E72]">Esta semana</p>
-                <p className="text-[18px] font-bold text-[#2D3436]">
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div>
+                <p className="text-[28px] font-bold tracking-tight">
                   {fmt(insights.currentWeekSpend)}
                 </p>
+                <p className="text-[11px] opacity-80">Esta semana</p>
               </div>
-              <div className="p-3 rounded-2xl bg-[#F5F5F5]">
-                <p className="text-[11px] text-[#636E72]">Promedio semanal</p>
-                <p className="text-[18px] font-bold text-[#2D3436]">
-                  {fmt(insights.avgWeeklySpend)}
-                </p>
+              <div className="text-right">
+                <p className="text-[18px] font-bold">{fmt(insights.avgWeeklySpend)}</p>
+                <p className="text-[11px] opacity-80">Promedio</p>
+                {weekTrend !== 0 && (
+                  <p
+                    className={`text-[10px] font-bold mt-1 ${
+                      weekTrend > 0 ? 'text-[#FFEB3B]' : 'text-white/90'
+                    }`}
+                  >
+                    {weekTrend > 0 ? '+' : ''}
+                    {weekTrend}% vs promedio
+                  </p>
+                )}
               </div>
             </div>
-            <div className="flex items-end gap-1.5 h-24">
-              {[...insights.weeklySpends].reverse().map(week => (
-                <div key={week.start} className="flex-1 flex flex-col items-center gap-1">
-                  <div
-                    className="w-full rounded-t-md bg-[#00BFA5]/80 min-h-[4px]"
-                    style={{
-                      height: `${Math.max(8, (week.amount / maxWeekly) * 72)}px`,
-                    }}
-                    title={`${week.label}: ${fmt(week.amount)}`}
-                  />
-                  <span className="text-[9px] text-[#B2BEC3] truncate w-full text-center">
-                    {week.label === 'Actual' ? 'Hoy' : week.label.slice(0, 3)}
-                  </span>
-                </div>
-              ))}
+            <div className="flex items-end gap-1 h-16">
+              {[...insights.weeklySpends].reverse().map(week => {
+                const h = Math.max(6, (week.amount / maxWeekly) * 56)
+                const isCurrent = week.label === 'Actual'
+                return (
+                  <div key={week.start} className="flex-1 flex flex-col items-center gap-1">
+                    <div
+                      className={`w-full rounded-t-md ${isCurrent ? 'bg-white' : 'bg-white/40'}`}
+                      style={{ height: `${h}px` }}
+                    />
+                    <span className="text-[8px] opacity-70">
+                      {isCurrent ? '•' : week.label.slice(0, 1)}
+                    </span>
+                  </div>
+                )
+              })}
             </div>
-            <p className="text-[11px] text-[#636E72]">
-              {insights.totalTrips} visitas al mercado ·{' '}
-              {formatFrequency(insights.avgDaysBetweenTrips)}
-            </p>
+            <div className="flex items-center gap-4 mt-3 text-[10px] opacity-80">
+              <span>{insights.totalTrips} visitas</span>
+              {insights.avgDaysBetweenTrips !== null && (
+                <span>cada ~{insights.avgDaysBetweenTrips}d</span>
+              )}
+            </div>
           </section>
 
-          {(carneGroup || aseoGroup) && (
-            <section className="rounded-[24px] bg-white/90 backdrop-blur-md border border-white/60 shadow-sm p-5 space-y-3">
-              <h2 className="text-[14px] font-bold text-[#2D3436]">Lo que más compras</h2>
-              <div className="space-y-2">
-                {[carneGroup, aseoGroup].filter(Boolean).map(group => {
-                  const Icon = GROUP_ICONS[group!.group] ?? Package
+          {insights.groupStats.length > 0 && (
+            <section className="rounded-[24px] bg-white/90 backdrop-blur-md border border-white/60 shadow-sm p-5">
+              <h2 className="text-[13px] font-bold text-[#2D3436] mb-3">
+                ¿En qué gastas?
+              </h2>
+              <div className="grid grid-cols-2 gap-2 mb-4">
+                {insights.groupStats.slice(0, 4).map(group => {
+                  const meta = GROUP_META[group.group]
+                  const Icon = meta.icon
+                  const pct = Math.round((group.totalSpent / totalGroupSpend) * 100)
                   return (
                     <div
-                      key={group!.group}
-                      className="p-3 rounded-2xl bg-[#F5F5F5] flex items-start gap-3"
+                      key={group.group}
+                      className="p-3 rounded-2xl flex items-center gap-2.5"
+                      style={{ backgroundColor: meta.bg }}
                     >
-                      <div className="w-9 h-9 rounded-xl bg-white flex items-center justify-center shrink-0 text-[#00BFA5]">
+                      <div
+                        className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-white/80"
+                        style={{ color: meta.color }}
+                      >
                         <Icon className="w-4 h-4" />
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[14px] font-semibold text-[#2D3436]">
-                          {group!.label}
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[11px] font-bold text-[#2D3436] truncate">
+                          {group.label}
                         </p>
-                        <p className="text-[11px] text-[#636E72]">
-                          {fmt(group!.totalSpent)} total · ~{fmt(group!.avgWeeklySpend)}/sem
+                        <p className="text-[13px] font-bold" style={{ color: meta.color }}>
+                          {pct}%
                         </p>
-                        <p className="text-[11px] text-[#636E72]">
-                          {group!.purchaseTrips} compras ·{' '}
-                          {formatFrequency(group!.avgDaysBetweenTrips)}
-                        </p>
-                        {group!.topProducts.length > 0 && (
-                          <p className="text-[11px] text-[#B2BEC3] mt-1 truncate">
-                            {group!.topProducts.join(' · ')}
-                          </p>
-                        )}
                       </div>
+                    </div>
+                  )
+                })}
+              </div>
+              <div className="space-y-2">
+                {insights.groupStats.map(group => {
+                  const meta = GROUP_META[group.group]
+                  const pct = (group.totalSpent / totalGroupSpend) * 100
+                  return (
+                    <div key={group.group} className="flex items-center gap-2">
+                      <span className="text-[10px] text-[#636E72] w-20 truncate shrink-0">
+                        {group.label.split(' ')[0]}
+                      </span>
+                      <div className="flex-1 h-2 rounded-full bg-[#F5F5F5] overflow-hidden">
+                        <div
+                          className="h-full rounded-full"
+                          style={{ width: `${pct}%`, backgroundColor: meta.color }}
+                        />
+                      </div>
+                      <span className="text-[11px] font-bold text-[#2D3436] w-16 text-right shrink-0">
+                        {fmt(group.totalSpent)}
+                      </span>
                     </div>
                   )
                 })}
@@ -233,67 +272,66 @@ export function MercadoClient({
             </section>
           )}
 
-          <section className="rounded-[24px] bg-white/90 backdrop-blur-md border border-white/60 shadow-sm p-5 space-y-3">
-            <div className="flex items-center justify-between gap-2">
+          <section className="rounded-[24px] bg-white/90 backdrop-blur-md border border-white/60 shadow-sm p-5">
+            <div className="flex items-center justify-between gap-2 mb-3">
               <div className="flex items-center gap-2">
                 <ListChecks className="w-4 h-4 text-[#00BFA5]" />
-                <h2 className="text-[14px] font-bold text-[#2D3436]">Lista de compra sugerida</h2>
+                <h2 className="text-[13px] font-bold text-[#2D3436]">Lista sugerida</h2>
               </div>
               <div className="flex items-center gap-1">
-                <span className="text-[11px] font-bold text-[#00BFA5] mr-1">
-                  ~{fmt(insights.shoppingList.reduce((s, i) => s + i.estimatedPrice, 0))}
-                </span>
                 {insights.shoppingList.length > 0 && (
                   <>
+                    <span className="text-[12px] font-bold text-[#00BFA5] mr-1">
+                      {fmt(listTotal)}
+                    </span>
                     <button
                       type="button"
                       onClick={shareShoppingList}
-                      className="w-8 h-8 rounded-lg bg-[#F5F5F5] flex items-center justify-center text-[#636E72] hover:text-[#00BFA5]"
-                      aria-label="Compartir lista"
+                      className="w-7 h-7 rounded-lg bg-[#F5F5F5] flex items-center justify-center text-[#636E72]"
+                      aria-label="Compartir"
                     >
-                      <Share2 className="w-3.5 h-3.5" />
+                      <Share2 className="w-3 h-3" />
                     </button>
                     <button
                       type="button"
                       onClick={exportShoppingList}
-                      className="w-8 h-8 rounded-lg bg-[#F5F5F5] flex items-center justify-center text-[#636E72] hover:text-[#00BFA5]"
-                      aria-label="Exportar lista"
+                      className="w-7 h-7 rounded-lg bg-[#F5F5F5] flex items-center justify-center text-[#636E72]"
+                      aria-label="Exportar"
                     >
-                      <Download className="w-3.5 h-3.5" />
+                      <Download className="w-3 h-3" />
                     </button>
                   </>
                 )}
               </div>
             </div>
-            <p className="text-[11px] text-[#636E72]">
-              Basada en productos que sueles comprar y cuándo los compraste por última vez.
-            </p>
+
             {insights.shoppingList.length === 0 ? (
-              <p className="text-[13px] text-[#636E72]">
-                Agrega ítems detallados en tus compras de Mercado para generar la lista.
+              <p className="text-[12px] text-[#636E72]">
+                Agrega productos en tus compras para generar la lista.
               </p>
             ) : (
-              <ul className="space-y-2">
+              <ul className="space-y-1.5">
                 {insights.shoppingList.map(item => {
                   const isChecked = checked.has(item.name)
-                  const urgencyClass =
+                  const meta = GROUP_META[item.group]
+                  const urgencyDot =
                     item.urgency === 'overdue'
-                      ? 'bg-[#FFEBEE] text-[#E53935]'
+                      ? 'bg-[#E53935]'
                       : item.urgency === 'soon'
-                        ? 'bg-[#FFF8E1] text-[#F59E0B]'
-                        : 'bg-[#E0F2F1] text-[#00BFA5]'
+                        ? 'bg-[#F59E0B]'
+                        : 'bg-[#00BFA5]'
 
                   return (
                     <li key={item.name}>
                       <button
                         type="button"
                         onClick={() => toggleItem(item.name)}
-                        className={`w-full flex items-center gap-3 p-3 rounded-2xl text-left transition-opacity ${
-                          isChecked ? 'opacity-50' : 'bg-[#F5F5F5]'
+                        className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-left transition-opacity ${
+                          isChecked ? 'opacity-40' : 'hover:bg-[#F5F5F5]'
                         }`}
                       >
                         <span
-                          className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 ${
+                          className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 text-[9px] ${
                             isChecked
                               ? 'bg-[#00BFA5] border-[#00BFA5] text-white'
                               : 'border-[#B2BEC3] bg-white'
@@ -301,30 +339,16 @@ export function MercadoClient({
                         >
                           {isChecked && '✓'}
                         </span>
-                        <div className="flex-1 min-w-0">
-                          <p
-                            className={`text-[14px] font-semibold truncate ${
-                              isChecked
-                                ? 'line-through text-[#B2BEC3]'
-                                : 'text-[#2D3436]'
-                            }`}
-                          >
-                            {item.name}
-                          </p>
-                          <p className="text-[11px] text-[#636E72]">
-                            {MARKET_GROUP_LABELS[item.group]} · {fmt(item.estimatedPrice)}
-                            {item.lastPurchased &&
-                              ` · última ${formatShortDate(item.lastPurchased)}`}
-                          </p>
-                        </div>
+                        <span className={`w-2 h-2 rounded-full shrink-0 ${urgencyDot}`} />
                         <span
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded-lg shrink-0 ${urgencyClass}`}
+                          className={`flex-1 text-[13px] font-medium truncate ${
+                            isChecked ? 'line-through text-[#B2BEC3]' : 'text-[#2D3436]'
+                          }`}
                         >
-                          {item.urgency === 'overdue'
-                            ? 'Toca'
-                            : item.urgency === 'soon'
-                              ? 'Pronto'
-                              : 'Habitual'}
+                          {item.name}
+                        </span>
+                        <span className="text-[12px] font-bold text-[#636E72] shrink-0">
+                          {fmt(item.estimatedPrice)}
                         </span>
                       </button>
                     </li>
@@ -334,65 +358,49 @@ export function MercadoClient({
             )}
           </section>
 
-          {insights.groupStats.length > 0 && (
-            <section className="rounded-[24px] bg-white/90 backdrop-blur-md border border-white/60 shadow-sm p-5 space-y-3">
-              <div className="flex items-center gap-2">
-                <CalendarDays className="w-4 h-4 text-[#00BFA5]" />
-                <h2 className="text-[14px] font-bold text-[#2D3436]">
-                  Gasto por tipo de producto
-                </h2>
-              </div>
-              <ul className="space-y-2">
-                {insights.groupStats.map(group => (
-                  <li
-                    key={group.group}
-                    className="flex items-center gap-3 p-3 rounded-2xl bg-[#F5F5F5]"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[13px] font-semibold text-[#2D3436]">
-                        {group.label}
-                      </p>
-                      <p className="text-[11px] text-[#636E72]">
-                        ~{fmt(group.avgWeeklySpend)}/sem ·{' '}
-                        {formatFrequency(group.avgDaysBetweenTrips)}
-                      </p>
-                    </div>
-                    <span className="text-[14px] font-bold text-[#2D3436] shrink-0">
-                      {fmt(group.totalSpent)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-
           {insights.topProducts.length > 0 && (
-            <section className="rounded-[24px] bg-white/90 backdrop-blur-md border border-white/60 shadow-sm p-5 space-y-3">
-              <h2 className="text-[14px] font-bold text-[#2D3436]">
-                Productos que más compras
-              </h2>
+            <section className="rounded-[24px] bg-white/90 backdrop-blur-md border border-white/60 shadow-sm p-5">
+              <h2 className="text-[13px] font-bold text-[#2D3436] mb-3">Top productos</h2>
               <ul className="space-y-2">
-                {insights.topProducts.map(product => (
-                  <li
-                    key={product.name}
-                    className="flex items-center gap-3 p-3 rounded-2xl bg-[#F5F5F5]"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[13px] font-semibold text-[#2D3436] truncate">
-                        {product.name}
-                      </p>
-                      <p className="text-[11px] text-[#636E72]">
-                        {product.purchaseCount} compras · {fmt(product.avgUnitPrice)} c/u ·{' '}
-                        {formatFrequency(product.avgDaysBetween)}
-                        {product.daysSinceLastPurchase !== null &&
-                          ` · hace ${formatDaysLabel(product.daysSinceLastPurchase)}`}
-                      </p>
-                    </div>
-                    <span className="text-[14px] font-bold text-[#2D3436] shrink-0">
-                      {fmt(product.totalSpent)}
-                    </span>
-                  </li>
-                ))}
+                {insights.topProducts.slice(0, 6).map((product, i) => {
+                  const meta = GROUP_META[product.group]
+                  return (
+                    <li key={product.name} className="flex items-center gap-3">
+                      <span
+                        className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0"
+                        style={{
+                          backgroundColor: i < 3 ? meta.color : '#B2BEC3',
+                        }}
+                      >
+                        {i + 1}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-semibold text-[#2D3436] truncate">
+                          {product.name}
+                        </p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <div className="flex-1 h-1 rounded-full bg-[#F5F5F5] overflow-hidden max-w-[80px]">
+                            <div
+                              className="h-full rounded-full"
+                              style={{
+                                width: `${Math.min(100, (product.totalSpent / insights.topProducts[0].totalSpent) * 100)}%`,
+                                backgroundColor: meta.color,
+                              }}
+                            />
+                          </div>
+                          <span className="text-[10px] text-[#B2BEC3]">
+                            {product.purchaseCount}x
+                            {product.daysSinceLastPurchase !== null &&
+                              ` · hace ${formatDaysLabel(product.daysSinceLastPurchase)}`}
+                          </span>
+                        </div>
+                      </div>
+                      <span className="text-[13px] font-bold text-[#2D3436] shrink-0">
+                        {fmt(product.totalSpent)}
+                      </span>
+                    </li>
+                  )
+                })}
               </ul>
             </section>
           )}

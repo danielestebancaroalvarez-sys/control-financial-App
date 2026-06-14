@@ -285,7 +285,7 @@ export function AddTransactionForm({
 
       <div>
         <p className="text-[11px] font-semibold text-[#636E72] mb-2">Categoría</p>
-        <div className="flex gap-2 overflow-x-auto pb-1">
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none -mx-1 px-1">
           {filteredCategories.map(cat => {
             const active = (categoryId || filteredCategories[0]?.id) === cat.id
             return (

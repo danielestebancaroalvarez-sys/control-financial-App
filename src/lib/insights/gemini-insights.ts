@@ -6,36 +6,50 @@ const MODEL = 'gemini-2.5-flash-lite'
 export type InsightContext = {
   currency: string
   period: string
+  periodStart: string
+  periodEnd: string
+  realBalance: number
   income: number
   expenses: number
   guiltFreeMoney: number
   periodSavings: number
-  topCategories: { name: string; amount: number }[]
+  totalSavingsAccumulated: number
+  topCategories: { name: string; amount: number; percentOfExpenses: number }[]
+  expenseGroups: { name: string; amount: number }[]
+  savingsGoals: { name: string; percent: number; current: number; target: number }[]
   mercadoProjection: {
     spentSoFar: number
     projectedTotal: number
     historicalAverage: number
     percentVsAverage: number
+    daysRemaining: number
   } | null
-  pendingPayments: { name: string; amount: number }[]
+  pendingPayments: { name: string; amount: number; category: string | null }[]
   paidPaymentsCount: number
   totalPaymentsCount: number
+  shoppingListDueCount: number
 }
 
 const INSIGHT_PROMPT = `Eres un asesor financiero para parejas que usan CoupleCash.
-Recibes métricas del hogar en JSON. Responde ÚNICAMENTE con JSON válido (sin markdown):
+Analizas el mes en curso del hogar. Recibes métricas reales en JSON.
+
+Responde ÚNICAMENTE con JSON válido (sin markdown):
 {
   "summary": string,
   "tips": string[]
 }
 
-Reglas:
-- Escribe en español, tono cercano y práctico (máx. 2 frases en summary).
-- Genera exactamente 3 tips accionables y concretos.
-- Usa los montos del JSON; no inventes cifras.
-- Si guiltFreeMoney es negativo, advierte con tacto.
-- Si mercadoProjection.percentVsAverage > 10, menciona el sobreconsumo en mercado.
-- Tips cortos (máx. 120 caracteres cada uno).`
+Reglas del summary (2-3 frases):
+- Empieza con el estado general del mes (bien / apretado / en rojo) según guiltFreeMoney y gastos vs ingresos.
+- Menciona el dato más relevante: mayor categoría de gasto, mercado proyectado, o pagos pendientes.
+- Usa cifras del JSON; no inventes montos.
+
+Reglas de tips (exactamente 3):
+1. Un tip sobre control de gastos o categoría que más pesa.
+2. Un tip sobre ahorros, metas o dinero libre de culpa.
+3. Un tip sobre mercado, pagos recurrentes pendientes o lista de compra (si aplica).
+
+Tono: cercano, directo, en español. Sin jerga técnica. Máx. 130 caracteres por tip.`
 
 function parseInsightResponse(text: string): WeeklyInsight {
   const cleaned = text
@@ -69,7 +83,7 @@ export async function generateWeeklyInsight(
     model: MODEL,
     generationConfig: {
       responseMimeType: 'application/json',
-      temperature: 0.4,
+      temperature: 0.35,
     },
   })
 

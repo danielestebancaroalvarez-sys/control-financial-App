@@ -11,8 +11,8 @@ import {
 import { formatMoney } from '@/lib/finance/format'
 import { formatEstimatedTime } from '@/lib/finance/savings'
 import { SavingsCategoryPicker } from '@/components/savings/savings-category-picker'
-import { SavingsProjectionChart, formToSavingsGoalInput } from '@/components/savings/savings-projection-chart'
-import { SavingsScenarioPanel } from '@/components/savings/savings-scenario-panel'
+import { SavingsSimulationCollapsible } from '@/components/savings/savings-simulation-collapsible'
+import { formToSavingsGoalInput } from '@/components/savings/savings-projection-chart'
 import { CategoryIcon } from '@/components/transactions/category-icon'
 import {
   DEFAULT_SAVINGS_CATEGORY,
@@ -279,26 +279,14 @@ function SavingsGoalForm({
         </Field>
       )}
 
-      <div className="rounded-2xl bg-[#F5F5F5] p-4">
-        <p className="text-[12px] font-bold text-[#2D3436] mb-3">
-          Simulación de crecimiento
-        </p>
-        <SavingsProjectionChart
-          goal={simulationGoal}
-          accentColor={selectedCategory.color}
-        />
-        {simulationGoal.contribution_amount && simulationGoal.contribution_amount > 0 && (
-          <div className="mt-4 pt-4 border-t border-white">
-            <SavingsScenarioPanel
-              baseGoal={simulationGoal}
-              accentColor={selectedCategory.color}
-              currency={currency}
-              guiltFreeMoney={guiltFreeMoney}
-              periodSavings={periodSavings}
-            />
-          </div>
-        )}
-      </div>
+      <SavingsSimulationCollapsible
+        goal={simulationGoal}
+        accentColor={selectedCategory.color}
+        currency={currency}
+        guiltFreeMoney={guiltFreeMoney}
+        periodSavings={periodSavings}
+        defaultOpen
+      />
 
       {error && <p className="text-[12px] text-red-600">{error}</p>}
 
@@ -527,27 +515,13 @@ export function AhorrosClient({
                 </p>
               )}
 
-              <div className="mt-4 rounded-2xl bg-[#F5F5F5] p-3">
-                <p className="text-[11px] font-bold text-[#2D3436] mb-2">
-                  Simulación
-                </p>
-                <SavingsProjectionChart
-                  goal={simulationGoal}
-                  accentColor={goal.color}
-                  height={120}
-                />
-                {goal.contribution_amount && goal.contribution_amount > 0 && (
-                  <div className="mt-3 pt-3 border-t border-white">
-                    <SavingsScenarioPanel
-                      baseGoal={simulationGoal}
-                      accentColor={goal.color}
-                      currency={currency}
-                      guiltFreeMoney={guiltFreeMoney}
-                      periodSavings={periodSavings}
-                    />
-                  </div>
-                )}
-              </div>
+              <SavingsSimulationCollapsible
+                goal={simulationGoal}
+                accentColor={goal.color}
+                currency={currency}
+                guiltFreeMoney={guiltFreeMoney}
+                periodSavings={periodSavings}
+              />
             </div>
           )
         })}
