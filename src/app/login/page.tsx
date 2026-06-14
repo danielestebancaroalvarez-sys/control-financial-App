@@ -5,19 +5,24 @@ import { createClient } from '@/utils/supabase/client'
 import { useRouter } from 'next/navigation'
 import {
   Mail, Lock, Eye, EyeOff, TrendingUp, Heart,
-  MessageCircle, PiggyBank, DollarSign, BarChart2, Home,
+  MessageCircle, PiggyBank, DollarSign, BarChart2, Home, User,
 } from 'lucide-react'
+
+type AuthMode = 'login' | 'signup'
 
 export default function LoginPage() {
   const router = useRouter()
   const supabase = createClient()
 
-  const [email, setEmail]               = useState('')
-  const [password, setPassword]         = useState('')
+  const [mode, setMode] = useState<AuthMode>('login')
+  const [fullName, setFullName] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [loading, setLoading]           = useState(false)
+  const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
-  const [error, setError]               = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -25,10 +30,18 @@ export default function LoginPage() {
     if (urlError) setError(decodeURIComponent(urlError))
   }, [])
 
+  function switchMode(next: AuthMode) {
+    setMode(next)
+    setError(null)
+    setSuccess(null)
+  }
+
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
     setError(null)
+    setSuccess(null)
+
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) {
       setError(
@@ -39,13 +52,61 @@ export default function LoginPage() {
       setLoading(false)
       return
     }
+
     router.push('/')
     router.refresh()
+  }
+
+  async function handleSignUp(e: React.FormEvent) {
+    e.preventDefault()
+    setLoading(true)
+    setError(null)
+    setSuccess(null)
+
+    if (password.length < 6) {
+      setError('La contraseña debe tener al menos 6 caracteres.')
+      setLoading(false)
+      return
+    }
+
+    const { data, error } = await supabase.auth.signUp({
+      email: email.trim(),
+      password,
+      options: {
+        data: {
+          full_name: fullName.trim() || undefined,
+          name: fullName.trim() || undefined,
+        },
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      },
+    })
+
+    if (error) {
+      setError(
+        error.message === 'User already registered'
+          ? 'Este correo ya está registrado. Inicia sesión.'
+          : error.message
+      )
+      setLoading(false)
+      return
+    }
+
+    if (data.session) {
+      router.push('/onboarding')
+      router.refresh()
+      return
+    }
+
+    setSuccess(
+      'Cuenta creada. Revisa tu correo y confirma el enlace para activar tu cuenta.'
+    )
+    setLoading(false)
   }
 
   async function handleGoogleLogin() {
     setGoogleLoading(true)
     setError(null)
+    setSuccess(null)
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: `${window.location.origin}/auth/callback` },
@@ -59,7 +120,6 @@ export default function LoginPage() {
   return (
     <div className="relative min-h-screen w-full overflow-hidden flex items-center justify-center p-6 bg-gradient-to-br from-[#A8EDEA] via-[#CBF5D3] to-[#FFD6A5]">
 
-      {/* Floating decorative icons */}
       <div className="pointer-events-none select-none absolute inset-0 overflow-hidden">
         <PiggyBank  className="absolute top-[7%]  left-[5%]  w-9 h-9  -rotate-[15deg] opacity-20 text-teal-400" />
         <TrendingUp className="absolute top-[12%] right-[7%] w-10 h-10 rotate-[10deg]  opacity-20 text-amber-400" />
@@ -70,14 +130,10 @@ export default function LoginPage() {
         <DollarSign className="absolute top-[72%] right-[4%] w-7 h-7  -rotate-[5deg]  opacity-20 text-teal-400" />
       </div>
 
-      {/* Card */}
       <div className="relative z-10 w-full max-w-[380px]">
         <div className="rounded-[32px] overflow-hidden bg-white shadow-[0_24px_64px_rgba(0,0,0,0.13),0_4px_16px_rgba(0,0,0,0.07)]">
 
-          {/* Header */}
           <div className="px-7 pt-7 pb-5 bg-gradient-to-br from-[#A8EDEA]/55 via-[#CBF5D3]/40 to-[#FFD6A5]/40">
-
-            {/* Logo */}
             <div className="flex items-center gap-2.5 mb-5">
               <div className="relative shrink-0">
                 <div className="w-[42px] h-[42px] rounded-full flex items-center justify-center shadow-md bg-gradient-to-br from-[#F59E0B] to-[#FBBF24]">
@@ -93,7 +149,6 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Illustration */}
             <div className="relative h-[148px] flex items-end justify-center">
               <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[210px] h-[58px] rounded-[30px] bg-[#60C5C0]/28" />
               <div className="absolute bottom-9 left-1/2 -translate-x-1/2 w-[190px] h-[50px] rounded-[22px] bg-[#60C5C0]/38" />
@@ -124,18 +179,34 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Form */}
           <div className="px-7 pb-7 pt-1">
             <h1 className="text-[22px] font-bold text-gray-900 text-center mt-[18px] mb-5">
-              ¡Bienvenido de Nuevo!
+              {mode === 'login' ? '¡Bienvenido de Nuevo!' : 'Crea tu cuenta'}
             </h1>
 
-            <form onSubmit={handleLogin} className="flex flex-col gap-3">
+            <form
+              onSubmit={mode === 'login' ? handleLogin : handleSignUp}
+              className="flex flex-col gap-3"
+            >
+              {mode === 'signup' && (
+                <div className="relative">
+                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                  <input
+                    type="text"
+                    placeholder="Tu nombre"
+                    value={fullName}
+                    onChange={e => setFullName(e.target.value)}
+                    autoComplete="name"
+                    className="w-full pl-10 pr-4 py-3.5 rounded-[14px] text-sm text-gray-900 placeholder:text-gray-400 outline-none transition-all bg-[#F3F4F6] border-[1.5px] border-[#F3F4F6] focus:border-[#2DD4BF] focus:ring-2 focus:ring-[#2DD4BF]/30"
+                  />
+                </div>
+              )}
+
               <div className="relative">
                 <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                 <input
-                  type="text"
-                  placeholder="Correo electrónico o Usuario"
+                  type="email"
+                  placeholder="Correo electrónico"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
                   required
@@ -152,7 +223,8 @@ export default function LoginPage() {
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   required
-                  autoComplete="current-password"
+                  minLength={6}
+                  autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                   className="w-full pl-10 pr-11 py-3.5 rounded-[14px] text-sm text-gray-900 placeholder:text-gray-400 outline-none transition-all bg-[#F3F4F6] border-[1.5px] border-[#F3F4F6] focus:border-[#2DD4BF] focus:ring-2 focus:ring-[#2DD4BF]/30"
                 />
                 <button
@@ -165,15 +237,29 @@ export default function LoginPage() {
                 </button>
               </div>
 
-              <div className="flex justify-end -mt-1">
-                <button type="button" className="text-[13px] font-medium text-[#2DD4BF] hover:underline">
-                  ¿Olvidaste tu contraseña?
-                </button>
-              </div>
+              {mode === 'login' && (
+                <div className="flex justify-end -mt-1">
+                  <button type="button" className="text-[13px] font-medium text-[#2DD4BF] hover:underline">
+                    ¿Olvidaste tu contraseña?
+                  </button>
+                </div>
+              )}
+
+              {mode === 'signup' && (
+                <p className="text-[11px] text-gray-400 -mt-1">
+                  Mínimo 6 caracteres. Si tu proyecto requiere confirmación, te llegará un correo de activación.
+                </p>
+              )}
 
               {error && (
                 <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-[13px] text-red-600 text-center">
                   {error}
+                </div>
+              )}
+
+              {success && (
+                <div className="rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-[13px] text-emerald-700 text-center">
+                  {success}
                 </div>
               )}
 
@@ -182,9 +268,15 @@ export default function LoginPage() {
                 disabled={loading}
                 className="w-full py-[15px] rounded-[14px] text-white text-[15px] font-bold tracking-[0.1px] transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed mt-1 bg-gradient-to-r from-[#1ABC9C] to-[#2DD4BF] shadow-[0_6px_20px_rgba(26,188,156,0.38)] hover:shadow-[0_8px_24px_rgba(26,188,156,0.45)]"
               >
-                {loading
-                  ? <span className="flex items-center justify-center gap-2"><Spinner /> Iniciando...</span>
-                  : 'Iniciar Sesión'}
+                {loading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Spinner /> {mode === 'login' ? 'Iniciando...' : 'Creando cuenta...'}
+                  </span>
+                ) : mode === 'login' ? (
+                  'Iniciar Sesión'
+                ) : (
+                  'Crear cuenta'
+                )}
               </button>
             </form>
 
@@ -204,19 +296,30 @@ export default function LoginPage() {
               Continuar con Google
             </button>
 
-            <button
-              type="button"
-              className="w-full py-[13px] rounded-[14px] bg-gray-900 text-white text-[14px] font-semibold flex items-center justify-center gap-2.5 mt-2.5 hover:bg-gray-800 active:scale-[0.98] transition-all"
-            >
-              <AppleIcon />
-              Continuar con Apple
-            </button>
-
             <p className="text-center text-[13px] text-gray-500 mt-5">
-              ¿No tienes cuenta?{' '}
-              <button type="button" className="text-gray-900 font-bold hover:text-[#2DD4BF] transition-colors">
-                Regístrate gratis
-              </button>
+              {mode === 'login' ? (
+                <>
+                  ¿No tienes cuenta?{' '}
+                  <button
+                    type="button"
+                    onClick={() => switchMode('signup')}
+                    className="text-gray-900 font-bold hover:text-[#2DD4BF] transition-colors"
+                  >
+                    Regístrate gratis
+                  </button>
+                </>
+              ) : (
+                <>
+                  ¿Ya tienes cuenta?{' '}
+                  <button
+                    type="button"
+                    onClick={() => switchMode('login')}
+                    className="text-gray-900 font-bold hover:text-[#2DD4BF] transition-colors"
+                  >
+                    Inicia sesión
+                  </button>
+                </>
+              )}
             </p>
           </div>
         </div>
@@ -241,15 +344,6 @@ function GoogleIcon() {
       <path d="M9 18C11.43 18 13.4673 17.1941 14.9564 15.8195L12.0477 13.5614C11.2418 14.1014 10.2109 14.4205 9 14.4205C6.65591 14.4205 4.67182 12.8373 3.96409 10.71H0.957275V13.0418C2.43818 15.9832 5.48182 18 9 18Z" fill="#34A853"/>
       <path d="M3.96409 10.71C3.78409 10.17 3.68182 9.59318 3.68182 9C3.68182 8.40682 3.78409 7.83 3.96409 7.29V4.95818H0.957275C0.347727 6.17318 0 7.54773 0 9C0 10.4523 0.347727 11.8268 0.957275 13.0418L3.96409 10.71Z" fill="#FBBC05"/>
       <path d="M9 3.57955C10.3214 3.57955 11.5077 4.03364 12.4405 4.92545L15.0218 2.34409C13.4632 0.891818 11.4259 0 9 0C5.48182 0 2.43818 2.01682 0.957275 4.95818L3.96409 7.29C4.67182 5.16273 6.65591 3.57955 9 3.57955Z" fill="#EA4335"/>
-    </svg>
-  )
-}
-
-function AppleIcon() {
-  return (
-    <svg width="15" height="18" viewBox="0 0 15 18" fill="none">
-      <path d="M12.4219 9.56836C12.4043 7.74219 13.9043 6.85742 13.9746 6.81543C13.1133 5.55762 11.7656 5.38184 11.2969 5.36426C10.1777 5.24512 9.0957 6.02051 8.52734 6.02051C7.94922 6.02051 7.06934 5.37598 6.12109 5.39648C4.89941 5.41602 3.76172 6.10156 3.13672 7.18164C1.84766 9.38086 2.80664 12.6504 4.04297 14.4453C4.66016 15.3262 5.38574 16.3125 6.34375 16.2773C7.27734 16.2383 7.62793 15.6895 8.75488 15.6895C9.87305 15.6895 10.2002 16.2773 11.1758 16.252C12.1777 16.2285 12.8008 15.3594 13.4004 14.4707C14.1113 13.4531 14.4004 12.4531 14.4121 12.4004C14.3887 12.3926 12.4434 11.6387 12.4219 9.56836Z" fill="white"/>
-      <path d="M10.6074 4.14453C11.1113 3.52148 11.4551 2.67383 11.3555 1.8125C10.6367 1.8418 9.73047 2.29883 9.20508 2.90723C8.73633 3.44824 8.32617 4.32617 8.44043 5.1543C9.24609 5.21582 10.0859 4.75977 10.6074 4.14453Z" fill="white"/>
     </svg>
   )
 }
