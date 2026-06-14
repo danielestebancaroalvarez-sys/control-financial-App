@@ -10,6 +10,7 @@ import { getPeriodRangeAtOffset, getPeriodBlockLabel } from './format'
 import { buildMarketInsights } from './market-analytics'
 import type { MarketInsights } from './market-analytics'
 import { getCategoryColor } from './categories'
+import { getNextBillingDate } from './recurring-occurrences'
 import { buildTrendSeries } from './dashboard-stats'
 import { buildExpenseGroupTotals } from './category-groups'
 import { calculatePeriodSavingsAllocations } from './savings-dashboard'
@@ -124,7 +125,7 @@ export const getRecurringScheduleItems = cache(
       .from('recurring_schedules')
       .select(
         `
-        id, type, description, amount_original, currency_original,
+        id, type, category_id, description, amount_original, currency_original,
         frequency, next_occurrence,
         categories ( name, icon, color )
       `
@@ -141,11 +142,16 @@ export const getRecurringScheduleItems = cache(
       return {
         id: row.id,
         type: row.type as 'income' | 'expense',
+        categoryId: row.category_id,
         description: row.description,
         amount: Number(row.amount_original),
         currency: row.currency_original as CurrencyCode,
         frequency: row.frequency as 'weekly' | 'biweekly' | 'monthly',
         nextOccurrence: row.next_occurrence,
+        nextBillingDate: getNextBillingDate(
+          row.next_occurrence,
+          row.frequency as 'weekly' | 'biweekly' | 'monthly'
+        ),
         categoryName: cat?.name ?? 'Sin categoría',
         categoryIcon: cat?.icon ?? null,
         categoryColor: cat?.color

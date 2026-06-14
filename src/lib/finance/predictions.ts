@@ -9,11 +9,15 @@ import {
   getNextPeriodRange,
   getPeriodRange,
   getPreviousPeriodRanges,
+  getTodayString,
 } from './format'
 import { buildConsumptionPrediction } from './consumption-prediction'
 import { CONSUMPTION_PREDICTION_CATEGORIES } from './consumption-categories'
 import { parseLineItems } from './category-radar'
-import { countOccurrencesInRange } from './recurring-occurrences'
+import {
+  countOccurrencesInRange,
+  getPrimaryDueDateInRange,
+} from './recurring-occurrences'
 
 type RecurringRow = {
   id: string
@@ -126,6 +130,14 @@ function mapRecurringPayment(
   const cat = r.categories
   const unitAmount = Number(r.amount_original)
   const paymentStatus = detectPaymentStatus(r, rangeStart, rangeEnd, transactions)
+  const dueDate =
+    getPrimaryDueDateInRange(r.next_occurrence, frequency, rangeStart, rangeEnd) ??
+    undefined
+  const today = getTodayString()
+  let status = paymentStatus.status
+  if (status === 'pending' && dueDate && dueDate < today) {
+    status = 'overdue'
+  }
 
   return {
     id: r.id,
@@ -136,7 +148,9 @@ function mapRecurringPayment(
     categoryName: cat?.name ?? null,
     categoryIcon: cat?.icon ?? null,
     dueInNextPeriod,
+    dueDate,
     ...paymentStatus,
+    status,
   }
 }
 
@@ -148,13 +162,6 @@ export function buildPredictionsSummary(
 ): PredictionsSummary {
   const nextRange = getNextPeriodRange(period)
   const currentRange = getPeriodRange(period)
-
-  const upcomingPayments = recurring
-    .map(r =>
-      mapRecurringPayment(r, nextRange.start, nextRange.end, transactions, true)
-    )
-    .filter((s): s is FixedServiceStatus => s !== null)
-    .sort((a, b) => b.amount - a.amount)
 
   const currentPeriodPayments = recurring
     .map(r =>
@@ -168,7 +175,27 @@ export function buildPredictionsSummary(
     )
     .filter((s): s is FixedServiceStatus => s !== null)
     .sort((a, b) => {
-      if (a.status !== b.status) return a.status === 'pending' ? -1 : 1
+      const order = { overdue: 0, pending: 1, paid: 2 }
+      if (a.status !== b.status) return order[a.status] - order[b.status]
+      return (a.dueDate ?? '').localeCompare(b.dueDate ?? '')
+    })
+
+  const unpaidCurrentIds = new Set(
+    currentPeriodPayments
+      .filter(p => p.status === 'pending' || p.status === 'overdue')
+      .map(p => p.id)
+  )
+
+  const upcomingPayments = recurring
+    .map(r =>
+      mapRecurringPayment(r, nextRange.start, nextRange.end, transactions, true)
+    )
+    .filter((s): s is FixedServiceStatus => s !== null)
+    .filter(s => !unpaidCurrentIds.has(s.id))
+    .sort((a, b) => {
+      const da = a.dueDate ?? ''
+      const db = b.dueDate ?? ''
+      if (da !== db) return da.localeCompare(db)
       return b.amount - a.amount
     })
 

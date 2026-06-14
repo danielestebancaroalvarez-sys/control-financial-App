@@ -5,7 +5,7 @@ import { CalendarClock, Repeat, ShoppingBag } from 'lucide-react'
 import { ConsumptionPredictionCard } from '@/components/predictions/consumption-prediction-card'
 import { WeeklyInsightsCard } from '@/components/predictions/weekly-insights-card'
 import { CategoryIcon } from '@/components/transactions/category-icon'
-import { formatMoney, formatFrequency, getPeriodLabels } from '@/lib/finance/format'
+import { formatMoney, formatFrequency, formatShortDate, getPeriodLabels } from '@/lib/finance/format'
 import type { PredictionsSummary, Period } from '@/lib/finance/types'
 import type { CurrencyCode } from '@/lib/household/types'
 
@@ -109,8 +109,11 @@ export function PrediccionesClient({
                     {payment.occurrences && payment.occurrences > 1 && (
                       <> · {formatFrequency(payment.frequency, payment.occurrences)}</>
                     )}
+                    {payment.dueDate && payment.status !== 'paid' && (
+                      <> · vence {formatShortDate(payment.dueDate)}</>
+                    )}
                     {payment.status === 'paid' && payment.paidDate && (
-                      <> · pagado {payment.paidDate}</>
+                      <> · pagado {formatShortDate(payment.paidDate)}</>
                     )}
                   </p>
                 </div>
@@ -118,10 +121,16 @@ export function PrediccionesClient({
                   className={`text-[11px] font-bold px-2 py-1 rounded-lg shrink-0 ${
                     payment.status === 'paid'
                       ? 'bg-[#E8F5E9] text-[#2E7D32]'
-                      : 'bg-[#FFF8E1] text-[#F59E0B]'
+                      : payment.status === 'overdue'
+                        ? 'bg-[#FFEBEE] text-[#C62828]'
+                        : 'bg-[#FFF8E1] text-[#F59E0B]'
                   }`}
                 >
-                  {payment.status === 'paid' ? 'Pagado' : 'Pendiente'}
+                  {payment.status === 'paid'
+                    ? 'Pagado'
+                    : payment.status === 'overdue'
+                      ? 'Vencido'
+                      : 'Pendiente'}
                 </span>
               </li>
             ))}
@@ -154,6 +163,9 @@ export function PrediccionesClient({
                   <p className="text-[11px] text-cc-secondary">
                     {payment.categoryName && <span>{payment.categoryName} · </span>}
                     {fmt(payment.amount)}
+                    {payment.dueDate && (
+                      <> · {formatShortDate(payment.dueDate)}</>
+                    )}
                   </p>
                 </div>
                 <span className="text-[11px] font-bold px-2 py-1 rounded-lg bg-[#E0F2F1] text-[#00BFA5] shrink-0">

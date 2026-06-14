@@ -7,14 +7,16 @@ import {
   ArrowLeft,
   CalendarClock,
   Loader2,
+  Pencil,
   Plus,
   Repeat,
   Trash2,
 } from 'lucide-react'
 import { CategoryIcon } from '@/components/transactions/category-icon'
+import { EditFixedScheduleSheet } from '@/components/transactions/edit-fixed-schedule-sheet'
 import { deactivateRecurringSchedule } from '@/lib/finance/actions'
-import { formatFrequency, formatMoney, getPeriodLabels } from '@/lib/finance/format'
-import type { Period, RecurringScheduleItem } from '@/lib/finance/types'
+import { formatFrequency, formatMoney, formatShortDate, getPeriodLabels } from '@/lib/finance/format'
+import type { Category, Period, RecurringScheduleItem } from '@/lib/finance/types'
 import type { CurrencyCode } from '@/lib/household/types'
 
 function ScheduleList({
@@ -22,13 +24,17 @@ function ScheduleList({
   items,
   currency,
   householdId,
+  categories,
   onRemoved,
+  onEdit,
 }: {
   title: string
   items: RecurringScheduleItem[]
   currency: CurrencyCode
   householdId: string
+  categories: Category[]
   onRemoved: (id: string) => void
+  onEdit: (item: RecurringScheduleItem) => void
 }) {
   const fmt = (n: number) => formatMoney(n, currency)
   const [removingId, setRemovingId] = useState<string | null>(null)
@@ -77,22 +83,32 @@ function ScheduleList({
               </p>
               <p className="text-[10px] text-cc-muted flex items-center gap-1 mt-0.5">
                 <CalendarClock className="w-3 h-3" />
-                Próxima: {item.nextOccurrence}
+                Próxima: {formatShortDate(item.nextBillingDate)}
               </p>
             </div>
-            <button
-              type="button"
-              disabled={removingId === item.id}
-              onClick={() => handleRemove(item.id)}
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-cc-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 disabled:opacity-50 shrink-0"
-              aria-label="Eliminar programación"
-            >
-              {removingId === item.id ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Trash2 className="w-4 h-4" />
-              )}
-            </button>
+            <div className="flex items-center gap-1 shrink-0">
+              <button
+                type="button"
+                onClick={() => onEdit(item)}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-cc-muted hover:text-[#00BFA5] hover:bg-[#E0F2F1] dark:hover:bg-[#00BFA5]/10"
+                aria-label="Editar programación"
+              >
+                <Pencil className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                disabled={removingId === item.id}
+                onClick={() => handleRemove(item.id)}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-cc-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 disabled:opacity-50"
+                aria-label="Eliminar programación"
+              >
+                {removingId === item.id ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Trash2 className="w-4 h-4" />
+                )}
+              </button>
+            </div>
           </li>
         ))}
       </ul>
@@ -105,15 +121,18 @@ export function FijosClient({
   householdId,
   currency,
   period,
+  categories,
 }: {
   schedules: RecurringScheduleItem[]
   householdId: string
   currency: CurrencyCode
   period: Period
+  categories: Category[]
 }) {
   const router = useRouter()
   const labels = getPeriodLabels(period)
   const [schedules, setSchedules] = useState(initialSchedules)
+  const [editingItem, setEditingItem] = useState<RecurringScheduleItem | null>(null)
 
   const incomes = schedules.filter(s => s.type === 'income')
   const expenses = schedules.filter(s => s.type === 'expense')
@@ -161,6 +180,8 @@ export function FijosClient({
             items={incomes}
             currency={currency}
             householdId={householdId}
+            categories={categories}
+            onEdit={setEditingItem}
             onRemoved={id => {
               setSchedules(prev => prev.filter(s => s.id !== id))
               router.refresh()
@@ -171,12 +192,29 @@ export function FijosClient({
             items={expenses}
             currency={currency}
             householdId={householdId}
+            categories={categories}
+            onEdit={setEditingItem}
             onRemoved={id => {
               setSchedules(prev => prev.filter(s => s.id !== id))
               router.refresh()
             }}
           />
         </>
+      )}
+
+      {editingItem && (
+        <EditFixedScheduleSheet
+          item={editingItem}
+          categories={categories}
+          householdId={householdId}
+          currency={currency}
+          onClose={() => setEditingItem(null)}
+          onUpdated={updated => {
+            setSchedules(prev =>
+              prev.map(s => (s.id === updated.id ? updated : s))
+            )
+          }}
+        />
       )}
     </div>
   )

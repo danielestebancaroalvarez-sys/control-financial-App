@@ -1,4 +1,6 @@
-import { addFrequency, subtractFrequency } from './format'
+import { addFrequency, getTodayString, subtractFrequency } from './format'
+
+export type RecurringFrequency = 'weekly' | 'biweekly' | 'monthly'
 
 export type RecurringScheduleRow = {
   type: string
@@ -69,6 +71,42 @@ export function listOccurrenceDatesInRange(
   }
 
   return dates
+}
+
+/** Avanza desde la fecha ancla hasta la próxima facturación en o después de `fromDate`. */
+export function getNextBillingDate(
+  anchorDate: string,
+  frequency: RecurringFrequency,
+  fromDate: string = getTodayString()
+): string {
+  let date = anchorDate
+  let guard = 0
+
+  while (date < fromDate && guard < 240) {
+    date = addFrequency(date, frequency)
+    guard++
+  }
+
+  return date
+}
+
+/** Primera ocurrencia del periodo; si todas pasaron, la última del rango (vencida). */
+export function getPrimaryDueDateInRange(
+  nextOccurrence: string,
+  frequency: RecurringFrequency,
+  rangeStart: string,
+  rangeEnd: string
+): string | null {
+  const dates = listOccurrenceDatesInRange(
+    nextOccurrence,
+    frequency,
+    rangeStart,
+    rangeEnd
+  )
+  if (dates.length === 0) return null
+
+  const today = getTodayString()
+  return dates.find(d => d >= today) ?? dates[dates.length - 1] ?? null
 }
 
 export function calculateScheduledRecurringTotal(

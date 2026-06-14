@@ -146,7 +146,8 @@ export type FixedServiceStatus = {
   name: string
   amount: number
   frequency: string
-  status: 'pending' | 'paid'
+  status: 'pending' | 'paid' | 'overdue'
+  dueDate?: string
   paidAmount?: number
   paidDate?: string
   categoryName: string | null
@@ -200,14 +201,28 @@ export type InsightHighlight = {
 export type RecurringScheduleItem = {
   id: string
   type: 'income' | 'expense'
+  categoryId: string
   description: string
   amount: number
   currency: CurrencyCode
   frequency: 'weekly' | 'biweekly' | 'monthly'
   nextOccurrence: string
+  nextBillingDate: string
   categoryName: string
   categoryIcon: string | null
   categoryColor: string | null
+}
+
+export type UpdateRecurringScheduleInput = {
+  id: string
+  householdId: string
+  type: 'income' | 'expense'
+  categoryId: string
+  description: string
+  amount: number
+  currency?: CurrencyCode
+  frequency: 'weekly' | 'biweekly' | 'monthly'
+  startDate: string
 }
 
 export type CreateRecurringScheduleInput = {

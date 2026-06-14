@@ -20,6 +20,7 @@ import type {
   CreateSavingsGoalInput,
   CreateTransactionInput,
   RecordSavingsContributionInput,
+  UpdateRecurringScheduleInput,
   UpdateSavingsGoalInput,
   UpdateTransactionInput,
 } from './types'
@@ -157,6 +158,43 @@ export async function deactivateRecurringSchedule(
     .update({ is_active: false })
     .eq('id', scheduleId)
     .eq('household_id', householdId)
+
+  if (error) return { error: error.message }
+
+  revalidateAll()
+  revalidatePath('/fijos')
+  return {}
+}
+
+export async function updateRecurringSchedule(
+  input: UpdateRecurringScheduleInput
+): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) return { error: 'Debes iniciar sesión.' }
+
+  if (input.amount <= 0) return { error: 'El monto debe ser mayor a cero.' }
+  if (!input.description.trim()) return { error: 'La descripción es obligatoria.' }
+
+  const baseCurrency = await getHouseholdBaseCurrency(input.householdId)
+  const currency = input.currency ?? baseCurrency
+
+  const { error } = await supabase
+    .from('recurring_schedules')
+    .update({
+      category_id: input.categoryId,
+      type: input.type,
+      description: input.description.trim(),
+      amount_original: input.amount,
+      currency_original: currency,
+      frequency: input.frequency,
+      next_occurrence: input.startDate,
+    })
+    .eq('id', input.id)
+    .eq('household_id', input.householdId)
 
   if (error) return { error: error.message }
 
