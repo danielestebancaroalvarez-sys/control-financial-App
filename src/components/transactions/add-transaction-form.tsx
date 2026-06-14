@@ -3,9 +3,14 @@
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
-  Loader2, Plus, Trash2, Check, Sparkles, ShoppingCart, Repeat,
+  Loader2, Plus, Trash2, Check, ShoppingCart, Repeat,
 } from 'lucide-react'
 import { createTransaction, createCategory } from '@/lib/finance/actions'
+import { attachReceiptToTransaction } from '@/lib/receipts/actions'
+import { compressReceiptImage } from '@/lib/receipts/compress-image'
+import type { ParsedReceipt } from '@/lib/receipts/types'
+import { ReceiptAttachment } from './receipt-attachment'
+import { ReceiptScanner } from './receipt-scanner'
 import { getCategoryRadarKind } from '@/lib/finance/category-radar'
 import { getTodayString } from '@/lib/finance/format'
 import { CategoryIcon } from './category-icon'
@@ -44,6 +49,9 @@ export function AddTransactionForm({
   const [showNewCategory, setShowNewCategory] = useState(false)
   const [newCategoryName, setNewCategoryName] = useState('')
   const [creatingCategory, setCreatingCategory] = useState(false)
+  const [receiptFile, setReceiptFile] = useState<File | null>(null)
+  const [receiptPreviewUrl, setReceiptPreviewUrl] = useState<string | null>(null)
+  const [receiptUploadWarning, setReceiptUploadWarning] = useState<string | null>(null)
 
   const filteredCategories = useMemo(
     () => categories.filter(c => c.type === txType),
@@ -66,6 +74,45 @@ export function AddTransactionForm({
     setTxType(type)
     setCategoryId('')
     setLineItemsEnabled(false)
+    clearReceipt()
+  }
+
+  function clearReceipt() {
+    if (receiptPreviewUrl) URL.revokeObjectURL(receiptPreviewUrl)
+    setReceiptFile(null)
+    setReceiptPreviewUrl(null)
+    setReceiptUploadWarning(null)
+  }
+
+  async function handleReceiptSelect(file: File) {
+    const compressed = await compressReceiptImage(file)
+    const preview = URL.createObjectURL(compressed)
+    if (receiptPreviewUrl) URL.revokeObjectURL(receiptPreviewUrl)
+    setReceiptFile(new File([compressed], 'receipt.jpg', { type: 'image/jpeg' }))
+    setReceiptPreviewUrl(preview)
+    setReceiptUploadWarning(null)
+  }
+
+  function handleReceiptSelectFromScanner(file: File, previewUrl: string) {
+    if (receiptPreviewUrl && receiptPreviewUrl !== previewUrl) {
+      URL.revokeObjectURL(receiptPreviewUrl)
+    }
+    setReceiptFile(file)
+    setReceiptPreviewUrl(previewUrl)
+    setReceiptUploadWarning(null)
+  }
+
+  function handleApplyScannedReceipt(receipt: ParsedReceipt) {
+    if (receipt.storeName) setDescription(receipt.storeName)
+    if (receipt.transactionDate && receipt.transactionDate <= TODAY) {
+      setDate(receipt.transactionDate)
+    }
+    if (receipt.items.length > 0) {
+      setLineItemsEnabled(true)
+      setLineItems(receipt.items)
+    } else if (receipt.total && receipt.total > 0) {
+      setAmount(String(receipt.total))
+    }
   }
 
   function addLineItem() {
@@ -156,6 +203,23 @@ export function AddTransactionForm({
       return
     }
 
+    if (receiptFile && result.id) {
+      const formData = new FormData()
+      formData.append('receipt', receiptFile)
+      const uploadResult = await attachReceiptToTransaction(
+        householdId,
+        result.id,
+        formData
+      )
+      if (uploadResult.error) {
+        setReceiptUploadWarning(
+          'Gasto guardado, pero no se pudo adjuntar el recibo: ' + uploadResult.error
+        )
+        setLoading(false)
+        return
+      }
+    }
+
     setLoading(false)
     onSuccess?.()
     router.push('/')
@@ -164,19 +228,6 @@ export function AddTransactionForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="flex rounded-2xl bg-[#F5F5F5] p-1">
-        <span className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-[#00BFA5] to-[#2DD4BF] text-white text-[12px] font-bold text-center">
-          Ingreso Manual
-        </span>
-        <span className="flex-1 py-2.5 rounded-xl text-[#B2BEC3] text-[12px] font-semibold flex flex-col items-center gap-0.5">
-          <span className="flex items-center gap-1">
-            <Sparkles className="w-3 h-3" />
-            Escáner con IA
-          </span>
-          <span className="text-[9px]">Próximamente</span>
-        </span>
-      </div>
-
       <div>
         <p className="text-[12px] font-semibold text-[#636E72] text-center mb-2">
           Tipo de movimiento
@@ -331,6 +382,24 @@ export function AddTransactionForm({
         />
       </div>
 
+      {txType === 'expense' && (
+        <ReceiptAttachment
+          previewUrl={receiptPreviewUrl}
+          onSelect={handleReceiptSelect}
+          onClear={clearReceipt}
+        />
+      )}
+
+      {isMercado && txType === 'expense' && (
+        <ReceiptScanner
+          householdId={householdId}
+          categoryId={categoryId || filteredCategories[0]?.id || ''}
+          previewUrl={receiptPreviewUrl}
+          onSelectFile={handleReceiptSelectFromScanner}
+          onApply={handleApplyScannedReceipt}
+        />
+      )}
+
       {isMercado && txType === 'expense' && (
         <div className="rounded-2xl bg-[#F5F5F5] p-4">
           <div className="flex items-center justify-between mb-3">
@@ -449,6 +518,12 @@ export function AddTransactionForm({
 
       {error && (
         <p className="text-[12px] text-red-600 text-center">{error}</p>
+      )}
+
+      {receiptUploadWarning && (
+        <p className="text-[12px] text-amber-700 text-center bg-amber-50 rounded-xl px-3 py-2">
+          {receiptUploadWarning}
+        </p>
       )}
 
       <button
