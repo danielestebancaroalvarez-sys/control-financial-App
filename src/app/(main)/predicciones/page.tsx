@@ -41,7 +41,7 @@ export default async function PrediccionesPage() {
         </h2>
         {summary.fixedServices.length === 0 ? (
           <p className="text-[13px] text-[#636E72]">
-            Crea gastos recurrentes en categorías fijas (Arriendo, Luz, Internet).
+            Crea gastos recurrentes en categorías de servicio (Arriendo, Luz, Internet).
           </p>
         ) : (
           <ul className="space-y-3">
@@ -111,7 +111,8 @@ export default async function PrediccionesPage() {
         </div>
         {summary.purchasePredictions.length === 0 ? (
           <p className="text-[13px] text-[#636E72]">
-            Registra compras con ítems detallados (ej. Mercado) para ver predicciones por producto.
+            Registra compras en Mercado (con o sin ítems detallados) o marca un gasto
+            recurrente en Mercado para ver predicciones aquí.
           </p>
         ) : (
           <ul className="space-y-2">

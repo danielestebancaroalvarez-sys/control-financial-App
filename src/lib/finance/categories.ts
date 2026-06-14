@@ -8,6 +8,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   Luz: '#FFE082',
   Internet: '#81D4FA',
   Transporte: '#7E57C2',
+  Suscripciones: '#7E57C2',
   'Otros gastos': '#B2BEC3',
   Ocio: '#FF8A65',
 }

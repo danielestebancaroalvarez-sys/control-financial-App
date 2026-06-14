@@ -18,6 +18,7 @@ export type Category = {
   icon: string | null
   color: string | null
   is_fixed: boolean
+  is_subscription: boolean
   is_system: boolean
 }
 

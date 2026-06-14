@@ -22,6 +22,7 @@ export function CategoriesManager({
   const [color, setColor] = useState(COLORS[0])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isSubscription, setIsSubscription] = useState(false)
 
   const userCustom = initial.filter(c => !c.is_system)
 
@@ -30,7 +31,13 @@ export function CategoriesManager({
     setLoading(true)
     setError(null)
 
-    const result = await createCategory({ householdId, name, type, color })
+    const result = await createCategory({
+      householdId,
+      name,
+      type,
+      color,
+      isSubscription: type === 'expense' && isSubscription,
+    })
     if (result.error) {
       setError(result.error)
       setLoading(false)
@@ -78,6 +85,17 @@ export function CategoriesManager({
             </button>
           ))}
         </div>
+        {type === 'expense' && (
+          <label className="flex items-center gap-2 text-[12px] text-[#636E72] cursor-pointer">
+            <input
+              type="checkbox"
+              checked={isSubscription}
+              onChange={e => setIsSubscription(e.target.checked)}
+              className="rounded accent-[#7E57C2]"
+            />
+            Es suscripción (Netflix, Spotify, etc.)
+          </label>
+        )}
         <div className="flex gap-2">
           {COLORS.map(c => (
             <button
@@ -115,7 +133,11 @@ export function CategoriesManager({
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-[13px] font-semibold text-[#2D3436] truncate">{cat.name}</p>
-                <p className="text-[11px] text-[#636E72] capitalize">{cat.type === 'income' ? 'Ingreso' : 'Gasto'}</p>
+                <p className="text-[11px] text-[#636E72] capitalize">
+                  {cat.type === 'income' ? 'Ingreso' : 'Gasto'}
+                  {cat.is_subscription ? ' · Suscripción' : ''}
+                  {cat.is_fixed ? ' · Servicio' : ''}
+                </p>
               </div>
               <button
                 type="button"

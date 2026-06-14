@@ -277,6 +277,7 @@ export async function createCategory(input: {
   name: string
   type: 'income' | 'expense'
   color?: string
+  isSubscription?: boolean
 }): Promise<{ error?: string; id?: string }> {
   const supabase = await createClient()
   const {
@@ -297,6 +298,7 @@ export async function createCategory(input: {
       icon: 'tag',
       color: input.color ?? '#636E72',
       is_fixed: false,
+      is_subscription: input.type === 'expense' && !!input.isSubscription,
       is_system: false,
     })
     .select('id')

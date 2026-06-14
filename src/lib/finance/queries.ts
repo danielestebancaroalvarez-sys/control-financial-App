@@ -38,7 +38,7 @@ export async function getCategories(householdId: string): Promise<Category[]> {
   const supabase = await createClient()
   const { data } = await supabase
     .from('categories')
-    .select('id, name, type, icon, color, is_fixed, is_system')
+    .select('id, name, type, icon, color, is_fixed, is_subscription, is_system')
     .eq('household_id', householdId)
     .order('name')
 
@@ -47,6 +47,7 @@ export async function getCategories(householdId: string): Promise<Category[]> {
     type: c.type as 'income' | 'expense',
     color: getCategoryColor(c.name, c.color),
     is_system: c.is_system ?? false,
+    is_subscription: c.is_subscription ?? false,
   }))
 }
 
@@ -254,21 +255,24 @@ export async function getPredictionsSummary(
 ): Promise<PredictionsSummary> {
   const supabase = await createClient()
 
-  const [recurringResult, txResult] = await Promise.all([
+  const [recurringResult, txResult, categories] = await Promise.all([
     supabase
       .from('recurring_schedules')
       .select(
-        'id, description, amount_original, frequency, next_occurrence, category_id, categories (name, icon, is_fixed)'
+        'id, description, amount_original, frequency, next_occurrence, category_id, categories (name, icon, is_fixed, is_subscription)'
       )
       .eq('household_id', householdId)
       .eq('is_active', true)
       .eq('type', 'expense'),
     supabase
       .from('transactions')
-      .select('category_id, amount_base, transaction_date, line_items')
+      .select('category_id, amount_base, transaction_date, description, line_items')
       .eq('household_id', householdId)
       .eq('type', 'expense'),
+    getCategories(householdId),
   ])
+
+  const mercado = categories.find(c => c.name === 'Mercado')
 
   const recurring = (recurringResult.data ?? []).map(r => {
     const cat = Array.isArray(r.categories) ? r.categories[0] : r.categories
@@ -280,7 +284,12 @@ export async function getPredictionsSummary(
       next_occurrence: r.next_occurrence,
       category_id: r.category_id,
       categories: cat
-        ? { name: cat.name, icon: cat.icon, is_fixed: cat.is_fixed }
+        ? {
+            name: cat.name,
+            icon: cat.icon,
+            is_fixed: cat.is_fixed,
+            is_subscription: cat.is_subscription ?? false,
+          }
         : null,
     }
   })
@@ -291,8 +300,10 @@ export async function getPredictionsSummary(
       category_id: tx.category_id,
       amount_base: tx.amount_base,
       transaction_date: tx.transaction_date,
-      line_items: tx.line_items as { name: string; price: number }[] | null,
+      description: tx.description,
+      line_items: tx.line_items,
     })),
+    mercado?.id ?? null,
     period
   )
 }

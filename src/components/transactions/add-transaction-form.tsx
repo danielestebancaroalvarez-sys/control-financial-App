@@ -6,6 +6,7 @@ import {
   Loader2, Plus, Trash2, Check, Sparkles, ShoppingCart, Repeat,
 } from 'lucide-react'
 import { createTransaction, createCategory } from '@/lib/finance/actions'
+import { getCategoryRadarKind } from '@/lib/finance/category-radar'
 import { getTodayString } from '@/lib/finance/format'
 import { CategoryIcon } from './category-icon'
 import type { Category, LineItem } from '@/lib/finance/types'
@@ -196,6 +197,18 @@ export function AddTransactionForm({
             </button>
           ))}
         </div>
+        {isRecurring && selectedCategory && (
+          <p className="text-[11px] text-[#636E72] mt-2">
+            {getCategoryRadarKind(selectedCategory) === 'service' &&
+              'Radar: aparecerá en Servicios (pagos fijos).'}
+            {getCategoryRadarKind(selectedCategory) === 'subscription' &&
+              'Radar: aparecerá en Suscripciones. Usa la descripción para el nombre (ej. Netflix).'}
+            {getCategoryRadarKind(selectedCategory) === 'shopping' &&
+              'Radar: aparecerá en Predicción de compras.'}
+            {getCategoryRadarKind(selectedCategory) === 'other' &&
+              'Para el radar elige: Arriendo/Luz/Internet, Suscripciones o Mercado.'}
+          </p>
+        )}
       </div>
 
       <div className="text-center py-2">
@@ -273,6 +286,18 @@ export function AddTransactionForm({
             </button>
           </div>
         )}
+        {isRecurring && selectedCategory && (
+          <p className="text-[11px] text-[#636E72] mt-2">
+            {getCategoryRadarKind(selectedCategory) === 'service' &&
+              'Radar: aparecerá en Servicios (pagos fijos).'}
+            {getCategoryRadarKind(selectedCategory) === 'subscription' &&
+              'Radar: aparecerá en Suscripciones. Pon el nombre en descripción (ej. Netflix).'}
+            {getCategoryRadarKind(selectedCategory) === 'shopping' &&
+              'Radar: aparecerá en Predicción de compras.'}
+            {getCategoryRadarKind(selectedCategory) === 'other' &&
+              'Para el radar usa: Arriendo/Luz/Internet, Suscripciones o Mercado.'}
+          </p>
+        )}
       </div>
 
       <div>
@@ -281,7 +306,11 @@ export function AddTransactionForm({
           type="text"
           value={description}
           onChange={e => setDescription(e.target.value)}
-          placeholder="Ej: Cena, Salario marzo..."
+          placeholder={
+            selectedCategory && getCategoryRadarKind(selectedCategory) === 'subscription'
+              ? 'Ej: Netflix, Spotify, Disney+...'
+              : 'Ej: Cena, Salario marzo...'
+          }
           className="mt-1 w-full px-4 py-3 rounded-xl bg-[#F5F5F5] text-[14px] outline-none focus:ring-2 focus:ring-[#00BFA5]/30"
         />
       </div>
