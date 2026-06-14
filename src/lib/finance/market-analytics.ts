@@ -1,15 +1,9 @@
 import { parseLineItems } from './category-radar'
 import { getPeriodRangeAtOffset, listPeriodBlocks } from './format'
-import type { Period } from './types'
+import { classifyProductName } from './market-product-keywords'
+import type { Period, MarketProductGroup } from './types'
 
-export type MarketProductGroup =
-  | 'carne'
-  | 'aseo'
-  | 'frutas-verduras'
-  | 'lacteos'
-  | 'panaderia'
-  | 'bebidas'
-  | 'otros'
+export type { MarketProductGroup } from './types'
 
 export const MARKET_GROUP_LABELS: Record<MarketProductGroup, string> = {
   carne: 'Carne y proteína',
@@ -19,121 +13,6 @@ export const MARKET_GROUP_LABELS: Record<MarketProductGroup, string> = {
   panaderia: 'Panadería',
   bebidas: 'Bebidas',
   otros: 'Otros',
-}
-
-const GROUP_KEYWORDS: Record<MarketProductGroup, string[]> = {
-  carne: [
-    'carne',
-    'pollo',
-    'cerdo',
-    'res',
-    'cordero',
-    'chorizo',
-    'salchicha',
-    'jamón',
-    'jamon',
-    'tocino',
-    'hamburguesa',
-    'pescado',
-    'atún',
-    'atun',
-    'salmón',
-    'salmon',
-    'filete',
-    'muslo',
-    'pechuga',
-    'huevo',
-    'huevos',
-  ],
-  aseo: [
-    'aseo',
-    'jabón',
-    'jabon',
-    'detergente',
-    'shampoo',
-    'champú',
-    'champu',
-    'acondicionador',
-    'limpiador',
-    'cloro',
-    'desinfectante',
-    'papel higiénico',
-    'papel higienico',
-    'servilleta',
-    'pañal',
-    'panal',
-    'toalla',
-    'esponja',
-    'lavaplatos',
-    'suavizante',
-    'bleach',
-    'limpia',
-    'ariel',
-    'fabuloso',
-    'lyso',
-    'papel',
-    'bolsa',
-  ],
-  'frutas-verduras': [
-    'fruta',
-    'verdura',
-    'tomate',
-    'cebolla',
-    'plátano',
-    'platano',
-    'banano',
-    'manzana',
-    'pera',
-    'naranja',
-    'limón',
-    'limon',
-    'aguacate',
-    'papa',
-    'zanahoria',
-    'lechuga',
-    'espinaca',
-    'brocoli',
-    'brócoli',
-    'fresa',
-    'uva',
-    'mango',
-    'piña',
-    'pina',
-  ],
-  lacteos: [
-    'leche',
-    'queso',
-    'yogurt',
-    'yogur',
-    'mantequilla',
-    'crema',
-    'arequipe',
-    'kumis',
-  ],
-  panaderia: [
-    'pan',
-    'tortilla',
-    'galleta',
-    'pastel',
-    'bollo',
-    'arepa',
-    'croissant',
-    'bagel',
-  ],
-  bebidas: [
-    'agua',
-    'jugo',
-    'cerveza',
-    'refresco',
-    'gaseosa',
-    'soda',
-    'vino',
-    'whisky',
-    'bebida',
-    'cola',
-    'sprite',
-  ],
-  otros: [],
 }
 
 type TxRow = {
@@ -196,17 +75,7 @@ export type MarketInsights = {
 }
 
 export function classifyMarketProduct(name: string): MarketProductGroup {
-  const normalized = name.toLowerCase().normalize('NFD').replace(/\p{M}/gu, '')
-
-  for (const [group, keywords] of Object.entries(GROUP_KEYWORDS) as [
-    MarketProductGroup,
-    string[],
-  ][]) {
-    if (group === 'otros') continue
-    if (keywords.some(kw => normalized.includes(kw))) return group
-  }
-
-  return 'otros'
+  return classifyProductName(name)
 }
 
 function daysBetween(a: string, b: string): number {
