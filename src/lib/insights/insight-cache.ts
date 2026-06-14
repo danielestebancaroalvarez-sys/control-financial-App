@@ -1,8 +1,11 @@
+import { getPeriodRange } from '@/lib/finance/format'
+import type { Period } from '@/lib/finance/types'
 import { createClient } from '@/utils/supabase/server'
 import type { WeeklyInsight } from '@/lib/finance/types'
 
-function getPeriodKey(): string {
-  return new Date().toISOString().slice(0, 7)
+function getInsightCacheKey(period: Period): string {
+  const { start } = getPeriodRange(period)
+  return period === 'weekly' ? `w:${start}` : start.slice(0, 7)
 }
 
 export type CachedWeeklyInsight = WeeklyInsight & {
@@ -10,10 +13,11 @@ export type CachedWeeklyInsight = WeeklyInsight & {
 }
 
 export async function getCachedWeeklyInsight(
-  householdId: string
+  householdId: string,
+  period: Period = 'monthly'
 ): Promise<CachedWeeklyInsight | null> {
   const supabase = await createClient()
-  const periodKey = getPeriodKey()
+  const periodKey = getInsightCacheKey(period)
 
   const { data } = await supabase
     .from('household_weekly_insights')
@@ -35,10 +39,11 @@ export async function getCachedWeeklyInsight(
 export async function saveWeeklyInsight(
   householdId: string,
   insight: WeeklyInsight,
-  dataFingerprint: string
+  dataFingerprint: string,
+  period: Period = 'monthly'
 ): Promise<void> {
   const supabase = await createClient()
-  const periodKey = getPeriodKey()
+  const periodKey = getInsightCacheKey(period)
 
   await supabase.from('household_weekly_insights').upsert(
     {

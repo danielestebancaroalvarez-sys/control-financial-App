@@ -127,10 +127,21 @@ export function DashboardView({
               {fmt(summary.guiltFreeMoney)}
             </p>
             <p className="text-[11px] text-cc-secondary mt-1">
-              Ingresos − fijos programados − metas de ahorro − gasto variable
+              Ingresos prometidos {labels.ofPeriod} − gastos fijos prometidos − metas −
+              gasto variable
             </p>
             <div className="flex flex-wrap gap-2 mt-2 text-[10px] text-cc-muted">
-              <span>Fijos: {fmt(summary.scheduledFixedExpenses)}</span>
+              {summary.scheduledFixedIncome > 0 && (
+                <>
+                  <span>
+                    Ingresos fijos ({labels.current}): {fmt(summary.scheduledFixedIncome)}
+                  </span>
+                  <span>·</span>
+                </>
+              )}
+              <span>
+                Gastos fijos ({labels.current}): {fmt(summary.scheduledFixedExpenses)}
+              </span>
               <span>·</span>
               <span>Variable: {fmt(summary.variableSpent)}</span>
               <span>·</span>
@@ -320,7 +331,7 @@ export function DashboardView({
           )}
 
           <div className="rounded-2xl cc-surface-muted p-4">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-1">
               <p className="text-[12px] font-bold text-cc-primary">
                 Tendencia ingresos / gastos
               </p>
@@ -333,6 +344,9 @@ export function DashboardView({
                 </span>
               </div>
             </div>
+            <p className="text-[10px] text-cc-secondary mb-3">
+              Ingresos y gastos fijos prometidos {labels.ofPeriod} + variable real
+            </p>
             <TrendBarChart data={summary.trend} />
           </div>
 

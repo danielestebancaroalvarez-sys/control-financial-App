@@ -16,6 +16,7 @@ import {
   saveWeeklyInsight,
 } from '@/lib/insights/insight-cache'
 import type { CurrencyCode } from '@/lib/household/types'
+import type { Period } from '@/lib/finance/types'
 
 export async function GET(request: Request) {
   const supabase = await createClient()
@@ -46,17 +47,26 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Sin acceso al hogar.' }, { status: 403 })
   }
 
-  const { data: household } = await supabase
-    .from('households')
-    .select('base_currency')
-    .eq('id', householdId)
-    .single()
+  const [{ data: household }, { data: profile }] = await Promise.all([
+    supabase
+      .from('households')
+      .select('base_currency')
+      .eq('id', householdId)
+      .single(),
+    supabase
+      .from('profiles')
+      .select('dashboard_period')
+      .eq('id', user.id)
+      .single(),
+  ])
 
   const currency = (household?.base_currency ?? 'AUD') as CurrencyCode
+  const period: Period =
+    profile?.dashboard_period === 'weekly' ? 'weekly' : 'monthly'
 
   const [dashboard, predictions, market] = await Promise.all([
-    getDashboardSummary(householdId, 'monthly', 0),
-    getPredictionsSummary(householdId, 'monthly'),
+    getDashboardSummary(householdId, period, 0),
+    getPredictionsSummary(householdId, period),
     getMarketInsights(householdId),
   ])
 
@@ -70,7 +80,7 @@ export async function GET(request: Request) {
 
   const context: InsightContext = {
     currency,
-    period: 'mensual',
+      period: period === 'weekly' ? 'semanal' : 'mensual',
     periodStart: dashboard.periodStart,
     periodEnd: dashboard.periodEnd,
     realBalance: dashboard.realBalance,
@@ -123,7 +133,7 @@ export async function GET(request: Request) {
   const fingerprint = computeInsightFingerprint(context)
 
   if (!refresh) {
-    const cached = await getCachedWeeklyInsight(householdId)
+    const cached = await getCachedWeeklyInsight(householdId, period)
     if (cached && cached.dataFingerprint === fingerprint) {
       return NextResponse.json({
         insight: {
@@ -135,10 +145,11 @@ export async function GET(request: Request) {
         cached: true,
         dataFingerprint: fingerprint,
         aiCalled: false,
+        period,
       })
     }
   } else {
-    const cached = await getCachedWeeklyInsight(householdId)
+    const cached = await getCachedWeeklyInsight(householdId, period)
     if (cached && cached.dataFingerprint === fingerprint) {
       return NextResponse.json({
         insight: {
@@ -151,13 +162,14 @@ export async function GET(request: Request) {
         dataFingerprint: fingerprint,
         aiCalled: false,
         upToDate: true,
+        period,
       })
     }
   }
 
   try {
     const insight = await generateWeeklyInsight(context)
-    await saveWeeklyInsight(householdId, insight, fingerprint)
+    await saveWeeklyInsight(householdId, insight, fingerprint, period)
 
     return NextResponse.json({
       insight,
@@ -165,6 +177,7 @@ export async function GET(request: Request) {
       cached: false,
       dataFingerprint: fingerprint,
       aiCalled: true,
+      period,
     })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Error al generar insights.'

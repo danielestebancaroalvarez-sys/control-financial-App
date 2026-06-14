@@ -1,55 +1,72 @@
-import { addFrequency } from './format'
+import type { TransactionRow } from './types'
+import { sumVariableExpenses } from './variable-expenses'
+import {
+  calculateScheduledRecurringTotal,
+  type RecurringScheduleRow,
+} from './recurring-occurrences'
 
-type RecurringExpense = {
-  type: string
-  amount_original: number
-  frequency: string
-  next_occurrence: string
-  is_active?: boolean
-}
-
-function countOccurrencesInRange(
-  nextOccurrence: string,
-  frequency: 'weekly' | 'biweekly' | 'monthly',
-  rangeStart: string,
-  rangeEnd: string
-): number {
-  let date = nextOccurrence
-  let guard = 0
-
-  while (date < rangeStart && guard < 120) {
-    date = addFrequency(date, frequency)
-    guard++
-  }
-
-  let count = 0
-  while (date <= rangeEnd && guard < 240) {
-    count++
-    date = addFrequency(date, frequency)
-    guard++
-  }
-
-  return count
-}
-
+/** Montos fijos según fechas que caen dentro del rango [rangeStart, rangeEnd]. */
 export function calculateScheduledFixedExpenses(
-  recurring: RecurringExpense[],
+  recurring: RecurringScheduleRow[],
   rangeStart: string,
   rangeEnd: string
 ): number {
-  let total = 0
+  return calculateScheduledRecurringTotal(
+    recurring,
+    'expense',
+    rangeStart,
+    rangeEnd
+  )
+}
 
-  for (const row of recurring) {
-    if (row.type !== 'expense' || row.is_active === false) continue
-    const frequency = row.frequency as 'weekly' | 'biweekly' | 'monthly'
-    const count = countOccurrencesInRange(
-      row.next_occurrence,
-      frequency,
-      rangeStart,
-      rangeEnd
-    )
-    total += Number(row.amount_original) * count
+export function calculateScheduledFixedIncome(
+  recurring: RecurringScheduleRow[],
+  rangeStart: string,
+  rangeEnd: string
+): number {
+  return calculateScheduledRecurringTotal(
+    recurring,
+    'income',
+    rangeStart,
+    rangeEnd
+  )
+}
+
+/** Ingresos del periodo: fijos programados en el rango + ingresos puntuales sin recurrencia. */
+export function calculateEffectivePeriodIncome(
+  transactions: TransactionRow[],
+  recurring: RecurringScheduleRow[],
+  rangeStart: string,
+  rangeEnd: string
+): number {
+  const scheduled = calculateScheduledFixedIncome(recurring, rangeStart, rangeEnd)
+  let adHoc = 0
+
+  for (const tx of transactions) {
+    if (tx.type !== 'income') continue
+    if (tx.transaction_date < rangeStart || tx.transaction_date > rangeEnd) continue
+    if (tx.recurring_schedule_id) continue
+    adHoc += Number(tx.amount_base)
   }
 
-  return Math.round(total * 100) / 100
+  return Math.round((adHoc + scheduled) * 100) / 100
+}
+
+/** Salidas del periodo: fijos programados en el rango + gasto variable real. */
+export function calculateEffectivePeriodOutflow(
+  transactions: TransactionRow[],
+  recurring: RecurringScheduleRow[],
+  rangeStart: string,
+  rangeEnd: string,
+  categoryMap: Map<string, { is_fixed: boolean; is_subscription: boolean }>
+): number {
+  const scheduled = calculateScheduledFixedExpenses(recurring, rangeStart, rangeEnd)
+  const variable = sumVariableExpenses(
+    transactions,
+    rangeStart,
+    rangeEnd,
+    categoryMap
+  )
+
+  return Math.round((scheduled + variable) * 100) / 100
 }

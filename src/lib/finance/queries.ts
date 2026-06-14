@@ -4,7 +4,7 @@ import { getAuthUser } from '@/lib/auth/session'
 import type { CurrencyCode } from '@/lib/household/types'
 import { calculateBalance, sumByTypeInPeriod } from './balance'
 import { calculateGuiltFreeMoney } from './guilt-free'
-import { calculateScheduledFixedExpenses } from './scheduled-expenses'
+import { calculatePromisedCashflow } from './promised-cashflow'
 import { sumVariableExpenses } from './variable-expenses'
 import { getPeriodRangeAtOffset, getPeriodBlockLabel } from './format'
 import { buildMarketInsights } from './market-analytics'
@@ -40,7 +40,7 @@ export const getHouseholdTransactions = cache(
     const supabase = await createClient()
     const { data } = await supabase
       .from('transactions')
-      .select('type, amount_base, transaction_date, category_id, created_by, savings_goal_id')
+      .select('type, amount_base, transaction_date, category_id, created_by, savings_goal_id, recurring_schedule_id')
       .eq('household_id', householdId)
 
     return (data ?? []) as TransactionRow[]
@@ -134,7 +134,6 @@ export async function getDashboardSummary(
     ])
 
   const balance = calculateBalance(transactions)
-  const periodIncome = sumByTypeInPeriod(transactions, 'income', start, end)
   const periodExpenses = sumByTypeInPeriod(transactions, 'expense', start, end)
   const totalSavings = savingsGoals.reduce(
     (sum, g) => sum + Number(g.current_amount),
@@ -164,11 +163,16 @@ export async function getDashboardSummary(
     ])
   )
 
-  const scheduledFixedExpenses = calculateScheduledFixedExpenses(
+  const promised = calculatePromisedCashflow(
+    transactions,
     recurring,
-    start,
-    end
+    categoryMap,
+    period,
+    safeOffset
   )
+  const periodIncome = promised.promisedIncome
+  const scheduledFixedExpenses = promised.promisedFixedExpenses
+  const scheduledFixedIncome = promised.promisedFixedIncome
   const variableSpent = sumVariableExpenses(
     transactions,
     start,
@@ -270,7 +274,14 @@ export async function getDashboardSummary(
     })),
   ].filter(item => item.amount > 0)
 
-  const trend = buildTrendSeries(transactions, period, safeOffset, 6)
+  const trend = buildTrendSeries(
+    transactions,
+    recurring,
+    categoryMap,
+    period,
+    safeOffset,
+    6
+  )
   const savingsProgress = savingsGoals.map(g => ({
     name: g.name,
     current: Number(g.current_amount),
@@ -305,6 +316,7 @@ export async function getDashboardSummary(
     guiltFreeMoney,
     budgetDeficit,
     scheduledFixedExpenses,
+    scheduledFixedIncome,
     variableSpent,
     expenseChangePercent,
     topCategories,

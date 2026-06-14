@@ -1,6 +1,11 @@
 import type { Category, Period, TransactionRow } from './types'
 import { getPeriodRangeAtOffset } from './format'
 import { sumByTypeInPeriod } from './balance'
+import {
+  calculateEffectivePeriodIncome,
+  calculateEffectivePeriodOutflow,
+} from './scheduled-expenses'
+import type { RecurringScheduleRow } from './recurring-occurrences'
 
 export type TrendPoint = {
   offset: number
@@ -17,6 +22,8 @@ export type CategoryTrendPoint = {
 
 export function buildTrendSeries(
   transactions: TransactionRow[],
+  recurring: RecurringScheduleRow[],
+  categoryMap: Map<string, { is_fixed: boolean; is_subscription: boolean }>,
   period: Period,
   activeOffset: number,
   windowSize = 6
@@ -28,8 +35,19 @@ export function buildTrendSeries(
 
   for (let offset = endOffset; offset >= startOffset; offset--) {
     const { start, end } = getPeriodRangeAtOffset(period, offset)
-    const income = sumByTypeInPeriod(transactions, 'income', start, end)
-    const expenses = sumByTypeInPeriod(transactions, 'expense', start, end)
+    const income = calculateEffectivePeriodIncome(
+      transactions,
+      recurring,
+      start,
+      end
+    )
+    const expenses = calculateEffectivePeriodOutflow(
+      transactions,
+      recurring,
+      start,
+      end,
+      categoryMap
+    )
 
     points.unshift({
       offset,

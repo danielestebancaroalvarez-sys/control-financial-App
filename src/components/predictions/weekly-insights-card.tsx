@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from 'react'
 import { Loader2, RefreshCw, Sparkles, Info } from 'lucide-react'
-import type { InsightHighlight, WeeklyInsight } from '@/lib/finance/types'
+import type { InsightHighlight, Period, WeeklyInsight } from '@/lib/finance/types'
+import { getPeriodLabels } from '@/lib/finance/format'
 
-const STORAGE_PREFIX = 'cc-weekly-insight:'
+const storageKey = (householdId: string, period: Period) =>
+  `cc-weekly-insight:${householdId}:${period}`
 
 type StoredInsight = {
   insight: WeeklyInsight
@@ -12,10 +14,13 @@ type StoredInsight = {
   dataFingerprint: string
 }
 
-function readStoredInsight(householdId: string): StoredInsight | null {
+function readStoredInsight(
+  householdId: string,
+  period: Period
+): StoredInsight | null {
   if (typeof window === 'undefined') return null
   try {
-    const raw = sessionStorage.getItem(`${STORAGE_PREFIX}${householdId}`)
+    const raw = sessionStorage.getItem(storageKey(householdId, period))
     if (!raw) return null
     return JSON.parse(raw) as StoredInsight
   } catch {
@@ -23,9 +28,13 @@ function readStoredInsight(householdId: string): StoredInsight | null {
   }
 }
 
-function writeStoredInsight(householdId: string, data: StoredInsight) {
+function writeStoredInsight(
+  householdId: string,
+  period: Period,
+  data: StoredInsight
+) {
   try {
-    sessionStorage.setItem(`${STORAGE_PREFIX}${householdId}`, JSON.stringify(data))
+    sessionStorage.setItem(storageKey(householdId, period), JSON.stringify(data))
   } catch {
     // quota or private mode
   }
@@ -41,8 +50,15 @@ const TONE_STYLES: Record<
   neutral: 'cc-chip-neutral',
 }
 
-export function WeeklyInsightsCard({ householdId }: { householdId: string }) {
-  const stored = readStoredInsight(householdId)
+export function WeeklyInsightsCard({
+  householdId,
+  period,
+}: {
+  householdId: string
+  period: Period
+}) {
+  const labels = getPeriodLabels(period)
+  const stored = readStoredInsight(householdId, period)
   const [insight, setInsight] = useState<WeeklyInsight | null>(stored?.insight ?? null)
   const [highlights, setHighlights] = useState<InsightHighlight[]>(
     stored?.highlights ?? []
@@ -74,7 +90,7 @@ export function WeeklyInsightsCard({ householdId }: { householdId: string }) {
       if (data.upToDate) setUpToDate(true)
 
       if (data.dataFingerprint) {
-        writeStoredInsight(householdId, {
+        writeStoredInsight(householdId, period, {
           insight: nextInsight,
           highlights: nextHighlights,
           dataFingerprint: data.dataFingerprint,
@@ -90,7 +106,7 @@ export function WeeklyInsightsCard({ householdId }: { householdId: string }) {
 
   useEffect(() => {
     load()
-  }, [householdId])
+  }, [householdId, period])
 
   if (loading) {
     return (
@@ -128,7 +144,9 @@ export function WeeklyInsightsCard({ householdId }: { householdId: string }) {
         <div>
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-[#00BFA5]" />
-            <h2 className="text-[14px] font-bold text-cc-primary">Resumen del mes</h2>
+            <h2 className="text-[14px] font-bold text-cc-primary">
+              Resumen {labels.ofPeriod}
+            </h2>
           </div>
           <p className="text-[10px] text-cc-secondary mt-0.5">
             Basado en ingresos, gastos, ahorros, mercado y pagos recurrentes

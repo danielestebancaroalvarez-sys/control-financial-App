@@ -255,6 +255,17 @@ export function addFrequency(
   return toDateString(d)
 }
 
+export function subtractFrequency(
+  dateStr: string,
+  frequency: 'weekly' | 'biweekly' | 'monthly'
+): string {
+  const d = new Date(dateStr + 'T12:00:00')
+  if (frequency === 'weekly') d.setDate(d.getDate() - 7)
+  else if (frequency === 'biweekly') d.setDate(d.getDate() - 14)
+  else d.setMonth(d.getMonth() - 1)
+  return toDateString(d)
+}
+
 export function formatFrequency(
   frequency: string,
   occurrences = 1

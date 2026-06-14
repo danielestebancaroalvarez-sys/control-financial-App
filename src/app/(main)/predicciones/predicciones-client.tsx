@@ -6,17 +6,19 @@ import { ConsumptionPredictionCard } from '@/components/predictions/consumption-
 import { WeeklyInsightsCard } from '@/components/predictions/weekly-insights-card'
 import { CategoryIcon } from '@/components/transactions/category-icon'
 import { formatMoney, formatFrequency, getPeriodLabels } from '@/lib/finance/format'
-import type { PredictionsSummary } from '@/lib/finance/types'
+import type { PredictionsSummary, Period } from '@/lib/finance/types'
 import type { CurrencyCode } from '@/lib/household/types'
 
 export function PrediccionesClient({
   summary,
   currency,
   householdId,
+  period,
 }: {
   summary: PredictionsSummary
   currency: CurrencyCode
   householdId: string
+  period: Period
 }) {
   const fmt = (n: number) => formatMoney(n, currency)
   const labels = getPeriodLabels(summary.period)
@@ -30,7 +32,7 @@ export function PrediccionesClient({
         </p>
       </div>
 
-      <WeeklyInsightsCard householdId={householdId} />
+      <WeeklyInsightsCard householdId={householdId} period={period} />
 
       {summary.consumptionPredictions.length > 0 && (
         <section className="space-y-3">

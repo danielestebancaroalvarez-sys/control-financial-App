@@ -1,15 +1,15 @@
 import { redirect } from 'next/navigation'
-import { getMainAppContext } from '@/lib/app/context'
+import { getMainAppContextWithPeriod } from '@/lib/app/context'
 import { getDashboardSummary, getSavingsGoals } from '@/lib/finance/queries'
 import { AhorrosClient } from './ahorros-client'
 
 export default async function AhorrosPage() {
-  const ctx = await getMainAppContext()
+  const ctx = await getMainAppContextWithPeriod()
   if (!ctx) redirect('/login')
 
   const [goals, dashboard] = await Promise.all([
     getSavingsGoals(ctx.household.id),
-    getDashboardSummary(ctx.household.id, 'monthly', 0),
+    getDashboardSummary(ctx.household.id, ctx.period, 0),
   ])
 
   return (

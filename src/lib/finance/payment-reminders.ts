@@ -1,4 +1,4 @@
-import { addFrequency } from './format'
+import { listOccurrenceDatesInRange } from './recurring-occurrences'
 
 export type PaymentDueReminder = {
   id: string
@@ -27,15 +27,14 @@ export function listPaymentDueDates(
 
   for (const row of recurring) {
     const frequency = row.frequency as 'weekly' | 'biweekly' | 'monthly'
-    let date = row.next_occurrence
-    let guard = 0
+    const dates = listOccurrenceDatesInRange(
+      row.next_occurrence,
+      frequency,
+      rangeStart,
+      rangeEnd
+    )
 
-    while (date < rangeStart && guard < 120) {
-      date = addFrequency(date, frequency)
-      guard++
-    }
-
-    while (date <= rangeEnd && guard < 240) {
+    for (const date of dates) {
       const cat = row.categories
       results.push({
         id: `${row.id}:${date}`,
@@ -45,8 +44,6 @@ export function listPaymentDueDates(
         dueDate: date,
         categoryName: cat?.name ?? null,
       })
-      date = addFrequency(date, frequency)
-      guard++
     }
   }
 

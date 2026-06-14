@@ -12,13 +12,13 @@ export function buildInsightHighlights(
   const highlights: InsightHighlight[] = []
 
   highlights.push({
-    label: 'Ingresos del mes',
+    label: 'Ingresos del periodo',
     value: fmt(dashboard.monthlyIncome),
     tone: 'positive',
   })
 
   highlights.push({
-    label: 'Gastos del mes',
+    label: 'Gastos del periodo',
     value: fmt(dashboard.monthlyExpenses),
     tone: 'negative',
   })

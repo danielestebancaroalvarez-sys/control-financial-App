@@ -11,6 +11,7 @@ export type TransactionRow = {
   category_id?: string | null
   created_by?: string | null
   savings_goal_id?: string | null
+  recurring_schedule_id?: string | null
 }
 
 export type Category = {
@@ -93,6 +94,7 @@ export type DashboardSummary = {
   guiltFreeMoney: number
   budgetDeficit: number
   scheduledFixedExpenses: number
+  scheduledFixedIncome: number
   variableSpent: number
   expenseChangePercent: number | null
   topCategories: { name: string; amount: number; color: string | null }[]
