@@ -7,7 +7,10 @@ Crea un archivo llamado `.env.local` en la raíz del proyecto con este contenido
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://TU_PROJECT_ID.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=tu_anon_key_aqui
+GEMINI_API_KEY=tu_gemini_api_key_aqui
 ```
+
+> `GEMINI_API_KEY` es solo para el servidor (escaneo de recibos en Mercado). Obtén una en [Google AI Studio](https://aistudio.google.com/apikey). No uses `NEXT_PUBLIC_` para esta clave.
 
 ---
 
