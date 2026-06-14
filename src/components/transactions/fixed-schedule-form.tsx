@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { CalendarClock, Check, Loader2, Repeat } from 'lucide-react'
+import { CalendarClock, Check, Loader2 } from 'lucide-react'
 import { createRecurringSchedule } from '@/lib/finance/actions'
 import { getCategoryRadarKind } from '@/lib/finance/category-radar'
 import { getTodayString } from '@/lib/finance/format'
@@ -91,20 +91,11 @@ export function FixedScheduleForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="cc-surface rounded-[24px] p-5 space-y-4">
-      <div>
-        <div className="flex items-center gap-2 mb-1">
-          <Repeat className="w-4 h-4 text-[#00BFA5]" />
-          <h2 className="text-[15px] font-bold text-cc-primary">
-            Ingresos y gastos fijos
-          </h2>
-        </div>
-        <p className="text-[11px] text-cc-secondary leading-relaxed">
-          Configura lo que se repite automáticamente (arriendo, salario, servicios).
-          No crea un registro del día: solo programa el parámetro para el radar y el
-          presupuesto.
-        </p>
-      </div>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <p className="text-[11px] text-cc-secondary leading-relaxed cc-surface rounded-2xl px-4 py-3">
+        No crea un registro del día: solo programa el parámetro para el radar y el
+        presupuesto (arriendo, salario, servicios…).
+      </p>
 
       <div className="flex rounded-2xl cc-surface-muted p-1">
         {(['expense', 'income'] as const).map(type => (

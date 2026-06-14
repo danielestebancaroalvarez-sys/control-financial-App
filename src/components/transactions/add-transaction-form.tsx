@@ -342,7 +342,7 @@ export function AddTransactionForm({
           Fecha del movimiento
         </label>
         <p className="text-[10px] text-cc-muted mb-1">
-          Solo hoy o fechas pasadas. Para repetir, usa la sección de fijos abajo.
+          Solo hoy o fechas pasadas. Para repetir, cambia al tab Fijos.
         </p>
         <input
           type="date"
