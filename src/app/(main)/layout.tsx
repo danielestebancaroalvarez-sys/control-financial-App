@@ -1,10 +1,8 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 import { getUserHousehold } from '@/lib/household/queries'
-import { syncUserProfileFromMetadata } from '@/lib/profile/sync'
 import { AppHeader } from '@/components/layout/app-header'
 import { BottomTabBar } from '@/components/layout/bottom-tab-bar'
-import { PageTransition } from '@/components/layout/page-transition'
 import { HouseholdSync } from '@/components/realtime/household-sync'
 import { getFirstName } from '@/lib/utils/name'
 
@@ -23,8 +21,6 @@ export default async function MainLayout({
   const household = await getUserHousehold()
   if (!household) redirect('/onboarding')
 
-  await syncUserProfileFromMetadata()
-
   const displayName =
     user.user_metadata?.full_name ??
     user.user_metadata?.name ??
@@ -42,9 +38,7 @@ export default async function MainLayout({
       <HouseholdSync householdId={household.id} />
       <div className="mx-auto flex min-h-screen max-w-md flex-col px-5 pt-[max(0.5rem,env(safe-area-inset-top))] pb-[calc(7rem+env(safe-area-inset-bottom))]">
         <AppHeader firstName={firstName} email={user.email} avatarUrl={avatarUrl} />
-        <main className="flex-1">
-          <PageTransition>{children}</PageTransition>
-        </main>
+        <main className="flex-1">{children}</main>
         <BottomTabBar />
       </div>
     </div>

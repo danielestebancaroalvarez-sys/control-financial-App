@@ -3,8 +3,9 @@ import { syncUserProfileFromMetadata } from '@/lib/profile/sync'
 import type { CurrencyCode } from '@/lib/household/types'
 import { calculateBalance, sumByTypeInPeriod } from './balance'
 import { calculateGuiltFreeMoney } from './guilt-free'
-import { getPeriodRange } from './format'
+import { getPeriodRangeAtOffset, getPeriodBlockLabel } from './format'
 import { getCategoryColor } from './categories'
+import { buildTrendSeries } from './dashboard-stats'
 import { buildPredictionsSummary } from './predictions'
 import type {
   Category,
@@ -53,10 +54,13 @@ export async function getCategories(householdId: string): Promise<Category[]> {
 
 export async function getDashboardSummary(
   householdId: string,
-  period: Period = 'monthly'
+  period: Period = 'monthly',
+  periodOffset = 0
 ): Promise<DashboardSummary> {
+  const safeOffset = Math.max(0, Math.min(11, Math.floor(periodOffset)))
+  const { start, end } = getPeriodRangeAtOffset(period, safeOffset)
+
   const supabase = await createClient()
-  const { start, end } = getPeriodRange(period)
 
   const [transactions, savingsResult, categoriesResult] =
     await Promise.all([
@@ -114,6 +118,20 @@ export async function getDashboardSummary(
       }
     })
 
+  const allCategories = [...categoryTotals.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 6)
+    .map(([id, amount]) => {
+      const cat = categoryMap.get(id)
+      return {
+        name: cat?.name ?? 'Sin categoría',
+        amount,
+        color: cat?.color ?? null,
+      }
+    })
+
+  const trend = buildTrendSeries(transactions, period, safeOffset, 6)
+
   const savingsProgress = savingsGoals.map(g => ({
     name: g.name,
     current: Number(g.current_amount),
@@ -133,6 +151,12 @@ export async function getDashboardSummary(
     topCategories,
     savingsGoals: savingsProgress,
     period,
+    periodOffset: safeOffset,
+    periodStart: start,
+    periodEnd: end,
+    periodLabel: getPeriodBlockLabel(period, safeOffset, start, end),
+    trend,
+    allCategories,
   }
 }
 

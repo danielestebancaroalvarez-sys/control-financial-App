@@ -79,7 +79,61 @@ export function getCurrentWeekRange(): { start: string; end: string } {
 }
 
 export function getPeriodRange(period: Period): { start: string; end: string } {
-  return period === 'weekly' ? getCurrentWeekRange() : getCurrentMonthRange()
+  return getPeriodRangeAtOffset(period, 0)
+}
+
+export function getPeriodRangeAtOffset(
+  period: Period,
+  offset: number
+): { start: string; end: string } {
+  const safeOffset = Math.max(0, Math.floor(offset))
+
+  if (period === 'weekly') {
+    const day = new Date().getDay()
+    const diff = day === 0 ? -6 : 1 - day
+    const start = new Date()
+    start.setDate(start.getDate() + diff - safeOffset * 7)
+    const end = new Date(start)
+    end.setDate(start.getDate() + 6)
+    return { start: toDateString(start), end: toDateString(end) }
+  }
+
+  const now = new Date()
+  const mStart = new Date(now.getFullYear(), now.getMonth() - safeOffset, 1)
+  const mEnd = new Date(now.getFullYear(), now.getMonth() - safeOffset + 1, 0)
+  return { start: toDateString(mStart), end: toDateString(mEnd) }
+}
+
+export function formatShortDate(dateStr: string): string {
+  const d = new Date(`${dateStr}T12:00:00`)
+  return d.toLocaleDateString('es', { day: 'numeric', month: 'short' })
+}
+
+export function getPeriodBlockLabel(
+  period: Period,
+  offset: number,
+  start: string,
+  end: string
+): string {
+  if (offset === 0) return period === 'weekly' ? 'Actual' : 'Actual'
+  if (offset === 1) return period === 'weekly' ? 'Anterior' : 'Anterior'
+  if (period === 'weekly') {
+    return `${formatShortDate(start)}`
+  }
+  const d = new Date(`${start}T12:00:00`)
+  return d.toLocaleDateString('es', { month: 'short', year: '2-digit' })
+}
+
+export function listPeriodBlocks(period: Period, count = 8) {
+  return Array.from({ length: count }, (_, offset) => {
+    const { start, end } = getPeriodRangeAtOffset(period, offset)
+    return {
+      offset,
+      start,
+      end,
+      label: getPeriodBlockLabel(period, offset, start, end),
+    }
+  })
 }
 
 function toDateString(date: Date): string {

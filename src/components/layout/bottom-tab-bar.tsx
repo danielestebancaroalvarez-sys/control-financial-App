@@ -36,6 +36,7 @@ export function BottomTabBar() {
                 <Link
                   key={tab.href}
                   href={tab.href}
+                  prefetch
                   className="relative -top-5 flex flex-col items-center shrink-0"
                   aria-label={tab.label}
                 >
@@ -57,6 +58,7 @@ export function BottomTabBar() {
               <Link
                 key={tab.href}
                 href={tab.href}
+                prefetch
                 className="relative flex flex-col items-center gap-0.5 py-1.5 min-w-[3.25rem]"
               >
                 {active && activeIndex === index && (

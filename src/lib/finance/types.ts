@@ -69,6 +69,12 @@ export type DashboardSummary = {
   topCategories: { name: string; amount: number; color: string | null }[]
   savingsGoals: { name: string; percent: number; current: number; target: number }[]
   period: Period
+  periodOffset: number
+  periodStart: string
+  periodEnd: string
+  periodLabel: string
+  trend: { offset: number; label: string; income: number; expenses: number }[]
+  allCategories: { name: string; amount: number; color: string | null }[]
 }
 
 export type SavingsGoal = {
