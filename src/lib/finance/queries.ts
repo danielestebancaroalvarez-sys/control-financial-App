@@ -6,7 +6,9 @@ import { calculateBalance, sumByTypeInPeriod } from './balance'
 import { calculateGuiltFreeMoney } from './guilt-free'
 import { getPeriodRangeAtOffset, getPeriodBlockLabel } from './format'
 import { getCategoryColor } from './categories'
-import { buildTrendSeries } from './dashboard-stats'
+import { buildTrendSeries, buildCategoryTrendSeries } from './dashboard-stats'
+import { buildExpenseGroupTotals } from './category-groups'
+import { calculatePeriodSavingsAllocations } from './savings-dashboard'
 import { buildPredictionsSummary } from './predictions'
 import type {
   Category,
@@ -103,11 +105,28 @@ export async function getDashboardSummary(
     (sum, g) => sum + Number(g.current_amount),
     0
   )
-  const guiltFreeMoney = calculateGuiltFreeMoney(periodIncome, periodExpenses)
+  const { total: periodSavings, items: savingsBreakdown } =
+    calculatePeriodSavingsAllocations(savingsGoals, period, start, end)
+  const guiltFreeMoney = calculateGuiltFreeMoney(
+    periodIncome,
+    periodExpenses,
+    periodSavings
+  )
+  const budgetDeficit =
+    guiltFreeMoney < 0 ? Math.round(Math.abs(guiltFreeMoney) * 100) / 100 : 0
 
   const expenseCategories = categories.filter(c => c.type === 'expense')
   const categoryMap = new Map(
-    expenseCategories.map(c => [c.id, { id: c.id, name: c.name, color: c.color }])
+    expenseCategories.map(c => [
+      c.id,
+      {
+        id: c.id,
+        name: c.name,
+        color: c.color,
+        is_fixed: c.is_fixed,
+        is_subscription: c.is_subscription,
+      },
+    ])
   )
 
   const categoryTotals = new Map<string, number>()
@@ -134,10 +153,18 @@ export async function getDashboardSummary(
 
   const allCategories = [...categoryTotals.entries()]
     .sort((a, b) => b[1] - a[1])
-    .slice(0, 6)
     .map(mapCategoryAmount)
 
+  const expenseGroups = buildExpenseGroupTotals(categoryTotals, categoryMap)
+
   const trend = buildTrendSeries(transactions, period, safeOffset, 6)
+  const categoryTrend = buildCategoryTrendSeries(
+    transactions,
+    expenseCategories,
+    period,
+    safeOffset,
+    6
+  )
   const savingsProgress = savingsGoals.map(g => ({
     name: g.name,
     current: Number(g.current_amount),
@@ -152,9 +179,13 @@ export async function getDashboardSummary(
     realBalance: balance.balance,
     monthlyIncome: periodIncome,
     monthlyExpenses: periodExpenses,
+    periodSavings,
+    savingsBreakdown,
     totalSavings,
     guiltFreeMoney,
+    budgetDeficit,
     topCategories,
+    expenseGroups,
     savingsGoals: savingsProgress,
     period,
     periodOffset: safeOffset,
@@ -162,6 +193,7 @@ export async function getDashboardSummary(
     periodEnd: end,
     periodLabel: getPeriodBlockLabel(period, safeOffset, start, end),
     trend,
+    categoryTrend,
     allCategories,
   }
 }

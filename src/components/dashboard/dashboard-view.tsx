@@ -1,12 +1,45 @@
 import { DonutChart } from '@/components/dashboard/donut-chart'
 import { TrendBarChart } from '@/components/dashboard/trend-bar-chart'
 import { CategoryBarChart } from '@/components/dashboard/category-bar-chart'
+import { CategoryTrendChart } from '@/components/dashboard/category-trend-chart'
 import { PeriodBlockSelector } from '@/components/dashboard/period-block-selector'
 import { BalanceEditButton } from '@/app/(main)/balance-edit-button'
 import { formatMoney, getPeriodLabels } from '@/lib/finance/format'
 import type { DashboardSummary } from '@/lib/finance/types'
 import type { CurrencyCode } from '@/lib/household/types'
 import { Sparkles, ArrowDownRight, ArrowUpRight } from 'lucide-react'
+
+function buildBudgetSlices(summary: DashboardSummary) {
+  const slices: { value: number; color: string; label: string }[] = []
+
+  if (summary.monthlyExpenses > 0) {
+    slices.push({
+      value: summary.monthlyExpenses,
+      color: '#EC4899',
+      label: 'Gastos',
+    })
+  }
+
+  for (const saving of summary.savingsBreakdown) {
+    if (saving.amount > 0) {
+      slices.push({
+        value: saving.amount,
+        color: saving.color,
+        label: `Ahorro · ${saving.name}`,
+      })
+    }
+  }
+
+  if (summary.guiltFreeMoney > 0) {
+    slices.push({
+      value: summary.guiltFreeMoney,
+      color: '#FFE082',
+      label: 'Libre',
+    })
+  }
+
+  return slices
+}
 
 export function DashboardView({
   firstName,
@@ -23,7 +56,7 @@ export function DashboardView({
 }) {
   const fmt = (n: number) => formatMoney(n, currency)
   const labels = getPeriodLabels(summary.period)
-  const incomeVsExpenseTotal = summary.monthlyIncome + summary.monthlyExpenses
+  const budgetSlices = buildBudgetSlices(summary)
 
   return (
     <div className="space-y-4">
@@ -73,32 +106,36 @@ export function DashboardView({
                 Dinero libre de culpa
               </span>
             </div>
-            <p className="text-[24px] font-bold text-[#F59E0B]">
+            <p
+              className={`text-[24px] font-bold ${
+                summary.guiltFreeMoney < 0 ? 'text-[#EC4899]' : 'text-[#F59E0B]'
+              }`}
+            >
               {fmt(summary.guiltFreeMoney)}
             </p>
-            <p className="text-[11px] text-[#636E72] mt-1">Ingresos − gastos del periodo</p>
+            <p className="text-[11px] text-[#636E72] mt-1">
+              Ingresos − gastos − ahorros planificados del periodo
+            </p>
+            {summary.budgetDeficit > 0 && (
+              <p className="text-[11px] text-[#EC4899] font-semibold mt-1">
+                Déficit: {fmt(summary.budgetDeficit)} por encima del ingreso
+              </p>
+            )}
           </div>
 
           <div className="rounded-2xl bg-[#F5F5F5] p-4">
             <p className="text-[12px] font-bold text-[#2D3436] mb-1">
-              Distribución del periodo
+              Distribución del ingreso
             </p>
-            <p className="text-[10px] text-[#636E72] mb-4">Ingresos vs gastos</p>
+            <p className="text-[10px] text-[#636E72] mb-4">
+              Ingresos, gastos, ahorros y dinero libre
+            </p>
             <DonutChart
-              slices={[
-                {
-                  value: summary.monthlyIncome,
-                  color: '#00BFA5',
-                  label: 'Ingresos',
-                },
-                {
-                  value: summary.monthlyExpenses,
-                  color: '#EC4899',
-                  label: 'Gastos',
-                },
-              ]}
+              slices={budgetSlices}
+              centerValue={fmt(summary.monthlyIncome)}
+              centerLabel="Ingresos"
             />
-            <div className="flex justify-between mt-4 pt-3 border-t border-white text-[12px]">
+            <div className="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-white text-[11px]">
               <div className="flex items-center gap-1 text-[#00BFA5]">
                 <ArrowUpRight className="w-3 h-3" />
                 <span className="font-bold">{fmt(summary.monthlyIncome)}</span>
@@ -107,21 +144,39 @@ export function DashboardView({
                 <ArrowDownRight className="w-3 h-3" />
                 <span className="font-bold">{fmt(summary.monthlyExpenses)}</span>
               </div>
+              <div className="text-[#F59E0B] font-bold">
+                Ahorros: {fmt(summary.periodSavings)}
+              </div>
+              <div className="text-[#636E72] font-bold">
+                Libre: {fmt(Math.max(0, summary.guiltFreeMoney))}
+              </div>
             </div>
-            {incomeVsExpenseTotal > 0 && (
-              <p className="text-[10px] text-[#636E72] text-center mt-2">
-                Balance del periodo:{' '}
-                <span className="font-semibold text-[#2D3436]">
-                  {fmt(summary.monthlyIncome - summary.monthlyExpenses)}
-                </span>
-              </p>
-            )}
           </div>
+
+          {summary.expenseGroups.length > 0 && (
+            <div className="rounded-2xl bg-[#F5F5F5] p-4">
+              <p className="text-[12px] font-bold text-[#2D3436] mb-1">
+                ¿En qué se va la plata?
+              </p>
+              <p className="text-[10px] text-[#636E72] mb-4">
+                Arriendo, servicios, mercado, restaurantes, transporte y otros
+              </p>
+              <DonutChart
+                slices={summary.expenseGroups.map(g => ({
+                  value: g.amount,
+                  color: g.color,
+                  label: g.name,
+                }))}
+                centerValue={fmt(summary.monthlyExpenses)}
+                centerLabel="Gastos"
+              />
+            </div>
+          )}
 
           <div className="rounded-2xl bg-[#F5F5F5] p-4">
             <div className="flex items-center justify-between mb-3">
               <p className="text-[12px] font-bold text-[#2D3436]">
-                Tendencia ({summary.period === 'weekly' ? 'semanas' : 'meses'})
+                Tendencia ingresos / gastos
               </p>
               <div className="flex gap-3 text-[9px] font-semibold text-[#636E72]">
                 <span className="flex items-center gap-1">
@@ -135,10 +190,20 @@ export function DashboardView({
             <TrendBarChart data={summary.trend} />
           </div>
 
+          <div className="rounded-2xl bg-[#F5F5F5] p-4">
+            <p className="text-[12px] font-bold text-[#2D3436] mb-1">
+              Gastos por categoría · tendencia
+            </p>
+            <p className="text-[10px] text-[#636E72] mb-3">
+              Barras apiladas por {summary.period === 'weekly' ? 'semana' : 'mes'}
+            </p>
+            <CategoryTrendChart data={summary.categoryTrend} />
+          </div>
+
           {summary.allCategories.length > 0 && (
             <div className="rounded-2xl bg-[#F5F5F5] p-4">
               <p className="text-[12px] font-bold text-[#2D3436] mb-3">
-                Gastos por categoría
+                Gastos por categoría · periodo actual
               </p>
               <CategoryBarChart items={summary.allCategories} formatValue={fmt} />
             </div>
@@ -171,7 +236,9 @@ export function DashboardView({
             </div>
           )}
 
-          {summary.allCategories.length === 0 && summary.savingsGoals.length === 0 && (
+          {summary.allCategories.length === 0 &&
+            summary.savingsGoals.length === 0 &&
+            summary.monthlyIncome === 0 && (
             <div className="rounded-2xl bg-[#F5F5F5] px-5 py-4 text-center">
               <p className="text-[13px] text-[#636E72]">
                 Añade transacciones para ver gráficos en este periodo.

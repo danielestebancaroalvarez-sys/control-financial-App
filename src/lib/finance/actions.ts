@@ -11,6 +11,7 @@ import type {
   CreateSavingsGoalInput,
   CreateTransactionInput,
   UpdateSavingsGoalInput,
+  UpdateTransactionInput,
 } from './types'
 
 const REVALIDATE_PATHS = ['/', '/buscar', '/ahorros', '/predicciones', '/nuevo', '/ajustes']
@@ -175,6 +176,112 @@ export async function createTransaction(
 
   revalidateAll()
   return { id: tx.id }
+}
+
+export async function updateTransaction(
+  input: UpdateTransactionInput
+): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) return { error: 'Debes iniciar sesión.' }
+
+  const today = getTodayString()
+  if (input.transactionDate > today) {
+    return { error: 'No puedes usar una fecha futura.' }
+  }
+
+  const { data: existing, error: fetchError } = await supabase
+    .from('transactions')
+    .select('id, type, is_auto_adjustment, household_id')
+    .eq('id', input.id)
+    .eq('household_id', input.householdId)
+    .single()
+
+  if (fetchError || !existing) {
+    return { error: 'No se encontró el movimiento.' }
+  }
+
+  if (existing.type === 'adjustment' || existing.is_auto_adjustment) {
+    return { error: 'Este movimiento no se puede editar.' }
+  }
+
+  const baseCurrency = await getHouseholdBaseCurrency(input.householdId)
+  const currency = input.currency ?? baseCurrency
+
+  let amount = input.amount
+  if (input.lineItems && input.lineItems.length > 0) {
+    amount = input.lineItems.reduce((sum, item) => sum + item.price, 0)
+  }
+
+  if (amount <= 0) return { error: 'El monto debe ser mayor a cero.' }
+
+  let exchangeRate = 1
+  try {
+    exchangeRate = await fetchExchangeRate(supabase, currency, baseCurrency)
+  } catch {
+    return { error: `No hay tasa de cambio para ${currency} → ${baseCurrency}` }
+  }
+
+  const amounts = prepareTransactionAmounts(amount, currency, baseCurrency, exchangeRate)
+
+  const { error: txError } = await supabase
+    .from('transactions')
+    .update({
+      category_id: input.categoryId,
+      type: input.type,
+      description: input.description.trim(),
+      transaction_date: input.transactionDate,
+      ...amounts,
+      line_items: input.lineItems?.length ? input.lineItems : null,
+    })
+    .eq('id', input.id)
+    .eq('household_id', input.householdId)
+
+  if (txError) return { error: txError.message }
+
+  revalidateAll()
+  return {}
+}
+
+export async function deleteTransaction(
+  id: string,
+  householdId: string
+): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) return { error: 'Debes iniciar sesión.' }
+
+  const { data: existing, error: fetchError } = await supabase
+    .from('transactions')
+    .select('id, type, is_auto_adjustment')
+    .eq('id', id)
+    .eq('household_id', householdId)
+    .single()
+
+  if (fetchError || !existing) {
+    return { error: 'No se encontró el movimiento.' }
+  }
+
+  if (existing.type === 'adjustment' || existing.is_auto_adjustment) {
+    return { error: 'Este movimiento no se puede eliminar.' }
+  }
+
+  const { error } = await supabase
+    .from('transactions')
+    .delete()
+    .eq('id', id)
+    .eq('household_id', householdId)
+
+  if (error) return { error: error.message }
+
+  revalidateAll()
+  return {}
 }
 
 export async function createSavingsGoal(

@@ -78,6 +78,48 @@ export function getCurrentWeekRange(): { start: string; end: string } {
   return { start: toDateString(start), end: toDateString(end) }
 }
 
+export function getLastWeekRange(): { start: string; end: string } {
+  const { start } = getCurrentWeekRange()
+  const weekStart = new Date(`${start}T12:00:00`)
+  weekStart.setDate(weekStart.getDate() - 7)
+  const weekEnd = new Date(weekStart)
+  weekEnd.setDate(weekStart.getDate() + 6)
+  return { start: toDateString(weekStart), end: toDateString(weekEnd) }
+}
+
+export function getLastMonthRange(): { start: string; end: string } {
+  const now = new Date()
+  const start = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+  const end = new Date(now.getFullYear(), now.getMonth(), 0)
+  return { start: toDateString(start), end: toDateString(end) }
+}
+
+export type SearchDatePreset =
+  | 'this-week'
+  | 'last-week'
+  | 'this-month'
+  | 'last-month'
+  | 'period'
+
+export function getSearchPresetRange(
+  preset: SearchDatePreset,
+  period: Period
+): { start: string; end: string } {
+  switch (preset) {
+    case 'this-week':
+      return getCurrentWeekRange()
+    case 'last-week':
+      return getLastWeekRange()
+    case 'this-month':
+      return getCurrentMonthRange()
+    case 'last-month':
+      return getLastMonthRange()
+    case 'period':
+    default:
+      return getPeriodRange(period)
+  }
+}
+
 export function getPeriodRange(period: Period): { start: string; end: string } {
   return getPeriodRangeAtOffset(period, 0)
 }

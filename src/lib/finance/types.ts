@@ -64,9 +64,13 @@ export type DashboardSummary = {
   realBalance: number
   monthlyIncome: number
   monthlyExpenses: number
+  periodSavings: number
+  savingsBreakdown: { name: string; amount: number; color: string }[]
   totalSavings: number
   guiltFreeMoney: number
+  budgetDeficit: number
   topCategories: { name: string; amount: number; color: string | null }[]
+  expenseGroups: { name: string; amount: number; color: string }[]
   savingsGoals: { name: string; percent: number; current: number; target: number }[]
   period: Period
   periodOffset: number
@@ -74,6 +78,11 @@ export type DashboardSummary = {
   periodEnd: string
   periodLabel: string
   trend: { offset: number; label: string; income: number; expenses: number }[]
+  categoryTrend: {
+    label: string
+    offset: number
+    categories: { name: string; amount: number; color: string }[]
+  }[]
   allCategories: { name: string; amount: number; color: string | null }[]
 }
 
@@ -155,6 +164,18 @@ export type CreateTransactionInput = {
   transactionDate: string
   isRecurring?: boolean
   frequency?: 'weekly' | 'biweekly' | 'monthly'
+  lineItems?: LineItem[]
+}
+
+export type UpdateTransactionInput = {
+  id: string
+  householdId: string
+  type: 'income' | 'expense'
+  categoryId: string
+  description: string
+  amount: number
+  currency?: CurrencyCode
+  transactionDate: string
   lineItems?: LineItem[]
 }
 

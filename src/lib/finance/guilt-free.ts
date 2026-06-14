@@ -14,7 +14,8 @@ export function toMonthlyAmount(
 
 export function calculateGuiltFreeMoney(
   periodIncome: number,
-  periodExpenses: number
+  periodExpenses: number,
+  periodSavings = 0
 ): number {
-  return periodIncome - periodExpenses
+  return periodIncome - periodExpenses - periodSavings
 }

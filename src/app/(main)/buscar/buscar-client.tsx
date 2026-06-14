@@ -1,43 +1,52 @@
 'use client'
 
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useCallback, useTransition } from 'react'
-import { Download, Search } from 'lucide-react'
+import { useCallback, useState, useTransition } from 'react'
+import { Download, Search, Pencil, Trash2, Loader2 } from 'lucide-react'
+import { deleteTransaction } from '@/lib/finance/actions'
+import { EditTransactionSheet } from '@/components/transactions/edit-transaction-sheet'
 import { CategoryIcon } from '@/components/transactions/category-icon'
-import { formatMoney, getPeriodLabels } from '@/lib/finance/format'
+import { formatMoney, getPeriodLabels, type SearchDatePreset } from '@/lib/finance/format'
 import type { Category, Period, TransactionListItem } from '@/lib/finance/types'
 import type { CurrencyCode } from '@/lib/household/types'
-import type { HouseholdMember } from '@/lib/household/types'
+
+const DATE_PRESETS: { id: SearchDatePreset; label: string }[] = [
+  { id: 'period', label: 'Periodo actual' },
+  { id: 'this-week', label: 'Esta semana' },
+  { id: 'last-week', label: 'Última semana' },
+  { id: 'this-month', label: 'Este mes' },
+  { id: 'last-month', label: 'Mes pasado' },
+]
 
 export function BuscarClient({
   results,
   categories,
-  members,
+  householdId,
   currency,
   filters,
   period,
-  defaultStartDate,
-  defaultEndDate,
 }: {
   results: TransactionListItem[]
   categories: Category[]
-  members: HouseholdMember[]
+  householdId: string
   currency: CurrencyCode
-  filters: Record<string, string>
+  filters: { q: string; type: string; preset: SearchDatePreset }
   period: Period
-  defaultStartDate: string
-  defaultEndDate: string
 }) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [pending, startTransition] = useTransition()
+  const [editing, setEditing] = useState<TransactionListItem | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
   const labels = getPeriodLabels(period)
 
-  const updateFilter = useCallback(
-    (key: string, value: string) => {
+  const updateParams = useCallback(
+    (updates: Record<string, string>) => {
       const params = new URLSearchParams(searchParams.toString())
-      if (value) params.set(key, value)
-      else params.delete(key)
+      for (const [key, value] of Object.entries(updates)) {
+        if (value && value !== 'all') params.set(key, value)
+        else params.delete(key)
+      }
       startTransition(() => {
         router.replace(`/buscar?${params.toString()}`)
       })
@@ -66,6 +75,18 @@ export function BuscarClient({
     a.download = `couplecash-${new Date().toISOString().slice(0, 10)}.csv`
     a.click()
     URL.revokeObjectURL(url)
+  }
+
+  async function handleDelete(tx: TransactionListItem) {
+    if (!confirm(`¿Eliminar "${tx.description}"?`)) return
+    setDeletingId(tx.id)
+    const result = await deleteTransaction(tx.id, householdId)
+    setDeletingId(null)
+    if (result.error) {
+      alert(result.error)
+      return
+    }
+    router.refresh()
   }
 
   const fmt = (n: number) => formatMoney(n, currency)
@@ -97,57 +118,49 @@ export function BuscarClient({
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#B2BEC3]" />
           <input
             type="search"
-            defaultValue={filters.q ?? ''}
+            defaultValue={filters.q}
             placeholder="Buscar por descripción..."
-            onChange={e => updateFilter('q', e.target.value)}
+            onChange={e => updateParams({ q: e.target.value })}
             className="w-full pl-10 pr-4 py-3 rounded-xl bg-[#F5F5F5] text-[14px] outline-none focus:ring-2 focus:ring-[#00BFA5]/30"
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
-          <select
-            defaultValue={filters.type ?? 'all'}
-            onChange={e => updateFilter('type', e.target.value === 'all' ? '' : e.target.value)}
-            className="px-3 py-2.5 rounded-xl bg-[#F5F5F5] text-[12px] font-semibold outline-none"
-          >
-            <option value="all">Todos los tipos</option>
-            <option value="income">Ingresos</option>
-            <option value="expense">Gastos</option>
-          </select>
-          <select
-            defaultValue={filters.categoryId ?? ''}
-            onChange={e => updateFilter('categoryId', e.target.value)}
-            className="px-3 py-2.5 rounded-xl bg-[#F5F5F5] text-[12px] font-semibold outline-none"
-          >
-            <option value="">Todas las categorías</option>
-            {categories.map(c => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
-          <select
-            defaultValue={filters.createdBy ?? ''}
-            onChange={e => updateFilter('createdBy', e.target.value)}
-            className="px-3 py-2.5 rounded-xl bg-[#F5F5F5] text-[12px] font-semibold outline-none"
-          >
-            <option value="">Todos los autores</option>
-            {members.map(m => (
-              <option key={m.user_id} value={m.user_id}>
-                {m.full_name ?? 'Usuario'}
-              </option>
-            ))}
-          </select>
-          <input
-            type="date"
-            defaultValue={filters.startDate ?? defaultStartDate}
-            onChange={e => updateFilter('startDate', e.target.value)}
-            className="px-3 py-2.5 rounded-xl bg-[#F5F5F5] text-[12px] outline-none"
-          />
-          <input
-            type="date"
-            defaultValue={filters.endDate ?? defaultEndDate}
-            onChange={e => updateFilter('endDate', e.target.value)}
-            className="px-3 py-2.5 rounded-xl bg-[#F5F5F5] text-[12px] outline-none"
-          />
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          {DATE_PRESETS.map(p => (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => updateParams({ preset: p.id })}
+              className={`shrink-0 px-3 py-2 rounded-xl text-[11px] font-bold transition-colors ${
+                filters.preset === p.id
+                  ? 'bg-[#00BFA5] text-white'
+                  : 'bg-[#F5F5F5] text-[#636E72]'
+              }`}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex gap-2">
+          {[
+            { id: 'all', label: 'Todos' },
+            { id: 'expense', label: 'Gastos' },
+            { id: 'income', label: 'Ingresos' },
+          ].map(t => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => updateParams({ type: t.id })}
+              className={`flex-1 py-2 rounded-xl text-[12px] font-bold ${
+                (filters.type || 'all') === t.id
+                  ? 'bg-[#2D3436] text-white'
+                  : 'bg-[#F5F5F5] text-[#636E72]'
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -180,18 +193,51 @@ export function BuscarClient({
                   {tx.author_name ? ` · ${tx.author_name}` : ''}
                 </p>
               </div>
-              <span
-                className={`text-[14px] font-bold shrink-0 ${
-                  tx.type === 'income' ? 'text-[#00BFA5]' : 'text-[#EC4899]'
-                }`}
-              >
-                {tx.type === 'income' ? '+' : '-'}
-                {fmt(tx.amount_base)}
-              </span>
+              <div className="flex items-center gap-1 shrink-0">
+                <span
+                  className={`text-[14px] font-bold ${
+                    tx.type === 'income' ? 'text-[#00BFA5]' : 'text-[#EC4899]'
+                  }`}
+                >
+                  {tx.type === 'income' ? '+' : '-'}
+                  {fmt(tx.amount_base)}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setEditing(tx)}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center text-[#B2BEC3] hover:text-[#00BFA5] hover:bg-[#E0F2F1]"
+                  aria-label={`Editar ${tx.description}`}
+                >
+                  <Pencil className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDelete(tx)}
+                  disabled={deletingId === tx.id}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center text-[#B2BEC3] hover:text-red-500 hover:bg-red-50 disabled:opacity-50"
+                  aria-label={`Eliminar ${tx.description}`}
+                >
+                  {deletingId === tx.id ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
             </div>
           ))
         )}
       </div>
+
+      {editing && (
+        <EditTransactionSheet
+          transaction={editing}
+          categories={categories}
+          householdId={householdId}
+          currency={currency}
+          onClose={() => setEditing(null)}
+        />
+      )}
     </div>
   )
 }

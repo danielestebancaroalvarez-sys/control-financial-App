@@ -4,10 +4,14 @@ export function DonutChart({
   slices,
   size = 160,
   stroke = 22,
+  centerLabel,
+  centerValue,
 }: {
   slices: Slice[]
   size?: number
   stroke?: number
+  centerLabel?: string
+  centerValue?: string
 }) {
   const total = slices.reduce((s, x) => s + x.value, 0)
   const radius = (size - stroke) / 2
@@ -73,6 +77,32 @@ export function DonutChart({
             />
           )
         })}
+        {(centerLabel || centerValue) && (
+          <>
+            {centerValue && (
+              <text
+                x={cx}
+                y={cy - (centerLabel ? 4 : 0)}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                className="fill-[#2D3436] text-[13px] font-bold"
+              >
+                {centerValue}
+              </text>
+            )}
+            {centerLabel && (
+              <text
+                x={cx}
+                y={cy + (centerValue ? 12 : 0)}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                className="fill-[#636E72] text-[9px] font-semibold"
+              >
+                {centerLabel}
+              </text>
+            )}
+          </>
+        )}
       </svg>
       <div className="flex flex-wrap justify-center gap-x-4 gap-y-1">
         {slices.map(slice => (
