@@ -1,0 +1,348 @@
+'use client'
+
+import { useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import {
+  Loader2, Plus, Trash2, Check, Sparkles, ShoppingCart,
+} from 'lucide-react'
+import { createTransaction } from '@/lib/finance/actions'
+import { CategoryIcon } from './category-icon'
+import type { Category, LineItem } from '@/lib/finance/types'
+import type { CurrencyCode } from '@/lib/household/types'
+
+type TxType = 'income' | 'expense'
+
+export function AddTransactionForm({
+  householdId,
+  baseCurrency,
+  categories,
+  authorName,
+  onSuccess,
+}: {
+  householdId: string
+  baseCurrency: CurrencyCode
+  categories: Category[]
+  authorName: string
+  onSuccess?: () => void
+}) {
+  const router = useRouter()
+  const [txType, setTxType] = useState<TxType>('expense')
+  const [categoryId, setCategoryId] = useState('')
+  const [description, setDescription] = useState('')
+  const [amount, setAmount] = useState('')
+  const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
+  const [isRecurring, setIsRecurring] = useState(false)
+  const [frequency, setFrequency] = useState<'weekly' | 'biweekly' | 'monthly'>('monthly')
+  const [lineItemsEnabled, setLineItemsEnabled] = useState(false)
+  const [lineItems, setLineItems] = useState<LineItem[]>([{ name: '', price: 0 }])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const filteredCategories = useMemo(
+    () => categories.filter(c => c.type === txType),
+    [categories, txType]
+  )
+
+  const selectedCategory = filteredCategories.find(c => c.id === categoryId)
+  const isMercado = selectedCategory?.name === 'Mercado'
+
+  const displayAmount = useMemo(() => {
+    if (lineItemsEnabled && isMercado) {
+      return lineItems.reduce((s, i) => s + (i.price || 0), 0)
+    }
+    return parseFloat(amount) || 0
+  }, [lineItemsEnabled, isMercado, lineItems, amount])
+
+  function handleTypeChange(type: TxType) {
+    setTxType(type)
+    setCategoryId('')
+    setLineItemsEnabled(false)
+  }
+
+  function addLineItem() {
+    setLineItems(prev => [...prev, { name: '', price: 0 }])
+  }
+
+  function updateLineItem(index: number, field: keyof LineItem, value: string) {
+    setLineItems(prev =>
+      prev.map((item, i) =>
+        i === index
+          ? { ...item, [field]: field === 'price' ? parseFloat(value) || 0 : value }
+          : item
+      )
+    )
+  }
+
+  function removeLineItem(index: number) {
+    setLineItems(prev => prev.filter((_, i) => i !== index))
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setLoading(true)
+    setError(null)
+
+    const catId = categoryId || filteredCategories[0]?.id
+    if (!catId) {
+      setError('Selecciona una categoría.')
+      setLoading(false)
+      return
+    }
+
+    const desc = description.trim() || selectedCategory?.name || 'Movimiento'
+    const parsedAmount = displayAmount
+
+    if (parsedAmount <= 0) {
+      setError('Ingresa un monto válido.')
+      setLoading(false)
+      return
+    }
+
+    const result = await createTransaction({
+      householdId,
+      type: txType,
+      categoryId: catId,
+      description: desc,
+      amount: parsedAmount,
+      currency: baseCurrency,
+      transactionDate: date,
+      isRecurring: isRecurring && txType === 'expense',
+      frequency: isRecurring ? frequency : undefined,
+      lineItems:
+        lineItemsEnabled && isMercado
+          ? lineItems.filter(i => i.name.trim() && i.price > 0)
+          : undefined,
+    })
+
+    if (result.error) {
+      setError(result.error)
+      setLoading(false)
+      return
+    }
+
+    setLoading(false)
+    onSuccess?.()
+    router.push('/')
+    router.refresh()
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="flex rounded-2xl bg-[#F5F5F5] p-1">
+        <span className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-[#00BFA5] to-[#2DD4BF] text-white text-[12px] font-bold text-center">
+          Ingreso Manual
+        </span>
+        <span className="flex-1 py-2.5 rounded-xl text-[#B2BEC3] text-[12px] font-semibold flex flex-col items-center gap-0.5">
+          <span className="flex items-center gap-1">
+            <Sparkles className="w-3 h-3" />
+            Escáner con IA
+          </span>
+          <span className="text-[9px]">Próximamente</span>
+        </span>
+      </div>
+
+      <div>
+        <p className="text-[12px] font-semibold text-[#636E72] text-center mb-2">
+          Tipo de Movimiento
+        </p>
+        <div className="flex rounded-2xl bg-[#F5F5F5] p-1">
+          {(['income', 'expense'] as const).map(type => (
+            <button
+              key={type}
+              type="button"
+              onClick={() => handleTypeChange(type)}
+              className={`flex-1 py-2.5 rounded-xl text-[13px] font-bold transition-all ${
+                txType === type
+                  ? 'bg-gradient-to-r from-[#00BFA5] to-[#2DD4BF] text-white shadow-sm'
+                  : 'text-[#636E72]'
+              }`}
+            >
+              {type === 'income' ? 'Ingreso' : 'Gasto'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="text-center py-2">
+        <p className="text-[36px] font-bold text-[#2D3436] tracking-tight">
+          {baseCurrency === 'COP' ? '$' : '$ '}
+          {displayAmount.toFixed(baseCurrency === 'COP' ? 0 : 2)}
+        </p>
+        {!lineItemsEnabled && (
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            value={amount}
+            onChange={e => setAmount(e.target.value)}
+            placeholder="0.00"
+            className="mt-2 w-40 mx-auto block text-center text-[14px] px-3 py-2 rounded-xl bg-[#F5F5F5] outline-none focus:ring-2 focus:ring-[#00BFA5]/30"
+          />
+        )}
+      </div>
+
+      <div>
+        <p className="text-[11px] font-semibold text-[#636E72] mb-2">Categoría</p>
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+          {filteredCategories.map(cat => {
+            const active = (categoryId || filteredCategories[0]?.id) === cat.id
+            return (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => {
+                  setCategoryId(cat.id)
+                  if (cat.name !== 'Mercado') setLineItemsEnabled(false)
+                }}
+                className={`shrink-0 flex flex-col items-center gap-1.5 w-[4.5rem] py-3 rounded-2xl transition-all ${
+                  active
+                    ? 'bg-gradient-to-br from-[#00BFA5] to-[#2DD4BF] text-white shadow-md'
+                    : 'bg-[#F5F5F5] text-[#636E72]'
+                }`}
+              >
+                <CategoryIcon icon={cat.icon} className="w-5 h-5" />
+                <span className="text-[9px] font-semibold text-center leading-tight px-1">
+                  {cat.name}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      <input
+        type="text"
+        value={description}
+        onChange={e => setDescription(e.target.value)}
+        placeholder="Descripción (opcional)"
+        className="w-full px-4 py-3 rounded-xl bg-[#F5F5F5] text-[14px] outline-none focus:ring-2 focus:ring-[#00BFA5]/30"
+      />
+
+      <input
+        type="date"
+        value={date}
+        onChange={e => setDate(e.target.value)}
+        className="w-full px-4 py-3 rounded-xl bg-[#F5F5F5] text-[14px] outline-none focus:ring-2 focus:ring-[#00BFA5]/30"
+      />
+
+      {isMercado && txType === 'expense' && (
+        <div className="rounded-2xl bg-[#F5F5F5] p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <ShoppingCart className="w-4 h-4 text-[#00BFA5]" />
+              <span className="text-[13px] font-semibold text-[#2D3436]">
+                Añadir por producto
+              </span>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={lineItemsEnabled}
+              onClick={() => setLineItemsEnabled(v => !v)}
+              className={`w-11 h-6 rounded-full transition-colors relative ${
+                lineItemsEnabled ? 'bg-[#00BFA5]' : 'bg-[#DFE6E9]'
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
+                  lineItemsEnabled ? 'translate-x-5' : 'translate-x-0.5'
+                }`}
+              />
+            </button>
+          </div>
+
+          {lineItemsEnabled && (
+            <div className="space-y-2">
+              <p className="text-[11px] text-[#636E72]">
+                Detalle del Mercado (Total: ${displayAmount.toFixed(2)})
+              </p>
+              {lineItems.map((item, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={item.name}
+                    onChange={e => updateLineItem(i, 'name', e.target.value)}
+                    placeholder="Producto"
+                    className="flex-1 px-3 py-2 rounded-xl bg-white text-[13px] outline-none"
+                  />
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={item.price || ''}
+                    onChange={e => updateLineItem(i, 'price', e.target.value)}
+                    placeholder="0.00"
+                    className="w-20 px-3 py-2 rounded-xl bg-white text-[13px] outline-none"
+                  />
+                  {lineItems.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeLineItem(i)}
+                      className="text-[#B2BEC3] hover:text-red-500"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={addLineItem}
+                className="flex items-center gap-1 text-[12px] font-semibold text-[#00BFA5]"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Añadir otro producto
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {txType === 'expense' && (
+        <div className="flex items-center gap-3 flex-wrap">
+          <label className="flex items-center gap-2 text-[12px] text-[#2D3436] cursor-pointer">
+            <input
+              type="checkbox"
+              checked={isRecurring}
+              onChange={e => setIsRecurring(e.target.checked)}
+              className="rounded accent-[#00BFA5]"
+            />
+            Gasto fijo recurrente
+          </label>
+          {isRecurring && (
+            <select
+              value={frequency}
+              onChange={e =>
+                setFrequency(e.target.value as 'weekly' | 'biweekly' | 'monthly')
+              }
+              className="px-3 py-1.5 rounded-xl bg-[#F5F5F5] text-[12px] font-semibold outline-none"
+            >
+              <option value="weekly">Semanal</option>
+              <option value="biweekly">Quincenal</option>
+              <option value="monthly">Mensual</option>
+            </select>
+          )}
+        </div>
+      )}
+
+      <p className="text-[11px] text-[#636E72] text-center">
+        Creado por: {authorName}
+      </p>
+
+      {error && (
+        <p className="text-[12px] text-red-600 text-center">{error}</p>
+      )}
+
+      <button
+        type="submit"
+        disabled={loading}
+        className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#00BFA5] to-[#2DD4BF] text-white text-[15px] font-bold disabled:opacity-60 flex items-center justify-center gap-2 shadow-lg shadow-[#00BFA5]/25"
+      >
+        {loading ? (
+          <><Loader2 className="w-5 h-5 animate-spin" /> Guardando...</>
+        ) : (
+          <><Check className="w-5 h-5" /> Guardar movimiento</>
+        )}
+      </button>
+    </form>
+  )
+}

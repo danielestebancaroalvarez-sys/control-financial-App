@@ -2,9 +2,22 @@
 
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { X, Plus, Sparkles } from 'lucide-react'
+import { X } from 'lucide-react'
+import { AddTransactionForm } from '@/components/transactions/add-transaction-form'
+import type { Category } from '@/lib/finance/types'
+import type { CurrencyCode } from '@/lib/household/types'
 
-export function AddSheet() {
+export function AddSheet({
+  householdId,
+  baseCurrency,
+  categories,
+  authorName,
+}: {
+  householdId: string
+  baseCurrency: CurrencyCode
+  categories: Category[]
+  authorName: string
+}) {
   const router = useRouter()
 
   function handleClose() {
@@ -23,12 +36,11 @@ export function AddSheet() {
         className="fixed inset-0 z-40 bg-[#2D3436]/20 backdrop-blur-[2px]"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
         onClick={handleClose}
       />
 
       <motion.div
-        className="fixed inset-x-0 bottom-0 z-50 mx-auto max-w-md"
+        className="fixed inset-x-0 bottom-0 z-50 mx-auto max-w-md max-h-[92vh] overflow-y-auto"
         initial={{ y: '100%' }}
         animate={{ y: 0 }}
         transition={{ type: 'spring', stiffness: 340, damping: 34 }}
@@ -40,11 +52,11 @@ export function AddSheet() {
         }}
       >
         <div className="rounded-t-[2rem] bg-white shadow-[0_-12px_48px_rgba(0,0,0,0.15)] border-t border-white/80 pb-[max(6rem,env(safe-area-inset-bottom))]">
-          <div className="flex justify-center pt-3 pb-1">
+          <div className="flex justify-center pt-3 pb-1 sticky top-0 bg-white z-10">
             <div className="w-10 h-1 rounded-full bg-[#DFE6E9]" />
           </div>
 
-          <div className="flex items-center justify-between px-5 pb-4">
+          <div className="flex items-center justify-between px-5 pb-4 sticky top-4 bg-white z-10">
             <button
               type="button"
               onClick={handleClose}
@@ -57,38 +69,14 @@ export function AddSheet() {
             <div className="w-9" />
           </div>
 
-          <div className="px-5 space-y-4">
-            <div className="flex rounded-2xl bg-[#F5F5F5] p-1">
-              <button
-                type="button"
-                className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-[#00BFA5] to-[#2DD4BF] text-white text-[12px] font-bold"
-              >
-                Ingreso Manual
-              </button>
-              <button
-                type="button"
-                disabled
-                className="flex-1 py-2.5 rounded-xl text-[#B2BEC3] text-[12px] font-semibold flex flex-col items-center gap-0.5"
-              >
-                <span className="flex items-center gap-1">
-                  <Sparkles className="w-3 h-3" />
-                  Escáner con IA
-                </span>
-                <span className="text-[9px]">Próximamente</span>
-              </button>
-            </div>
-
-            <div className="rounded-2xl border border-[#F0F0F0] p-5 text-center">
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#00BFA5]/15 mb-3">
-                <Plus className="w-6 h-6 text-[#00BFA5]" />
-              </div>
-              <p className="text-[14px] font-semibold text-[#2D3436] mb-1">
-                Formulario en Fase 4
-              </p>
-              <p className="text-[12px] text-[#636E72]">
-                Tipo, categoría, monto, recurrencia y detalle por producto.
-              </p>
-            </div>
+          <div className="px-5 pb-4">
+            <AddTransactionForm
+              householdId={householdId}
+              baseCurrency={baseCurrency}
+              categories={categories}
+              authorName={authorName}
+              onSuccess={handleClose}
+            />
           </div>
         </div>
       </motion.div>

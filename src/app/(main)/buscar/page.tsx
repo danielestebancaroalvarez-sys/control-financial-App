@@ -1,24 +1,55 @@
-import { Search } from 'lucide-react'
+import { Suspense } from 'react'
+import { createClient } from '@/utils/supabase/server'
+import { getUserHousehold, getHouseholdMembers } from '@/lib/household/queries'
+import { getCategories, searchTransactions } from '@/lib/finance/queries'
+import { BuscarClient } from './buscar-client'
 
-export default function BuscarPage() {
+type SearchParams = Promise<{
+  q?: string
+  type?: string
+  categoryId?: string
+  createdBy?: string
+  startDate?: string
+  endDate?: string
+  period?: string
+}>
+
+export default async function BuscarPage({
+  searchParams,
+}: {
+  searchParams: SearchParams
+}) {
+  const params = await searchParams
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  const household = await getUserHousehold()
+  if (!household || !user) return null
+
+  const [results, categories, members] = await Promise.all([
+    searchTransactions(household.id, {
+      q: params.q,
+      type: params.type as 'income' | 'expense' | 'all' | undefined,
+      categoryId: params.categoryId,
+      createdBy: params.createdBy,
+      startDate: params.startDate,
+      endDate: params.endDate,
+    }),
+    getCategories(household.id),
+    getHouseholdMembers(household.id),
+  ])
+
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-[22px] font-bold text-[#2D3436]">Búsqueda</h1>
-        <p className="text-[13px] text-[#636E72]">Auditoría y análisis de movimientos</p>
-      </div>
-
-      <div className="rounded-[24px] bg-white/90 backdrop-blur-md border border-white/60 shadow-sm p-6 text-center">
-        <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[#00BFA5]/15 mb-4">
-          <Search className="w-7 h-7 text-[#00BFA5]" />
-        </div>
-        <p className="text-[15px] font-semibold text-[#2D3436] mb-2">
-          Próximamente
-        </p>
-        <p className="text-[13px] text-[#636E72]">
-          Buscador universal, filtros avanzados y exportación a CSV.
-        </p>
-      </div>
-    </div>
+    <Suspense fallback={<div className="text-[#636E72] text-sm">Cargando...</div>}>
+      <BuscarClient
+        results={results}
+        categories={categories}
+        members={members}
+        currency={household.base_currency}
+        filters={params as Record<string, string>}
+      />
+    </Suspense>
   )
 }
