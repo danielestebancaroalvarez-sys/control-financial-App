@@ -43,6 +43,64 @@ export function getTodayString(): string {
   return toDateString(new Date())
 }
 
+export function getPeriodProgress(period: Period): {
+  elapsed: number
+  total: number
+  start: string
+  end: string
+} {
+  const { start, end } = getPeriodRange(period)
+  const today = getTodayString()
+
+  if (period === 'weekly') {
+    const startMs = new Date(`${start}T12:00:00`).getTime()
+    const todayMs = new Date(`${today}T12:00:00`).getTime()
+    const elapsed = Math.floor((todayMs - startMs) / 86400000) + 1
+    return {
+      elapsed: Math.min(7, Math.max(1, elapsed)),
+      total: 7,
+      start,
+      end,
+    }
+  }
+
+  return {
+    elapsed: dayOfMonth(),
+    total: daysInCurrentMonth(),
+    start,
+    end,
+  }
+}
+
+export function getPreviousPeriodRanges(
+  period: Period,
+  count = 3
+): { start: string; end: string }[] {
+  const ranges: { start: string; end: string }[] = []
+  const now = new Date()
+
+  for (let i = 1; i <= count; i++) {
+    if (period === 'weekly') {
+      const day = now.getDay()
+      const diff = day === 0 ? -6 : 1 - day
+      const weekStart = new Date(now)
+      weekStart.setDate(now.getDate() + diff - i * 7)
+      const weekEnd = new Date(weekStart)
+      weekEnd.setDate(weekStart.getDate() + 6)
+      ranges.push({
+        start: toDateString(weekStart),
+        end: toDateString(weekEnd),
+      })
+    } else {
+      const mStart = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      const mEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0)
+      ranges.push({ start: toDateString(mStart), end: toDateString(mEnd) })
+    }
+  }
+
+  return ranges
+}
+
 export function addFrequency(
   dateStr: string,
   frequency: 'weekly' | 'biweekly' | 'monthly'

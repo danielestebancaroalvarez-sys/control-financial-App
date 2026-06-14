@@ -11,7 +11,7 @@ import type {
   UpdateSavingsGoalInput,
 } from './types'
 
-const REVALIDATE_PATHS = ['/', '/buscar', '/ahorros', '/predicciones', '/nuevo']
+const REVALIDATE_PATHS = ['/', '/buscar', '/ahorros', '/predicciones', '/nuevo', '/ajustes']
 
 function revalidateAll() {
   for (const path of REVALIDATE_PATHS) revalidatePath(path)
@@ -266,5 +266,67 @@ export async function deleteSavingsGoal(
 
   revalidatePath('/ahorros')
   revalidatePath('/')
+  return {}
+}
+
+export async function createCategory(input: {
+  householdId: string
+  name: string
+  type: 'income' | 'expense'
+  color?: string
+}): Promise<{ error?: string; id?: string }> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) return { error: 'Debes iniciar sesión.' }
+
+  const name = input.name.trim()
+  if (!name) return { error: 'El nombre es obligatorio.' }
+
+  const { data, error } = await supabase
+    .from('categories')
+    .insert({
+      household_id: input.householdId,
+      name,
+      type: input.type,
+      icon: 'tag',
+      color: input.color ?? '#636E72',
+      is_fixed: false,
+      is_system: false,
+    })
+    .select('id')
+    .single()
+
+  if (error || !data) {
+    return { error: error?.message ?? 'No se pudo crear la categoría.' }
+  }
+
+  revalidateAll()
+  return { id: data.id }
+}
+
+export async function deleteCategory(
+  categoryId: string,
+  householdId: string
+): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) return { error: 'Debes iniciar sesión.' }
+
+  const { error } = await supabase
+    .from('categories')
+    .delete()
+    .eq('id', categoryId)
+    .eq('household_id', householdId)
+    .eq('is_system', false)
+
+  if (error) return { error: error.message }
+
+  revalidateAll()
   return {}
 }

@@ -3,7 +3,8 @@ import { getUserHousehold } from '@/lib/household/queries'
 import { getUserDashboardPeriod } from '@/lib/profile/queries'
 import { getDashboardSummary } from '@/lib/finance/queries'
 import { formatMoney } from '@/lib/finance/format'
-import { ReconcileForm } from './reconcile-form'
+import { getFirstName } from '@/lib/utils/name'
+import { BalanceEditButton } from './balance-edit-button'
 import {
   DollarSign, PiggyBank, BarChart2, Sparkles,
   ArrowDownRight, ArrowUpRight,
@@ -22,7 +23,14 @@ export default async function DashboardPage() {
   const summary = await getDashboardSummary(household.id, period)
   const currency = household.base_currency
   const fmt = (n: number) => formatMoney(n, currency)
-  const periodLabel = period === 'weekly' ? 'Esta semana' : 'Este mes'
+  const periodLabel = period === 'weekly' ? 'esta semana' : 'este mes'
+
+  const displayName =
+    user.user_metadata?.full_name ??
+    user.user_metadata?.name ??
+    user.email?.split('@')[0] ??
+    'Usuario'
+  const firstName = getFirstName(displayName)
 
   const incomeVsExpenseTotal = summary.monthlyIncome + summary.monthlyExpenses
   const incomePercent =
@@ -33,26 +41,31 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-[22px] font-bold text-[#2D3436]">Dashboard</h1>
+        <h1 className="text-[24px] font-bold text-[#2D3436]">
+          Hola, {firstName}
+        </h1>
         <p className="text-[13px] text-[#636E72]">
-          {household.name} · {periodLabel}
+          {household.name} · Vista {periodLabel}
         </p>
       </div>
 
       <div className="rounded-[24px] bg-white/90 backdrop-blur-md border border-white/60 shadow-sm overflow-hidden">
-        <div className="rounded-2xl bg-gradient-to-br from-[#00BFA5] to-[#2DD4BF] m-4 p-5 text-white shadow-lg">
+        <div className="relative rounded-2xl bg-gradient-to-br from-[#00BFA5] to-[#2DD4BF] m-4 p-5 text-white shadow-lg">
+          <div className="absolute top-4 right-4">
+            <BalanceEditButton
+              householdId={household.id}
+              currentBalance={summary.realBalance}
+              currency={currency}
+            />
+          </div>
           <p className="text-[12px] font-medium opacity-90 mb-1">Saldo real</p>
-          <p className="text-[32px] font-bold tracking-tight">{fmt(summary.realBalance)}</p>
-          <p className="text-[11px] opacity-75 mt-1">Ingresos − Gastos + Ajustes (histórico)</p>
+          <p className="text-[32px] font-bold tracking-tight pr-10">
+            {fmt(summary.realBalance)}
+          </p>
+          <p className="text-[11px] opacity-75 mt-1">Histórico · ingresos − gastos + ajustes</p>
         </div>
 
         <div className="px-4 pb-4 space-y-4">
-          <ReconcileForm
-            householdId={household.id}
-            currentBalance={summary.realBalance}
-            currency={currency}
-          />
-
           <div className="rounded-2xl bg-[#FFF8E1] border border-[#FFE082]/50 p-4">
             <div className="flex items-center gap-2 mb-2">
               <Sparkles className="w-4 h-4 text-[#F59E0B]" />
@@ -64,7 +77,7 @@ export default async function DashboardPage() {
               {fmt(summary.guiltFreeMoney)}
             </p>
             <p className="text-[11px] text-[#636E72] mt-1">
-              Ingresos del periodo − gastos fijos − aportes a ahorro
+              Ingresos {periodLabel} − gastos {periodLabel}
             </p>
           </div>
 
@@ -86,7 +99,9 @@ export default async function DashboardPage() {
           </div>
 
           <div className="rounded-2xl bg-[#F5F5F5] p-4">
-            <p className="text-[12px] font-semibold text-[#2D3436] mb-3">{periodLabel}</p>
+            <p className="text-[12px] font-semibold text-[#2D3436] mb-3 capitalize">
+              Resumen {periodLabel}
+            </p>
             <div className="flex h-3 rounded-full overflow-hidden mb-3">
               <div className="bg-[#00BFA5]" style={{ width: `${incomePercent}%` }} />
               <div className="bg-[#EC4899]" style={{ width: `${100 - incomePercent}%` }} />
@@ -95,18 +110,20 @@ export default async function DashboardPage() {
               <div className="flex items-center gap-1 text-[#00BFA5]">
                 <ArrowUpRight className="w-3 h-3" />
                 <span className="font-semibold">{fmt(summary.monthlyIncome)}</span>
+                <span className="text-[#636E72]">ingresos</span>
               </div>
               <div className="flex items-center gap-1 text-[#EC4899]">
                 <ArrowDownRight className="w-3 h-3" />
                 <span className="font-semibold">{fmt(summary.monthlyExpenses)}</span>
+                <span className="text-[#636E72]">gastos</span>
               </div>
             </div>
           </div>
 
           {summary.topCategories.length > 0 && (
             <div className="rounded-2xl bg-[#F5F5F5] p-4">
-              <p className="text-[12px] font-semibold text-[#2D3436] mb-3">
-                Top categorías — {periodLabel.toLowerCase()}
+              <p className="text-[12px] font-semibold text-[#2D3436] mb-3 capitalize">
+                Top categorías · {periodLabel}
               </p>
               <div className="space-y-2">
                 {summary.topCategories.map(cat => (

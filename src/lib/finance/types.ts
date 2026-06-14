@@ -18,6 +18,7 @@ export type Category = {
   icon: string | null
   color: string | null
   is_fixed: boolean
+  is_system: boolean
 }
 
 export type LineItem = {
@@ -66,6 +67,7 @@ export type DashboardSummary = {
   guiltFreeMoney: number
   topCategories: { name: string; amount: number; color: string | null }[]
   savingsGoals: { name: string; percent: number; current: number; target: number }[]
+  period: Period
 }
 
 export type SavingsGoal = {
@@ -114,6 +116,7 @@ export type ConsumptionPrediction = {
   historicalAverage: number
   percentVsAverage: number
   daysRemaining: number
+  period: Period
 }
 
 export type PredictionsSummary = {

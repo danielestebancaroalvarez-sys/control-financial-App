@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import {
   Loader2, Plus, Trash2, Check, Sparkles, ShoppingCart, Repeat,
 } from 'lucide-react'
-import { createTransaction } from '@/lib/finance/actions'
+import { createTransaction, createCategory } from '@/lib/finance/actions'
 import { getTodayString } from '@/lib/finance/format'
 import { CategoryIcon } from './category-icon'
 import type { Category, LineItem } from '@/lib/finance/types'
@@ -40,6 +40,9 @@ export function AddTransactionForm({
   const [lineItems, setLineItems] = useState<LineItem[]>([{ name: '', price: 0 }])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showNewCategory, setShowNewCategory] = useState(false)
+  const [newCategoryName, setNewCategoryName] = useState('')
+  const [creatingCategory, setCreatingCategory] = useState(false)
 
   const filteredCategories = useMemo(
     () => categories.filter(c => c.type === txType),
@@ -80,6 +83,25 @@ export function AddTransactionForm({
 
   function removeLineItem(index: number) {
     setLineItems(prev => prev.filter((_, i) => i !== index))
+  }
+
+  async function handleCreateCategory() {
+    if (!newCategoryName.trim()) return
+    setCreatingCategory(true)
+    const result = await createCategory({
+      householdId,
+      name: newCategoryName.trim(),
+      type: txType,
+    })
+    setCreatingCategory(false)
+    if (result.error) {
+      setError(result.error)
+      return
+    }
+    setShowNewCategory(false)
+    setNewCategoryName('')
+    if (result.id) setCategoryId(result.id)
+    router.refresh()
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -223,7 +245,34 @@ export function AddTransactionForm({
               </button>
             )
           })}
+          <button
+            type="button"
+            onClick={() => setShowNewCategory(v => !v)}
+            className="shrink-0 flex flex-col items-center justify-center gap-1 w-[4.5rem] py-3 rounded-2xl border-2 border-dashed border-[#00BFA5]/40 text-[#00BFA5]"
+          >
+            <Plus className="w-5 h-5" />
+            <span className="text-[9px] font-semibold">Nueva</span>
+          </button>
         </div>
+        {showNewCategory && (
+          <div className="mt-2 flex gap-2">
+            <input
+              type="text"
+              value={newCategoryName}
+              onChange={e => setNewCategoryName(e.target.value)}
+              placeholder="Nombre categoría"
+              className="flex-1 px-3 py-2 rounded-xl bg-[#F5F5F5] text-[13px] outline-none"
+            />
+            <button
+              type="button"
+              onClick={handleCreateCategory}
+              disabled={creatingCategory}
+              className="px-4 py-2 rounded-xl bg-[#00BFA5] text-white text-[12px] font-bold disabled:opacity-60"
+            >
+              {creatingCategory ? '...' : 'Crear'}
+            </button>
+          </div>
+        )}
       </div>
 
       <div>

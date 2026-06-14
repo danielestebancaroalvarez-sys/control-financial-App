@@ -1,7 +1,7 @@
 import { createClient } from '@/utils/supabase/server'
 import type { CurrencyCode } from '@/lib/household/types'
 import { calculateBalance, sumByTypeInPeriod } from './balance'
-import { calculateGuiltFreeMoney, toMonthlyAmount } from './guilt-free'
+import { calculateGuiltFreeMoney } from './guilt-free'
 import { getPeriodRange } from './format'
 import { getCategoryColor } from './categories'
 import { buildPredictionsSummary } from './predictions'
@@ -37,7 +37,7 @@ export async function getCategories(householdId: string): Promise<Category[]> {
   const supabase = await createClient()
   const { data } = await supabase
     .from('categories')
-    .select('id, name, type, icon, color, is_fixed')
+    .select('id, name, type, icon, color, is_fixed, is_system')
     .eq('household_id', householdId)
     .order('name')
 
@@ -45,6 +45,7 @@ export async function getCategories(householdId: string): Promise<Category[]> {
     ...c,
     type: c.type as 'income' | 'expense',
     color: getCategoryColor(c.name, c.color),
+    is_system: c.is_system ?? false,
   }))
 }
 
@@ -55,7 +56,7 @@ export async function getDashboardSummary(
   const supabase = await createClient()
   const { start, end } = getPeriodRange(period)
 
-  const [transactions, savingsResult, recurringResult, categoriesResult] =
+  const [transactions, savingsResult, categoriesResult] =
     await Promise.all([
       getHouseholdTransactions(householdId),
       supabase
@@ -66,11 +67,6 @@ export async function getDashboardSummary(
         .eq('household_id', householdId)
         .eq('is_active', true),
       supabase
-        .from('recurring_schedules')
-        .select('type, amount_original, currency_original, frequency, is_active')
-        .eq('household_id', householdId)
-        .eq('is_active', true),
-      supabase
         .from('categories')
         .select('id, name, color')
         .eq('household_id', householdId)
@@ -78,8 +74,8 @@ export async function getDashboardSummary(
     ])
 
   const balance = calculateBalance(transactions)
-  const monthlyIncome = sumByTypeInPeriod(transactions, 'income', start, end)
-  const monthlyExpenses = sumByTypeInPeriod(transactions, 'expense', start, end)
+  const periodIncome = sumByTypeInPeriod(transactions, 'income', start, end)
+  const periodExpenses = sumByTypeInPeriod(transactions, 'expense', start, end)
 
   const savingsGoals = savingsResult.data ?? []
   const totalSavings = savingsGoals.reduce(
@@ -87,30 +83,7 @@ export async function getDashboardSummary(
     0
   )
 
-  const monthlyFixedExpenses = (recurringResult.data ?? [])
-    .filter(r => r.type === 'expense')
-    .reduce(
-      (sum, r) =>
-        sum + toMonthlyAmount(Number(r.amount_original), r.frequency),
-      0
-    )
-
-  const monthlySavingsContributions = savingsGoals.reduce((sum, g) => {
-    if (!g.contribution_amount || !g.contribution_frequency) return sum
-    return (
-      sum +
-      toMonthlyAmount(
-        Number(g.contribution_amount),
-        g.contribution_frequency as 'weekly' | 'biweekly' | 'monthly'
-      )
-    )
-  }, 0)
-
-  const guiltFreeMoney = calculateGuiltFreeMoney(
-    monthlyIncome,
-    monthlyFixedExpenses,
-    monthlySavingsContributions
-  )
+  const guiltFreeMoney = calculateGuiltFreeMoney(periodIncome, periodExpenses)
 
   const categoryMap = new Map(
     (categoriesResult.data ?? []).map(c => [
@@ -151,12 +124,13 @@ export async function getDashboardSummary(
 
   return {
     realBalance: balance.balance,
-    monthlyIncome,
-    monthlyExpenses,
+    monthlyIncome: periodIncome,
+    monthlyExpenses: periodExpenses,
     totalSavings,
     guiltFreeMoney,
     topCategories,
     savingsGoals: savingsProgress,
+    period,
   }
 }
 
@@ -261,7 +235,8 @@ export async function getSavingsGoals(householdId: string): Promise<SavingsGoal[
 }
 
 export async function getPredictionsSummary(
-  householdId: string
+  householdId: string,
+  period: Period = 'monthly'
 ): Promise<PredictionsSummary> {
   const supabase = await createClient()
 
@@ -306,7 +281,8 @@ export async function getPredictionsSummary(
       transaction_date: tx.transaction_date,
     })),
     mercado?.id ?? null,
-    mercado?.name ?? 'Mercado'
+    mercado?.name ?? 'Mercado',
+    period
   )
 }
 

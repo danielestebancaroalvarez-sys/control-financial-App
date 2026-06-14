@@ -6,6 +6,7 @@ import { AppHeader } from '@/components/layout/app-header'
 import { BottomTabBar } from '@/components/layout/bottom-tab-bar'
 import { PageTransition } from '@/components/layout/page-transition'
 import { HouseholdSync } from '@/components/realtime/household-sync'
+import { getFirstName } from '@/lib/utils/name'
 
 export default async function MainLayout({
   children,
@@ -30,6 +31,8 @@ export default async function MainLayout({
     user.email?.split('@')[0] ??
     'Usuario'
 
+  const firstName = getFirstName(displayName)
+
   const avatarUrl =
     (user.user_metadata?.avatar_url as string | undefined) ??
     (user.user_metadata?.picture as string | undefined)
@@ -38,7 +41,7 @@ export default async function MainLayout({
     <div className="min-h-screen bg-gradient-to-br from-[#B2EBF2] via-[#C8F0DC] to-[#FFE0B2]">
       <HouseholdSync householdId={household.id} />
       <div className="mx-auto flex min-h-screen max-w-md flex-col px-5 pt-[max(0.5rem,env(safe-area-inset-top))] pb-[calc(7rem+env(safe-area-inset-bottom))]">
-        <AppHeader displayName={displayName} email={user.email} avatarUrl={avatarUrl} />
+        <AppHeader firstName={firstName} email={user.email} avatarUrl={avatarUrl} />
         <main className="flex-1">
           <PageTransition>{children}</PageTransition>
         </main>

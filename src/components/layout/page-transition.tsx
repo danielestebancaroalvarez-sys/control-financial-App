@@ -15,10 +15,6 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
     prevPath.current = pathname
   }, [pathname])
 
-  if (pathname === '/nuevo') {
-    return <>{children}</>
-  }
-
   return (
     <motion.div
       key={pathname}

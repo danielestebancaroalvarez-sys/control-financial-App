@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server'
 import { getUserHousehold } from '@/lib/household/queries'
+import { getUserDashboardPeriod } from '@/lib/profile/queries'
 import { getPredictionsSummary } from '@/lib/finance/queries'
 import { formatMoney } from '@/lib/finance/format'
 import { CategoryIcon } from '@/components/transactions/category-icon'
@@ -20,19 +21,24 @@ export default async function PrediccionesPage() {
   const household = await getUserHousehold()
   if (!household || !user) return null
 
-  const summary = await getPredictionsSummary(household.id)
+  const period = await getUserDashboardPeriod()
+  const summary = await getPredictionsSummary(household.id, period)
   const fmt = (n: number) => formatMoney(n, household.base_currency)
+  const periodLabel = period === 'weekly' ? 'esta semana' : 'este mes'
+  const periodEndLabel = period === 'weekly' ? 'de la semana' : 'del mes'
 
   return (
     <div className="space-y-4">
       <div>
         <h1 className="text-[22px] font-bold text-[#2D3436]">Radar y Predicciones</h1>
-        <p className="text-[13px] text-[#636E72]">Servicios fijos y consumo proyectado</p>
+        <p className="text-[13px] text-[#636E72]">
+          Vista {periodLabel} · según tu configuración en Ajustes
+        </p>
       </div>
 
       <section className="rounded-[24px] bg-white/90 backdrop-blur-md border border-white/60 shadow-sm p-5">
-        <h2 className="text-[14px] font-bold text-[#2D3436] mb-4">
-          Servicios y Pagos Fijos (Este Mes)
+        <h2 className="text-[14px] font-bold text-[#2D3436] mb-4 capitalize">
+          Servicios y pagos fijos ({periodLabel})
         </h2>
         {summary.fixedServices.length === 0 ? (
           <p className="text-[13px] text-[#636E72]">
@@ -84,8 +90,8 @@ export default async function PrediccionesPage() {
 
       {summary.subscriptions.length > 0 && (
         <section className="rounded-[24px] bg-white/90 backdrop-blur-md border border-white/60 shadow-sm p-5">
-          <h2 className="text-[14px] font-bold text-[#2D3436] mb-4">
-            Radar de Suscripciones
+          <h2 className="text-[14px] font-bold text-[#2D3436] mb-4 capitalize">
+            Suscripciones ({periodLabel})
           </h2>
           <div className="grid grid-cols-2 gap-2">
             {summary.subscriptions.map(sub => (
@@ -97,10 +103,10 @@ export default async function PrediccionesPage() {
                   {sub.name}
                 </p>
                 <p className="text-[12px] text-[#636E72]">
-                  {fmt(sub.amount)}/mes
+                  {fmt(sub.amount)} / {FREQ_LABELS[sub.frequency] ?? sub.frequency}
                 </p>
                 <p className="text-[10px] text-[#F59E0B] mt-1">
-                  {sub.status === 'paid' ? 'Pagado este mes' : 'Pendiente'}
+                  {sub.status === 'paid' ? `Pagado ${periodLabel}` : 'Pendiente'}
                 </p>
               </div>
             ))}
@@ -113,18 +119,18 @@ export default async function PrediccionesPage() {
           <div className="flex items-center gap-2 mb-3">
             <LineChart className="w-4 h-4 text-[#00BFA5]" />
             <h2 className="text-[14px] font-bold text-[#2D3436]">
-              Predicción de Consumo ({summary.consumption.categoryName})
+              Predicción {summary.consumption.categoryName} ({periodLabel})
             </h2>
           </div>
           <p className="text-[28px] font-bold text-[#2D3436] mb-1">
             {fmt(summary.consumption.projectedTotal)}
             <span className="text-[13px] font-medium text-[#636E72] ml-2">
-              predicho
+              proyectado
             </span>
           </p>
           <p className="text-[12px] text-[#636E72] mb-4">
             Llevás {fmt(summary.consumption.spentSoFar)} gastados ·{' '}
-            {summary.consumption.daysRemaining} días restantes
+            {summary.consumption.daysRemaining} días restantes {periodEndLabel}
           </p>
           {summary.consumption.historicalAverage > 0 && (
             <div
@@ -142,7 +148,7 @@ export default async function PrediccionesPage() {
                 }`}
               />
               <p className="text-[12px] text-[#2D3436]">
-                Al ritmo actual, gastarás {fmt(summary.consumption.projectedTotal)} a fin de mes.
+                Al ritmo actual, gastarás {fmt(summary.consumption.projectedTotal)} al cierre {periodEndLabel}.
                 {summary.consumption.percentVsAverage > 0 ? (
                   <>
                     {' '}Estás un{' '}

@@ -13,9 +13,8 @@ export function toMonthlyAmount(
 }
 
 export function calculateGuiltFreeMoney(
-  monthlyIncome: number,
-  monthlyFixedExpenses: number,
-  monthlySavingsContributions: number
+  periodIncome: number,
+  periodExpenses: number
 ): number {
-  return monthlyIncome - monthlyFixedExpenses - monthlySavingsContributions
+  return periodIncome - periodExpenses
 }

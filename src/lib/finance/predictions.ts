@@ -1,9 +1,14 @@
 import type {
   ConsumptionPrediction,
   FixedServiceStatus,
+  Period,
   PredictionsSummary,
 } from './types'
-import { dayOfMonth, daysInCurrentMonth, getCurrentMonthRange } from './format'
+import {
+  getPeriodProgress,
+  getPeriodRange,
+  getPreviousPeriodRanges,
+} from './format'
 
 type RecurringRow = {
   id: string
@@ -24,17 +29,18 @@ export function buildPredictionsSummary(
   recurring: RecurringRow[],
   transactions: TxRow[],
   mercadoCategoryId: string | null,
-  mercadoCategoryName: string
+  mercadoCategoryName: string,
+  period: Period = 'monthly'
 ): PredictionsSummary {
-  const { start, end } = getCurrentMonthRange()
+  const { start, end } = getPeriodRange(period)
 
-  const monthTx = transactions.filter(
+  const periodTx = transactions.filter(
     tx => tx.transaction_date >= start && tx.transaction_date <= end
   )
 
   const mapService = (r: RecurringRow): FixedServiceStatus => {
     const cat = r.categories
-    const paid = monthTx.find(
+    const paid = periodTx.find(
       tx => tx.category_id === r.category_id && Number(tx.amount_base) > 0
     )
     return {
@@ -58,48 +64,51 @@ export function buildPredictionsSummary(
     .map(mapService)
 
   const consumption = mercadoCategoryId
-    ? buildConsumptionPrediction(monthTx, transactions, mercadoCategoryId, mercadoCategoryName)
+    ? buildConsumptionPrediction(
+        periodTx,
+        transactions,
+        mercadoCategoryId,
+        mercadoCategoryName,
+        period
+      )
     : null
 
   return { fixedServices, subscriptions, consumption }
 }
 
 function buildConsumptionPrediction(
-  monthTx: TxRow[],
+  periodTx: TxRow[],
   allTx: TxRow[],
   categoryId: string,
-  categoryName: string
+  categoryName: string,
+  period: Period
 ): ConsumptionPrediction {
-  const spentSoFar = monthTx
+  const { elapsed, total } = getPeriodProgress(period)
+
+  const spentSoFar = periodTx
     .filter(tx => tx.category_id === categoryId)
     .reduce((sum, tx) => sum + Number(tx.amount_base), 0)
 
-  const today = dayOfMonth()
-  const totalDays = daysInCurrentMonth()
   const projectedTotal =
-    today > 0 ? Math.round((spentSoFar / today) * totalDays * 100) / 100 : 0
+    elapsed > 0
+      ? Math.round((spentSoFar / elapsed) * total * 100) / 100
+      : 0
 
-  const now = new Date()
-  const monthlyTotals: number[] = []
-  for (let i = 1; i <= 3; i++) {
-    const mStart = new Date(now.getFullYear(), now.getMonth() - i, 1)
-    const mEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0)
-    const s = mStart.toISOString().slice(0, 10)
-    const e = mEnd.toISOString().slice(0, 10)
-    const total = allTx
+  const previousRanges = getPreviousPeriodRanges(period, 3)
+  const historicalTotals = previousRanges.map(({ start, end }) =>
+    allTx
       .filter(
         tx =>
           tx.category_id === categoryId &&
-          tx.transaction_date >= s &&
-          tx.transaction_date <= e
+          tx.transaction_date >= start &&
+          tx.transaction_date <= end
       )
       .reduce((sum, tx) => sum + Number(tx.amount_base), 0)
-    monthlyTotals.push(total)
-  }
+  )
 
   const historicalAverage =
-    monthlyTotals.length > 0
-      ? monthlyTotals.reduce((a, b) => a + b, 0) / monthlyTotals.length
+    historicalTotals.length > 0
+      ? historicalTotals.reduce((a, b) => a + b, 0) / historicalTotals.length
       : 0
 
   const percentVsAverage =
@@ -113,6 +122,7 @@ function buildConsumptionPrediction(
     projectedTotal,
     historicalAverage: Math.round(historicalAverage * 100) / 100,
     percentVsAverage,
-    daysRemaining: totalDays - today,
+    daysRemaining: total - elapsed,
+    period,
   }
 }

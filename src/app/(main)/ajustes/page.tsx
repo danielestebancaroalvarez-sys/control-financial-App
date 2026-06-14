@@ -1,9 +1,11 @@
 import { createClient } from '@/utils/supabase/server'
 import { getUserHousehold, getHouseholdMembers } from '@/lib/household/queries'
+import { getCategories } from '@/lib/finance/queries'
 import { getUserDashboardPeriod } from '@/lib/profile/queries'
 import SignOutButton from '@/app/sign-out-button'
 import { CopyButton } from './copy-button'
 import { DashboardPeriodSetting } from './dashboard-period-setting'
+import { CategoriesManager } from './categories-manager'
 import { Users, Coins } from 'lucide-react'
 
 export default async function AjustesPage() {
@@ -15,9 +17,10 @@ export default async function AjustesPage() {
   const household = await getUserHousehold()
   if (!household || !user) return null
 
-  const [members, dashboardPeriod] = await Promise.all([
+  const [members, dashboardPeriod, categories] = await Promise.all([
     getHouseholdMembers(household.id),
     getUserDashboardPeriod(),
+    getCategories(household.id),
   ])
 
   return (
@@ -28,6 +31,8 @@ export default async function AjustesPage() {
       </div>
 
       <DashboardPeriodSetting current={dashboardPeriod} />
+
+      <CategoriesManager householdId={household.id} categories={categories} />
 
       <section className="rounded-[24px] bg-white/90 backdrop-blur-md shadow-sm border border-white/60 p-5">
         <h2 className="text-[15px] font-bold text-[#2D3436] mb-3 flex items-center gap-2">
