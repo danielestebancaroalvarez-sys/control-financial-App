@@ -6,6 +6,11 @@ self.addEventListener('activate', event => {
   event.waitUntil(self.clients.claim())
 })
 
+/** Requerido por Chrome para promover la instalación como PWA */
+self.addEventListener('fetch', event => {
+  event.respondWith(fetch(event.request))
+})
+
 self.addEventListener('notificationclick', event => {
   event.notification.close()
   const url = event.notification.data?.url ?? '/predicciones'
