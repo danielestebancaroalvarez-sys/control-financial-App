@@ -27,6 +27,15 @@ export type LineItem = {
   price: number
 }
 
+export type MarketProductGroup =
+  | 'carne'
+  | 'aseo'
+  | 'frutas-verduras'
+  | 'lacteos'
+  | 'panaderia'
+  | 'bebidas'
+  | 'otros'
+
 export type TransactionListItem = {
   id: string
   type: TransactionType
