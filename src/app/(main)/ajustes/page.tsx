@@ -6,6 +6,7 @@ import SignOutButton from '@/app/sign-out-button'
 import { CopyButton } from './copy-button'
 import { DashboardPeriodSetting } from './dashboard-period-setting'
 import { CategoriesManager } from './categories-manager'
+import { ResetDataButton } from './reset-data-button'
 import { Users, Coins } from 'lucide-react'
 
 export default async function AjustesPage() {
@@ -85,6 +86,8 @@ export default async function AjustesPage() {
           ))}
         </ul>
       </section>
+
+      <ResetDataButton householdId={household.id} />
 
       <section className="rounded-[24px] bg-white/90 backdrop-blur-md shadow-sm border border-white/60 p-5">
         <h2 className="text-[15px] font-bold text-[#2D3436] mb-3">Sesión</h2>

@@ -72,3 +72,29 @@ export async function joinHouseholdByCode(
   revalidatePath('/', 'layout')
   redirect('/')
 }
+
+const REVALIDATE_PATHS = ['/', '/buscar', '/ahorros', '/predicciones', '/nuevo', '/ajustes']
+
+function revalidateApp() {
+  for (const path of REVALIDATE_PATHS) revalidatePath(path)
+}
+
+export async function resetHouseholdData(
+  householdId: string
+): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) return { error: 'Debes iniciar sesión.' }
+
+  const { error } = await supabase.rpc('reset_household_data', {
+    p_household_id: householdId,
+  })
+
+  if (error) return { error: error.message }
+
+  revalidateApp()
+  return {}
+}
