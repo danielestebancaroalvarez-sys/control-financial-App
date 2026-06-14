@@ -1,10 +1,9 @@
 'use client'
 
-import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { motion } from 'framer-motion'
 import { Home, Search, Plus, PiggyBank, LineChart } from 'lucide-react'
 import { getTabIndex } from './tab-routes'
+import { TabBarLink } from './tab-bar-link'
 
 const TABS = [
   { href: '/', label: 'Inicio', icon: Home },
@@ -33,57 +32,28 @@ export function BottomTabBar() {
 
             if ('center' in tab && tab.center) {
               return (
-                <Link
+                <TabBarLink
                   key={tab.href}
                   href={tab.href}
-                  prefetch
-                  className="relative -top-5 flex flex-col items-center shrink-0"
-                  aria-label={tab.label}
+                  label={tab.label}
+                  icon={Icon}
+                  active={active}
+                  center
                 >
-                  <motion.div
-                    whileTap={{ scale: 0.92 }}
-                    className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg ring-4 ring-white/90 bg-gradient-to-br from-[#00BFA5] to-[#2DD4BF] ${
-                      active
-                        ? 'shadow-[#00BFA5]/40'
-                        : 'shadow-[#00BFA5]/25'
-                    }`}
-                  >
-                    <Plus className="w-7 h-7 text-white" strokeWidth={2.5} />
-                  </motion.div>
-                </Link>
+                  <Plus className="w-7 h-7 text-white" strokeWidth={2.5} />
+                </TabBarLink>
               )
             }
 
             return (
-              <Link
+              <TabBarLink
                 key={tab.href}
                 href={tab.href}
-                prefetch
-                className="relative flex flex-col items-center gap-0.5 py-1.5 min-w-[3.25rem]"
-              >
-                {active && activeIndex === index && (
-                  <motion.span
-                    layoutId="tab-active"
-                    className="absolute -top-0.5 w-1 h-1 rounded-full bg-[#00BFA5]"
-                    transition={{ type: 'spring', stiffness: 500, damping: 35 }}
-                  />
-                )}
-                <motion.div whileTap={{ scale: 0.88 }}>
-                  <Icon
-                    className={`w-6 h-6 transition-colors ${
-                      active ? 'text-[#00BFA5]' : 'text-[#B2BEC3]'
-                    }`}
-                    strokeWidth={active ? 2.5 : 2}
-                  />
-                </motion.div>
-                <span
-                  className={`text-[10px] font-semibold transition-colors ${
-                    active ? 'text-[#00BFA5]' : 'text-[#B2BEC3]'
-                  }`}
-                >
-                  {tab.label}
-                </span>
-              </Link>
+                label={tab.label}
+                icon={Icon}
+                active={active}
+                showActiveDot={active && activeIndex === index}
+              />
             )
           })}
         </div>

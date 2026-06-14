@@ -1,30 +1,17 @@
-import { createClient } from '@/utils/supabase/server'
-import { getUserHousehold } from '@/lib/household/queries'
-import { getUserDashboardPeriod } from '@/lib/profile/queries'
+import { redirect } from 'next/navigation'
+import { getMainAppContextWithPeriod } from '@/lib/app/context'
 import { getPredictionsSummary } from '@/lib/finance/queries'
 import { formatMoney, getPeriodLabels } from '@/lib/finance/format'
 import { CategoryIcon } from '@/components/transactions/category-icon'
 import { Circle, ShoppingBag } from 'lucide-react'
 
-const FREQ_LABELS: Record<string, string> = {
-  weekly: 'semanal',
-  biweekly: 'quincenal',
-  monthly: 'mensual',
-}
-
 export default async function PrediccionesPage() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const ctx = await getMainAppContextWithPeriod()
+  if (!ctx) redirect('/login')
 
-  const household = await getUserHousehold()
-  if (!household || !user) return null
-
-  const period = await getUserDashboardPeriod()
-  const summary = await getPredictionsSummary(household.id, period)
-  const fmt = (n: number) => formatMoney(n, household.base_currency)
-  const labels = getPeriodLabels(period)
+  const summary = await getPredictionsSummary(ctx.household.id, ctx.period)
+  const fmt = (n: number) => formatMoney(n, ctx.household.base_currency)
+  const labels = getPeriodLabels(ctx.period)
 
   return (
     <div className="space-y-4">
@@ -63,7 +50,7 @@ export default async function PrediccionesPage() {
                     {fmt(svc.amount)}
                     {svc.occurrences && svc.occurrences > 1
                       ? ` · ${svc.occurrences} pagos`
-                      : ` / ${FREQ_LABELS[svc.frequency] ?? svc.frequency}`}
+                      : ` / ${svc.frequency}`}
                   </p>
                 </div>
                 <span className="text-[11px] font-bold px-2 py-1 rounded-lg bg-[#FFE082]/30 text-[#F59E0B]">
@@ -93,7 +80,7 @@ export default async function PrediccionesPage() {
                   {fmt(sub.amount)}
                   {sub.occurrences && sub.occurrences > 1
                     ? ` · ${sub.occurrences}x`
-                    : ` / ${FREQ_LABELS[sub.frequency] ?? sub.frequency}`}
+                    : ` / ${sub.frequency}`}
                 </p>
                 <p className="text-[10px] text-[#F59E0B] mt-1">Próximo periodo</p>
               </div>

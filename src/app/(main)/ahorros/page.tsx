@@ -1,24 +1,19 @@
-import { createClient } from '@/utils/supabase/server'
-import { getUserHousehold } from '@/lib/household/queries'
+import { redirect } from 'next/navigation'
+import { getMainAppContext } from '@/lib/app/context'
 import { getSavingsGoals } from '@/lib/finance/queries'
 import { AhorrosClient } from './ahorros-client'
 
 export default async function AhorrosPage() {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const ctx = await getMainAppContext()
+  if (!ctx) redirect('/login')
 
-  const household = await getUserHousehold()
-  if (!household || !user) return null
-
-  const goals = await getSavingsGoals(household.id)
+  const goals = await getSavingsGoals(ctx.household.id)
 
   return (
     <AhorrosClient
       goals={goals}
-      householdId={household.id}
-      currency={household.base_currency}
+      householdId={ctx.household.id}
+      currency={ctx.household.base_currency}
     />
   )
 }

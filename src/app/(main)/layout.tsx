@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/utils/supabase/server'
+import { getAuthUser } from '@/lib/auth/session'
 import { getUserHousehold } from '@/lib/household/queries'
 import { AppHeader } from '@/components/layout/app-header'
 import { BottomTabBar } from '@/components/layout/bottom-tab-bar'
@@ -11,11 +11,7 @@ export default async function MainLayout({
 }: {
   children: React.ReactNode
 }) {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
+  const user = await getAuthUser()
   if (!user) redirect('/login')
 
   const household = await getUserHousehold()
@@ -28,7 +24,6 @@ export default async function MainLayout({
     'Usuario'
 
   const firstName = getFirstName(displayName)
-
   const avatarUrl =
     (user.user_metadata?.avatar_url as string | undefined) ??
     (user.user_metadata?.picture as string | undefined)

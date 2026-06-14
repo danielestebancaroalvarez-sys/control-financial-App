@@ -1,5 +1,6 @@
+import { cache } from 'react'
 import { createClient } from '@/utils/supabase/server'
-import { syncUserProfileFromMetadata } from '@/lib/profile/sync'
+import { getAuthUser } from '@/lib/auth/session'
 import type { CurrencyCode } from '@/lib/household/types'
 import { calculateBalance, sumByTypeInPeriod } from './balance'
 import { calculateGuiltFreeMoney } from './guilt-free'
@@ -18,39 +19,68 @@ import type {
   TransactionRow,
 } from './types'
 
-export async function getHouseholdTransactions(
-  householdId: string
-): Promise<TransactionRow[]> {
-  const supabase = await createClient()
-  const { data } = await supabase
-    .from('transactions')
-    .select('type, amount_base, transaction_date, category_id')
-    .eq('household_id', householdId)
+export const getHouseholdTransactions = cache(
+  async (householdId: string): Promise<TransactionRow[]> => {
+    const supabase = await createClient()
+    const { data } = await supabase
+      .from('transactions')
+      .select('type, amount_base, transaction_date, category_id')
+      .eq('household_id', householdId)
 
-  return (data ?? []) as TransactionRow[]
-}
+    return (data ?? []) as TransactionRow[]
+  }
+)
 
 export async function getRealBalance(householdId: string): Promise<number> {
   const transactions = await getHouseholdTransactions(householdId)
   return calculateBalance(transactions).balance
 }
 
-export async function getCategories(householdId: string): Promise<Category[]> {
-  const supabase = await createClient()
-  const { data } = await supabase
-    .from('categories')
-    .select('id, name, type, icon, color, is_fixed, is_subscription, is_system')
-    .eq('household_id', householdId)
-    .order('name')
+export const getCategories = cache(
+  async (householdId: string): Promise<Category[]> => {
+    const supabase = await createClient()
+    const { data } = await supabase
+      .from('categories')
+      .select('id, name, type, icon, color, is_fixed, is_subscription, is_system')
+      .eq('household_id', householdId)
+      .order('name')
 
-  return (data ?? []).map(c => ({
-    ...c,
-    type: c.type as 'income' | 'expense',
-    color: getCategoryColor(c.name, c.color),
-    is_system: c.is_system ?? false,
-    is_subscription: c.is_subscription ?? false,
-  }))
-}
+    return (data ?? []).map(c => ({
+      ...c,
+      type: c.type as 'income' | 'expense',
+      color: getCategoryColor(c.name, c.color),
+      is_system: c.is_system ?? false,
+      is_subscription: c.is_subscription ?? false,
+    }))
+  }
+)
+
+export const getSavingsGoals = cache(
+  async (householdId: string): Promise<SavingsGoal[]> => {
+    const supabase = await createClient()
+    const { data } = await supabase
+      .from('savings_goals')
+      .select('*')
+      .eq('household_id', householdId)
+      .eq('is_active', true)
+      .order('created_at', { ascending: false })
+
+    return (data ?? []).map(g => ({
+      id: g.id,
+      name: g.name,
+      target_amount: Number(g.target_amount),
+      current_amount: Number(g.current_amount),
+      target_date: g.target_date,
+      contribution_amount: g.contribution_amount ? Number(g.contribution_amount) : null,
+      contribution_frequency: g.contribution_frequency,
+      savings_mode: g.savings_mode,
+      annual_interest_rate: g.annual_interest_rate
+        ? Number(g.annual_interest_rate)
+        : null,
+      is_active: g.is_active,
+    }))
+  }
+)
 
 export async function getDashboardSummary(
   householdId: string,
@@ -60,42 +90,24 @@ export async function getDashboardSummary(
   const safeOffset = Math.max(0, Math.min(11, Math.floor(periodOffset)))
   const { start, end } = getPeriodRangeAtOffset(period, safeOffset)
 
-  const supabase = await createClient()
-
-  const [transactions, savingsResult, categoriesResult] =
-    await Promise.all([
-      getHouseholdTransactions(householdId),
-      supabase
-        .from('savings_goals')
-        .select(
-          'name, target_amount, current_amount, contribution_amount, contribution_frequency, is_active'
-        )
-        .eq('household_id', householdId)
-        .eq('is_active', true),
-      supabase
-        .from('categories')
-        .select('id, name, color')
-        .eq('household_id', householdId)
-        .eq('type', 'expense'),
-    ])
+  const [transactions, savingsGoals, categories] = await Promise.all([
+    getHouseholdTransactions(householdId),
+    getSavingsGoals(householdId),
+    getCategories(householdId),
+  ])
 
   const balance = calculateBalance(transactions)
   const periodIncome = sumByTypeInPeriod(transactions, 'income', start, end)
   const periodExpenses = sumByTypeInPeriod(transactions, 'expense', start, end)
-
-  const savingsGoals = savingsResult.data ?? []
   const totalSavings = savingsGoals.reduce(
     (sum, g) => sum + Number(g.current_amount),
     0
   )
-
   const guiltFreeMoney = calculateGuiltFreeMoney(periodIncome, periodExpenses)
 
+  const expenseCategories = categories.filter(c => c.type === 'expense')
   const categoryMap = new Map(
-    (categoriesResult.data ?? []).map(c => [
-      c.id,
-      { ...c, color: getCategoryColor(c.name, c.color) },
-    ])
+    expenseCategories.map(c => [c.id, { id: c.id, name: c.name, color: c.color }])
   )
 
   const categoryTotals = new Map<string, number>()
@@ -106,32 +118,26 @@ export async function getDashboardSummary(
     categoryTotals.set(tx.category_id, prev + Number(tx.amount_base))
   }
 
+  const mapCategoryAmount = ([id, amount]: [string, number]) => {
+    const cat = categoryMap.get(id)
+    return {
+      name: cat?.name ?? 'Sin categoría',
+      amount,
+      color: cat?.color ?? null,
+    }
+  }
+
   const topCategories = [...categoryTotals.entries()]
     .sort((a, b) => b[1] - a[1])
     .slice(0, 3)
-    .map(([id, amount]) => {
-      const cat = categoryMap.get(id)
-      return {
-        name: cat?.name ?? 'Sin categoría',
-        amount,
-        color: cat?.color ?? null,
-      }
-    })
+    .map(mapCategoryAmount)
 
   const allCategories = [...categoryTotals.entries()]
     .sort((a, b) => b[1] - a[1])
     .slice(0, 6)
-    .map(([id, amount]) => {
-      const cat = categoryMap.get(id)
-      return {
-        name: cat?.name ?? 'Sin categoría',
-        amount,
-        color: cat?.color ?? null,
-      }
-    })
+    .map(mapCategoryAmount)
 
   const trend = buildTrendSeries(transactions, period, safeOffset, 6)
-
   const savingsProgress = savingsGoals.map(g => ({
     name: g.name,
     current: Number(g.current_amount),
@@ -165,11 +171,7 @@ export async function searchTransactions(
   filters: SearchFilters
 ): Promise<TransactionListItem[]> {
   const supabase = await createClient()
-  await syncUserProfileFromMetadata()
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = await getAuthUser()
 
   let query = supabase
     .from('transactions')
@@ -210,10 +212,13 @@ export async function searchTransactions(
   if (!data) return []
 
   const authorIds = [...new Set(data.map(r => r.created_by))]
-  const { data: profiles } = await supabase
-    .from('profiles')
-    .select('id, full_name')
-    .in('id', authorIds)
+  const { data: profiles } =
+    authorIds.length > 0
+      ? await supabase
+          .from('profiles')
+          .select('id, full_name')
+          .in('id', authorIds)
+      : { data: [] }
 
   const profileMap = new Map(
     (profiles ?? []).map(p => [p.id, p.full_name])
@@ -248,36 +253,12 @@ export async function searchTransactions(
   })
 }
 
-export async function getSavingsGoals(householdId: string): Promise<SavingsGoal[]> {
-  const supabase = await createClient()
-  const { data } = await supabase
-    .from('savings_goals')
-    .select('*')
-    .eq('household_id', householdId)
-    .eq('is_active', true)
-    .order('created_at', { ascending: false })
-
-  return (data ?? []).map(g => ({
-    id: g.id,
-    name: g.name,
-    target_amount: Number(g.target_amount),
-    current_amount: Number(g.current_amount),
-    target_date: g.target_date,
-    contribution_amount: g.contribution_amount ? Number(g.contribution_amount) : null,
-    contribution_frequency: g.contribution_frequency,
-    savings_mode: g.savings_mode,
-    annual_interest_rate: g.annual_interest_rate
-      ? Number(g.annual_interest_rate)
-      : null,
-    is_active: g.is_active,
-  }))
-}
-
 export async function getPredictionsSummary(
   householdId: string,
   period: Period = 'monthly'
 ): Promise<PredictionsSummary> {
   const supabase = await createClient()
+  const trendStart = getPeriodRangeAtOffset(period, 3).start
 
   const [recurringResult, txResult, categories] = await Promise.all([
     supabase
@@ -292,7 +273,8 @@ export async function getPredictionsSummary(
       .from('transactions')
       .select('category_id, amount_base, transaction_date, description, line_items')
       .eq('household_id', householdId)
-      .eq('type', 'expense'),
+      .eq('type', 'expense')
+      .gte('transaction_date', trendStart),
     getCategories(householdId),
   ])
 
