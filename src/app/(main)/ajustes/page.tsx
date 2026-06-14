@@ -6,6 +6,7 @@ import SignOutButton from '@/app/sign-out-button'
 import { CopyButton } from './copy-button'
 import { DashboardPeriodSetting } from './dashboard-period-setting'
 import { CategoriesManager } from './categories-manager'
+import { PaymentReminderSetting } from './payment-reminder-setting'
 import { ResetDataButton } from './reset-data-button'
 import { Users, Coins } from 'lucide-react'
 
@@ -26,6 +27,8 @@ export default async function AjustesPage() {
       </div>
 
       <DashboardPeriodSetting current={ctx.period} />
+
+      <PaymentReminderSetting />
 
       <CategoriesManager householdId={ctx.household.id} categories={categories} />
 

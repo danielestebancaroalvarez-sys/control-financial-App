@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { ServiceWorkerRegister } from "@/components/notifications/service-worker-register";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -10,6 +11,7 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "CoupleCash — Finanzas en pareja, fácil y feliz",
   description: "Gestiona tus finanzas en pareja de forma simple y feliz con CoupleCash.",
+  manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -32,7 +34,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" className={inter.variable}>
-      <body className="font-[var(--font-inter)]">{children}</body>
+      <body className="font-[var(--font-inter)]">
+        <ServiceWorkerRegister />
+        {children}
+      </body>
     </html>
   );
 }
