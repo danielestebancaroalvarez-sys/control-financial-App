@@ -5,12 +5,21 @@ import { useLinkStatus } from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
 import {
+  CalendarClock,
+  CheckSquare,
+  Clock,
+  Plus,
+  Repeat,
+  Target,
+} from 'lucide-react'
+import {
   TabAddIcon,
   TabHomeIcon,
   TabRadarIcon,
   TabSavingsIcon,
   TabSearchIcon,
 } from '@/components/brand/tab-icons'
+import { getAppModule } from '@/lib/app/module'
 
 function TabPendingDot() {
   const { pending } = useLinkStatus()
@@ -23,14 +32,24 @@ function TabPendingDot() {
   )
 }
 
-function CenterPendingRing({ children }: { children: React.ReactNode }) {
+function CenterPendingRing({
+  children,
+  accent = 'finance',
+}: {
+  children: React.ReactNode
+  accent?: 'finance' | 'time'
+}) {
   const { pending } = useLinkStatus()
+  const gradient =
+    accent === 'time'
+      ? 'from-[#6366F1] to-[#8B5CF6] shadow-[#6366F1]/25'
+      : 'from-[#00BFA5] to-[#2DD4BF] shadow-[#00BFA5]/25'
   return (
     <motion.div
       whileTap={{ scale: 0.92 }}
-      className={`relative w-14 h-14 rounded-full flex items-center justify-center shadow-lg ring-4 ring-white/90 bg-gradient-to-br from-[#00BFA5] to-[#2DD4BF] ${
-        pending ? 'shadow-[#00BFA5]/50' : 'shadow-[#00BFA5]/25'
-      }`}
+      className={`relative w-14 h-14 rounded-full flex items-center justify-center shadow-lg ring-4 ring-white/90 bg-gradient-to-br ${gradient} ${
+        pending && accent === 'time' ? 'shadow-[#6366F1]/50' : ''
+      } ${pending && accent === 'finance' ? 'shadow-[#00BFA5]/50' : ''}`}
     >
       {pending && (
         <span className="absolute inset-0 rounded-full border-2 border-white/60 border-t-white animate-spin" />
@@ -40,7 +59,7 @@ function CenterPendingRing({ children }: { children: React.ReactNode }) {
   )
 }
 
-const TABS = [
+const FINANCE_TABS = [
   {
     href: '/',
     label: 'Inicio',
@@ -69,20 +88,63 @@ const TABS = [
   },
 ] as const
 
+const TIME_TABS = [
+  {
+    href: '/tiempo',
+    label: 'Inicio',
+    renderIcon: (active: boolean) => (
+      <Clock className={`w-5 h-5 ${active ? 'text-[#6366F1]' : 'text-cc-muted'}`} />
+    ),
+  },
+  {
+    href: '/tiempo/tareas',
+    label: 'Tareas',
+    renderIcon: (active: boolean) => (
+      <CheckSquare className={`w-5 h-5 ${active ? 'text-[#6366F1]' : 'text-cc-muted'}`} />
+    ),
+  },
+  {
+    href: '/tiempo/nuevo',
+    label: 'Añadir',
+    center: true as const,
+    renderIcon: (_active?: boolean) => <Plus className="w-6 h-6 text-white" />,
+  },
+  {
+    href: '/tiempo/fijos',
+    label: 'Fijos',
+    renderIcon: (active: boolean) => (
+      <Repeat className={`w-5 h-5 ${active ? 'text-[#6366F1]' : 'text-cc-muted'}`} />
+    ),
+  },
+  {
+    href: '/tiempo/metas',
+    label: 'Metas',
+    renderIcon: (active: boolean) => (
+      <Target className={`w-5 h-5 ${active ? 'text-[#6366F1]' : 'text-cc-muted'}`} />
+    ),
+  },
+] as const
+
 function isActive(pathname: string, href: string) {
-  if (href === '/') return pathname === '/'
+  if (href === '/' || href === '/tiempo') {
+    return pathname === href
+  }
   return pathname.startsWith(href)
 }
 
-export function BottomTabBar() {
+type TabItem = (typeof FINANCE_TABS)[number] | (typeof TIME_TABS)[number]
+
+function TabBar({ tabs, accent }: { tabs: readonly TabItem[]; accent: 'finance' | 'time' }) {
   const pathname = usePathname()
-  const activeIndex = TABS.findIndex(tab => isActive(pathname, tab.href))
+  const activeIndex = tabs.findIndex(tab => isActive(pathname, tab.href))
+  const activeColor = accent === 'time' ? 'text-[#6366F1]' : 'text-[#00BFA5]'
+  const dotColor = accent === 'time' ? 'bg-[#6366F1]' : 'bg-[#00BFA5]'
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 pb-[max(1rem,env(safe-area-inset-bottom))]">
       <div className="mx-auto max-w-md px-4">
         <div className="relative flex items-end justify-around rounded-[28px] cc-surface shadow-[0_8px_40px_rgba(0,0,0,0.14)] dark:shadow-[0_8px_40px_rgba(0,0,0,0.35)] px-2 py-2">
-          {TABS.map((tab, index) => {
+          {tabs.map((tab, index) => {
             const active = isActive(pathname, tab.href)
 
             if ('center' in tab && tab.center) {
@@ -94,7 +156,9 @@ export function BottomTabBar() {
                   className="relative -top-5 flex flex-col items-center shrink-0"
                   aria-label={tab.label}
                 >
-                  <CenterPendingRing>{tab.renderIcon(false)}</CenterPendingRing>
+                  <CenterPendingRing accent={accent}>
+                    {tab.renderIcon(false)}
+                  </CenterPendingRing>
                 </Link>
               )
             }
@@ -108,8 +172,8 @@ export function BottomTabBar() {
               >
                 {active && activeIndex === index && (
                   <motion.span
-                    layoutId="tab-active"
-                    className="absolute -top-0.5 w-1 h-1 rounded-full bg-[#00BFA5]"
+                    layoutId={`tab-active-${accent}`}
+                    className={`absolute -top-0.5 w-1 h-1 rounded-full ${dotColor}`}
                     transition={{ type: 'spring', stiffness: 500, damping: 35 }}
                   />
                 )}
@@ -119,7 +183,7 @@ export function BottomTabBar() {
                 </motion.div>
                 <span
                   className={`text-[10px] font-semibold transition-colors ${
-                    active ? 'text-[#00BFA5]' : 'text-cc-muted'
+                    active ? activeColor : 'text-cc-muted'
                   }`}
                 >
                   {tab.label}
@@ -131,4 +195,15 @@ export function BottomTabBar() {
       </div>
     </nav>
   )
+}
+
+export function BottomTabBar() {
+  const pathname = usePathname()
+  const module = getAppModule(pathname)
+
+  if (module === 'time') {
+    return <TabBar tabs={TIME_TABS} accent="time" />
+  }
+
+  return <TabBar tabs={FINANCE_TABS} accent="finance" />
 }

@@ -55,6 +55,56 @@ export function HouseholdSync({ householdId }: { householdId: string }) {
         {
           event: '*',
           schema: 'public',
+          table: 'household_tasks',
+          filter: `household_id=eq.${householdId}`,
+        },
+        refresh
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'time_entries',
+          filter: `household_id=eq.${householdId}`,
+        },
+        refresh
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'time_blocks',
+          filter: `household_id=eq.${householdId}`,
+        },
+        refresh
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'productivity_goals',
+          filter: `household_id=eq.${householdId}`,
+        },
+        refresh
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'goal_steps',
+          filter: `household_id=eq.${householdId}`,
+        },
+        refresh
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
           table: 'household_members',
           filter: `household_id=eq.${householdId}`,
         },
