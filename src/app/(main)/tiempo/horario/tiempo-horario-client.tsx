@@ -79,8 +79,12 @@ export function TiempoHorarioClient({
           <CalendarClock className="w-5 h-5 text-[#6366F1]" />
           Horario
         </h1>
-        <p className="text-[12px] text-cc-secondary mt-0.5">{periodCaption}</p>
+        <p className="text-[12px] text-cc-secondary mt-0.5">
+          Tu semana de un vistazo. Cambia de persona para ver el horario de cada miembro del hogar.
+        </p>
       </div>
+
+      <p className="text-[10px] text-cc-muted">{periodCaption}</p>
 
       <WeekSelector activeOffset={periodOffset} />
 
@@ -106,13 +110,14 @@ export function TiempoHorarioClient({
 
       <WeeklyScheduleGrid
         periodStart={periodStart}
+        periodEnd={periodEnd}
         events={events}
         userId={activeUserId}
       />
 
       <div className="flex gap-2">
         <Link
-          href="/tiempo/nuevo"
+          href="/tiempo/nuevo?tipo=tiempo"
           className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white text-[13px] font-bold"
         >
           Añadir actividad

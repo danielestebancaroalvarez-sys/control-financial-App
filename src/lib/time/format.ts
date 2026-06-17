@@ -53,6 +53,44 @@ export function formatTimeRange(startTime: string | null, endTime: string | null
   return `${startTime.slice(0, 5)} – ${endTime.slice(0, 5)}`
 }
 
+export function formatRelativeDate(dateStr: string): string {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const target = new Date(dateStr + 'T12:00:00')
+  const diffDays = Math.round((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+
+  if (diffDays === 0) return 'hoy'
+  if (diffDays === 1) return 'mañana'
+  if (diffDays === -1) return 'ayer'
+  if (diffDays > 0 && diffDays < 30) return `en ${diffDays} días`
+  if (diffDays < 0 && diffDays > -30) return `hace ${Math.abs(diffDays)} días`
+
+  const diffMonths = Math.round(diffDays / 30)
+  if (diffMonths > 0 && diffMonths < 24) {
+    return diffMonths === 1 ? 'en 1 mes' : `en ${diffMonths} meses`
+  }
+  if (diffMonths < 0 && diffMonths > -24) {
+    const abs = Math.abs(diffMonths)
+    return abs === 1 ? 'hace 1 mes' : `hace ${abs} meses`
+  }
+
+  const diffYears = Math.round(diffDays / 365)
+  if (diffYears > 0) return diffYears === 1 ? 'en 1 año' : `en ${diffYears} años`
+  if (diffYears < 0) {
+    const abs = Math.abs(diffYears)
+    return abs === 1 ? 'hace 1 año' : `hace ${abs} años`
+  }
+
+  return formatShortDate(dateStr)
+}
+
+export function daysUntilDate(dateStr: string): number {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const target = new Date(dateStr + 'T12:00:00')
+  return Math.ceil((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+}
+
 export function getTimeWeekLabel(offset = 0): string {
   const { start, end } = getPeriodRangeAtOffset('weekly', offset)
   if (offset === 0) return 'Semana actual'

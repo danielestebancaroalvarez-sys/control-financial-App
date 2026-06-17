@@ -8,7 +8,7 @@ import { TiempoNuevoClient } from './tiempo-nuevo-client'
 export default async function TiempoNuevoPage({
   searchParams,
 }: {
-  searchParams: Promise<{ date?: string; user?: string }>
+  searchParams: Promise<{ date?: string; user?: string; tipo?: string }>
 }) {
   const ctx = await getMainAppContext()
   if (!ctx) redirect('/login')
@@ -28,6 +28,7 @@ export default async function TiempoNuevoPage({
       currentUserId={user!.id}
       initialDate={params.date}
       initialUserId={params.user}
+      initialTipo={params.tipo}
     />
   )
 }

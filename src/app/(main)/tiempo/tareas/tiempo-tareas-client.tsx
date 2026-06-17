@@ -17,7 +17,7 @@ import {
   reopenHouseholdTask,
 } from '@/lib/time/actions'
 import { formatDuration, formatShortDate } from '@/lib/time/format'
-import type { HouseholdTask } from '@/lib/time/types'
+import { TASK_DIFFICULTY_COLORS, TASK_DIFFICULTY_LABELS, type HouseholdTask } from '@/lib/time/types'
 
 type Filter = 'all' | 'mine' | 'pending' | 'done'
 
@@ -92,12 +92,13 @@ export function TiempoTareasClient({
           Tareas del hogar
         </h1>
         <p className="text-[12px] text-cc-secondary mt-0.5">
-          Asigna, completa y reparte tareas con tu pareja.
+          Asigna, completa y reparte tareas con tu pareja. Ej: Limpiar horno · Alta · Asignar a
+          pareja.
         </p>
       </div>
 
       <Link
-        href="/tiempo/nuevo"
+        href="/tiempo/nuevo?tipo=tarea"
         className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white text-[13px] font-bold"
       >
         <Plus className="w-4 h-4" />
@@ -124,6 +125,9 @@ export function TiempoTareasClient({
       {filtered.length === 0 ? (
         <section className="cc-surface rounded-[24px] p-6 text-center">
           <p className="text-[13px] text-cc-secondary">No hay tareas en este filtro.</p>
+          <p className="text-[11px] text-cc-muted mt-2">
+            Crea una tarea y elige su dificultad para equilibrar la carga del hogar.
+          </p>
         </section>
       ) : (
         <ul className="space-y-2">
@@ -152,15 +156,23 @@ export function TiempoTareasClient({
                 )}
               </button>
               <div className="flex-1 min-w-0">
-                <p
-                  className={`text-[13px] font-semibold ${
-                    task.status === 'done'
-                      ? 'text-cc-muted line-through'
-                      : 'text-cc-primary'
-                  }`}
-                >
-                  {task.title}
-                </p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p
+                    className={`text-[13px] font-semibold ${
+                      task.status === 'done'
+                        ? 'text-cc-muted line-through'
+                        : 'text-cc-primary'
+                    }`}
+                  >
+                    {task.title}
+                  </p>
+                  <span
+                    className="text-[9px] font-bold px-1.5 py-0.5 rounded-md text-white"
+                    style={{ backgroundColor: TASK_DIFFICULTY_COLORS[task.difficulty] }}
+                  >
+                    {TASK_DIFFICULTY_LABELS[task.difficulty]}
+                  </span>
+                </div>
                 <p className="text-[11px] text-cc-secondary">
                   {task.assigneeName
                     ? `Asignada a ${task.assigneeName}`

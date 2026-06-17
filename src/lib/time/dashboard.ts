@@ -8,7 +8,7 @@ import type {
 } from './types'
 import type { TimeFrequency } from './types'
 import { scheduledMinutesInRange } from './recurring-blocks'
-import { getPeriodRangeAtOffset } from './format'
+import { getPeriodRangeAtOffset, daysUntilDate } from './format'
 
 type MemberRow = {
   user_id: string
@@ -56,6 +56,7 @@ type TaskRow = {
   created_by: string
   due_date: string | null
   estimated_minutes: number | null
+  difficulty: number
   status: 'pending' | 'done' | 'cancelled'
   completed_at: string | null
 }
@@ -63,6 +64,7 @@ type TaskRow = {
 type GoalRow = {
   id: string
   title: string
+  vision: string | null
   target_date: string | null
   color: string | null
   icon: string | null
@@ -70,6 +72,7 @@ type GoalRow = {
     id: string
     title: string
     step_order: number
+    step_type: string
     estimated_minutes: number | null
     due_date: string | null
     assigned_to: string | null
@@ -137,6 +140,7 @@ export function mapHouseholdTask(row: TaskRow, members: MemberRow[]): HouseholdT
     creatorName: memberName(members, row.created_by),
     dueDate: row.due_date,
     estimatedMinutes: row.estimated_minutes,
+    difficulty: (row.difficulty ?? 2) as 1 | 2 | 3,
     status: row.status,
     completedAt: row.completed_at,
   }
@@ -155,9 +159,16 @@ export function mapProductivityGoal(
     .filter(s => s.status === 'pending')
     .reduce((sum, s) => sum + (s.estimated_minutes ?? 0), 0)
 
+  const pendingMilestones = steps
+    .filter(s => s.status === 'pending' && s.due_date)
+    .sort((a, b) => (a.due_date ?? '').localeCompare(b.due_date ?? ''))
+
+  const nextMilestone = pendingMilestones[0] ?? null
+
   return {
     id: row.id,
     title: row.title,
+    vision: row.vision,
     targetDate: row.target_date,
     color: row.color,
     icon: row.icon,
@@ -165,11 +176,17 @@ export function mapProductivityGoal(
     totalSteps,
     estimatedRemainingMinutes,
     percent: totalSteps > 0 ? Math.round((doneSteps / totalSteps) * 100) : 0,
+    nextMilestoneTitle: nextMilestone?.title ?? null,
+    nextMilestoneDate: nextMilestone?.due_date ?? null,
+    daysToNextMilestone: nextMilestone?.due_date
+      ? daysUntilDate(nextMilestone.due_date)
+      : null,
     steps: steps.map(s => ({
       id: s.id,
       goalId: row.id,
       title: s.title,
       stepOrder: s.step_order,
+      stepType: (s.step_type === 'action' ? 'action' : 'milestone') as 'milestone' | 'action',
       estimatedMinutes: s.estimated_minutes,
       dueDate: s.due_date,
       assignedTo: s.assigned_to,

@@ -67,15 +67,15 @@ export async function getTimeDashboard(
       supabase
         .from('household_tasks')
         .select(
-          'id, title, description, assigned_to, created_by, due_date, estimated_minutes, status, completed_at'
+          'id, title, description, assigned_to, created_by, due_date, estimated_minutes, difficulty, status, completed_at'
         )
         .eq('household_id', householdId)
         .neq('status', 'cancelled'),
       supabase
         .from('productivity_goals')
         .select(
-          `id, title, target_date, color, icon,
-          goal_steps ( id, title, step_order, estimated_minutes, due_date, assigned_to, status )`
+          `id, title, vision, target_date, color, icon,
+          goal_steps ( id, title, step_order, step_type, estimated_minutes, due_date, assigned_to, status )`
         )
         .eq('household_id', householdId)
         .eq('is_active', true),
@@ -153,7 +153,7 @@ export async function getHouseholdTasks(
   const { data } = await supabase
     .from('household_tasks')
     .select(
-      'id, title, description, assigned_to, created_by, due_date, estimated_minutes, status, completed_at'
+      'id, title, description, assigned_to, created_by, due_date, estimated_minutes, difficulty, status, completed_at'
     )
     .eq('household_id', householdId)
     .neq('status', 'cancelled')
@@ -176,8 +176,8 @@ export async function getProductivityGoals(
   const { data } = await supabase
     .from('productivity_goals')
     .select(
-      `id, title, target_date, color, icon,
-      goal_steps ( id, title, step_order, estimated_minutes, due_date, assigned_to, status )`
+      `id, title, vision, target_date, color, icon,
+      goal_steps ( id, title, step_order, step_type, estimated_minutes, due_date, assigned_to, status )`
     )
     .eq('household_id', householdId)
     .eq('is_active', true)

@@ -175,9 +175,17 @@ export function TiempoDashboardClient({
                     style={{ width: `${goal.percent}%` }}
                   />
                 </div>
-                {goal.estimatedRemainingMinutes > 0 && (
+                {goal.nextMilestoneTitle && goal.daysToNextMilestone !== null && (
+                  <p className="text-[10px] text-[#6366F1] font-medium mt-1">
+                    Próximo: {goal.nextMilestoneTitle}
+                    {goal.daysToNextMilestone >= 0
+                      ? ` · en ${goal.daysToNextMilestone} días`
+                      : ` · vencido hace ${Math.abs(goal.daysToNextMilestone)} días`}
+                  </p>
+                )}
+                {!goal.nextMilestoneTitle && goal.estimatedRemainingMinutes > 0 && (
                   <p className="text-[10px] text-cc-muted mt-1">
-                    Faltan {formatDuration(goal.estimatedRemainingMinutes)}
+                    Faltan {formatDuration(goal.estimatedRemainingMinutes)} de acciones
                   </p>
                 )}
               </div>

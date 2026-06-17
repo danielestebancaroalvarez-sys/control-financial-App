@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { CalendarClock, Check, Clock, ListTodo, Loader2, Repeat } from 'lucide-react'
 import { CategoryIcon } from '@/components/transactions/category-icon'
+import { FormField, FormSection } from '@/components/time/form-field'
 import {
   createHouseholdTask,
   createTimeBlock,
@@ -16,11 +17,19 @@ import {
   minutesFromTimeRange,
   parseDurationInput,
 } from '@/lib/time/format'
-import type { TimeCategory, TimeFrequency } from '@/lib/time/types'
+import {
+  TASK_DIFFICULTY_COLORS,
+  TASK_DIFFICULTY_LABELS,
+  type TaskDifficulty,
+  type TimeCategory,
+  type TimeFrequency,
+} from '@/lib/time/types'
 import type { HouseholdMember } from '@/lib/household/types'
 
 type EntryKind = 'time' | 'task'
 type EntryNature = 'fixed' | 'variable'
+
+const inputClass = `w-full px-4 py-3 rounded-xl cc-input text-[14px] outline-none ring-2 ring-transparent ${TIME_THEME.focus}`
 
 export function TiempoNuevoClient({
   householdId,
@@ -29,6 +38,7 @@ export function TiempoNuevoClient({
   currentUserId,
   initialDate,
   initialUserId,
+  initialTipo,
 }: {
   householdId: string
   categories: TimeCategory[]
@@ -36,15 +46,20 @@ export function TiempoNuevoClient({
   currentUserId: string
   initialDate?: string
   initialUserId?: string
+  initialTipo?: string
 }) {
   const router = useRouter()
-  const [kind, setKind] = useState<EntryKind>('time')
+  const lockKind = initialTipo === 'tarea' || initialTipo === 'tiempo'
+  const [kind, setKind] = useState<EntryKind>(
+    initialTipo === 'tarea' ? 'task' : 'time'
+  )
   const [nature, setNature] = useState<EntryNature>('variable')
   const [categoryId, setCategoryId] = useState('')
   const [title, setTitle] = useState('')
   const [startTime, setStartTime] = useState('09:00')
   const [endTime, setEndTime] = useState('17:00')
   const [taskDuration, setTaskDuration] = useState('')
+  const [difficulty, setDifficulty] = useState<TaskDifficulty>(2)
   const [date, setDate] = useState(initialDate || getTodayString())
   const [anchorDate, setAnchorDate] = useState(getTodayString())
   const [frequency, setFrequency] = useState<TimeFrequency>('weekly')
@@ -63,17 +78,26 @@ export function TiempoNuevoClient({
     return minutesFromTimeRange(startTime, endTime)
   }, [kind, startTime, endTime, taskDuration])
 
+  const pageTitle =
+    kind === 'task'
+      ? 'Nueva tarea'
+      : nature === 'fixed'
+        ? 'Nuevo bloque fijo'
+        : 'Registrar tiempo'
+
+  const pageHint =
+    kind === 'task'
+      ? 'Crea una tarea del hogar y asígnala a alguien de la pareja.'
+      : nature === 'fixed'
+        ? 'Programa una actividad que se repite en tu horario semanal.'
+        : 'Registra el tiempo que ya dedicaste a una actividad.'
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
     setError(null)
 
     const catId = categoryId || categories[0]?.id
-    if (!catId) {
-      setError('No hay categorías de tiempo.')
-      setLoading(false)
-      return
-    }
 
     if (kind === 'task') {
       const result = await createHouseholdTask({
@@ -83,6 +107,7 @@ export function TiempoNuevoClient({
         assignedTo: assignedTo || null,
         dueDate: dueDate || null,
         estimatedMinutes: durationMinutes,
+        difficulty,
       })
       if (result.error) {
         setError(result.error)
@@ -92,6 +117,12 @@ export function TiempoNuevoClient({
       setLoading(false)
       router.push('/tiempo/tareas')
       router.refresh()
+      return
+    }
+
+    if (!catId) {
+      setError('No hay categorías de tiempo.')
+      setLoading(false)
       return
     }
 
@@ -146,194 +177,261 @@ export function TiempoNuevoClient({
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-[20px] font-bold text-cc-primary">Nuevo registro</h1>
-        <p className="text-[12px] text-cc-secondary mt-0.5">
-          Bloques de tiempo, tareas del hogar o programación fija.
-        </p>
+        <h1 className="text-[20px] font-bold text-cc-primary">{pageTitle}</h1>
+        <p className="text-[12px] text-cc-secondary mt-0.5">{pageHint}</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <button
-          type="button"
-          onClick={() => setKind('time')}
-          className={`rounded-2xl border-2 p-4 text-left ${kind === 'time' ? TIME_THEME.cardActive : 'cc-surface-muted border-[var(--cc-border)]'}`}
-        >
-          <Clock className="w-5 h-5 text-[#6366F1] mb-2" />
-          <p className="text-[13px] font-bold text-cc-primary">Tiempo</p>
-          <p className="text-[10px] text-cc-secondary">Trabajo, sueño, hogar…</p>
-        </button>
-        <button
-          type="button"
-          onClick={() => setKind('task')}
-          className={`rounded-2xl border-2 p-4 text-left ${kind === 'task' ? TIME_THEME.cardActive : 'cc-surface-muted border-[var(--cc-border)]'}`}
-        >
-          <ListTodo className="w-5 h-5 text-[#6366F1] mb-2" />
-          <p className="text-[13px] font-bold text-cc-primary">Tarea</p>
-          <p className="text-[10px] text-cc-secondary">Reparar, limpiar, comprar…</p>
-        </button>
-      </div>
+      {!lockKind && (
+        <FormSection title="¿Qué vas a registrar?" description="Elige entre tiempo o una tarea del hogar.">
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => setKind('time')}
+              className={`rounded-2xl border-2 p-4 text-left ${kind === 'time' ? TIME_THEME.cardActive : 'cc-surface-muted border-[var(--cc-border)]'}`}
+            >
+              <Clock className="w-5 h-5 text-[#6366F1] mb-2" />
+              <p className="text-[13px] font-bold text-cc-primary">Tiempo</p>
+              <p className="text-[10px] text-cc-secondary">Trabajo, sueño, hogar…</p>
+            </button>
+            <button
+              type="button"
+              onClick={() => setKind('task')}
+              className={`rounded-2xl border-2 p-4 text-left ${kind === 'task' ? TIME_THEME.cardActive : 'cc-surface-muted border-[var(--cc-border)]'}`}
+            >
+              <ListTodo className="w-5 h-5 text-[#6366F1] mb-2" />
+              <p className="text-[13px] font-bold text-cc-primary">Tarea</p>
+              <p className="text-[10px] text-cc-secondary">Reparar, limpiar, comprar…</p>
+            </button>
+          </div>
+        </FormSection>
+      )}
 
       {kind === 'time' && (
-        <div className="grid grid-cols-1 gap-2">
-          <button
-            type="button"
-            onClick={() => setNature('variable')}
-            className={`flex items-center gap-3 rounded-2xl border-2 p-3 text-left ${nature === 'variable' ? TIME_THEME.cardActive : 'cc-surface-muted border-[var(--cc-border)]'}`}
-          >
-            <CalendarClock className="w-5 h-5 text-[#6366F1] shrink-0" />
-            <div>
-              <p className="text-[12px] font-bold text-cc-primary">Registro puntual</p>
-              <p className="text-[10px] text-cc-secondary">Lo que ya ocurrió hoy o antes</p>
-            </div>
-          </button>
-          <button
-            type="button"
-            onClick={() => setNature('fixed')}
-            className={`flex items-center gap-3 rounded-2xl border-2 p-3 text-left ${nature === 'fixed' ? TIME_THEME.cardActive : 'cc-surface-muted border-[var(--cc-border)]'}`}
-          >
-            <Repeat className="w-5 h-5 text-[#6366F1] shrink-0" />
-            <div>
-              <p className="text-[12px] font-bold text-cc-primary">Bloque fijo</p>
-              <p className="text-[10px] text-cc-secondary">Se repite cada día, semana o mes</p>
-            </div>
-          </button>
-        </div>
+        <FormSection
+          title="Tipo de registro"
+          description="Puntual = ya ocurrió. Fijo = aparece en tu horario cada semana."
+        >
+          <div className="grid grid-cols-1 gap-2">
+            <button
+              type="button"
+              onClick={() => setNature('variable')}
+              className={`flex items-center gap-3 rounded-2xl border-2 p-3 text-left ${nature === 'variable' ? TIME_THEME.cardActive : 'cc-surface-muted border-[var(--cc-border)]'}`}
+            >
+              <CalendarClock className="w-5 h-5 text-[#6366F1] shrink-0" />
+              <div>
+                <p className="text-[12px] font-bold text-cc-primary">Registro puntual</p>
+                <p className="text-[10px] text-cc-secondary">Lo que ya ocurrió hoy o antes</p>
+              </div>
+            </button>
+            <button
+              type="button"
+              onClick={() => setNature('fixed')}
+              className={`flex items-center gap-3 rounded-2xl border-2 p-3 text-left ${nature === 'fixed' ? TIME_THEME.cardActive : 'cc-surface-muted border-[var(--cc-border)]'}`}
+            >
+              <Repeat className="w-5 h-5 text-[#6366F1] shrink-0" />
+              <div>
+                <p className="text-[12px] font-bold text-cc-primary">Bloque fijo</p>
+                <p className="text-[10px] text-cc-secondary">Se repite cada día, semana o mes</p>
+              </div>
+            </button>
+          </div>
+        </FormSection>
       )}
 
       <form onSubmit={handleSubmit} className="cc-surface rounded-[24px] p-4 space-y-4">
-        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none -mx-1 px-1">
-          {categories.map(cat => {
-            const active = (categoryId || categories[0]?.id) === cat.id
-            return (
-              <button
-                key={cat.id}
-                type="button"
-                onClick={() => setCategoryId(cat.id)}
-                className={`shrink-0 flex flex-col items-center gap-1.5 w-[4.5rem] py-3 rounded-2xl transition-all ${
-                  active
-                    ? 'bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] text-white shadow-md'
-                    : 'cc-surface-muted text-cc-secondary'
-                }`}
-              >
-                <CategoryIcon icon={cat.icon} className="w-5 h-5" />
-                <span className="text-[9px] font-semibold text-center leading-tight px-1">
-                  {cat.name}
-                </span>
-              </button>
-            )
-          })}
-        </div>
+        {kind === 'time' && (
+          <FormSection title="Categoría" description="Clasifica el tiempo para ver estadísticas por área.">
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none -mx-1 px-1">
+              {categories.map(cat => {
+                const active = (categoryId || categories[0]?.id) === cat.id
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => setCategoryId(cat.id)}
+                    className={`shrink-0 flex flex-col items-center gap-1.5 w-[4.5rem] py-3 rounded-2xl transition-all ${
+                      active
+                        ? 'bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] text-white shadow-md'
+                        : 'cc-surface-muted text-cc-secondary'
+                    }`}
+                  >
+                    <CategoryIcon icon={cat.icon} className="w-5 h-5" />
+                    <span className="text-[9px] font-semibold text-center leading-tight px-1">
+                      {cat.name}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </FormSection>
+        )}
 
-        <input
-          type="text"
-          value={title}
-          onChange={e => setTitle(e.target.value)}
-          placeholder={kind === 'task' ? 'Ej: Lavar el baño' : 'Ej: Trabajo, Sueño anoche…'}
-          className={`w-full px-4 py-3 rounded-xl cc-input text-[14px] outline-none ring-2 ring-transparent ${TIME_THEME.focus}`}
-        />
+        <FormField
+          label={kind === 'task' ? 'Nombre de la tarea' : 'Nombre de la actividad'}
+          hint={
+            kind === 'task'
+              ? 'Ej: Limpiar horno, Pagar luz, Comprar regalo.'
+              : 'Ej: Trabajo, Sueño anoche, Clase de yoga.'
+          }
+          required
+        >
+          <input
+            type="text"
+            value={title}
+            onChange={e => setTitle(e.target.value)}
+            placeholder={kind === 'task' ? 'Ej: Lavar el baño' : 'Ej: Trabajo'}
+            className={inputClass}
+          />
+        </FormField>
 
         {kind === 'task' && (
-          <textarea
-            value={description}
-            onChange={e => setDescription(e.target.value)}
-            placeholder="Detalles opcionales"
-            rows={2}
-            className={`w-full px-4 py-3 rounded-xl cc-input text-[14px] outline-none ring-2 ring-transparent ${TIME_THEME.focus}`}
-          />
+          <FormField
+            label="Detalles"
+            hint="Instrucciones, materiales o notas para quien la haga."
+          >
+            <textarea
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              placeholder="Detalles opcionales"
+              rows={2}
+              className={inputClass}
+            />
+          </FormField>
         )}
 
         {kind === 'task' ? (
-          <div>
-            <label className="text-[11px] font-semibold text-cc-secondary">
-              Duración estimada (8h, 90, 1h 30m)
-            </label>
+          <FormField
+            label="Duración estimada"
+            hint="Cuánto tiempo crees que tomará. Ej: 30, 1h, 1h 30m."
+          >
             <input
               type="text"
               value={taskDuration}
               onChange={e => setTaskDuration(e.target.value)}
               placeholder="Ej: 1h"
-              className={`mt-1 w-full px-4 py-3 rounded-xl cc-input text-[14px] outline-none ring-2 ring-transparent ${TIME_THEME.focus}`}
+              className={inputClass}
             />
-          </div>
+          </FormField>
         ) : (
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-[11px] font-semibold text-cc-secondary">Hora inicio</label>
-              <input
-                type="time"
-                value={startTime}
-                onChange={e => setStartTime(e.target.value)}
-                className={`mt-1 w-full px-4 py-3 rounded-xl cc-input text-[14px] outline-none ${TIME_THEME.focus}`}
-              />
-            </div>
-            <div>
-              <label className="text-[11px] font-semibold text-cc-secondary">Hora fin</label>
-              <input
-                type="time"
-                value={endTime}
-                onChange={e => setEndTime(e.target.value)}
-                className={`mt-1 w-full px-4 py-3 rounded-xl cc-input text-[14px] outline-none ${TIME_THEME.focus}`}
-              />
+          <FormSection title="¿Cuándo ocurre?" description="Indica la hora de inicio y fin de la actividad.">
+            <div className="grid grid-cols-2 gap-3">
+              <FormField label="Hora de inicio" hint="Ej: 09:00" required>
+                <input
+                  type="time"
+                  value={startTime}
+                  onChange={e => setStartTime(e.target.value)}
+                  className={inputClass}
+                />
+              </FormField>
+              <FormField label="Hora de fin" hint="Ej: 17:30" required>
+                <input
+                  type="time"
+                  value={endTime}
+                  onChange={e => setEndTime(e.target.value)}
+                  className={inputClass}
+                />
+              </FormField>
             </div>
             {durationMinutes != null && durationMinutes > 0 && (
-              <p className="col-span-2 text-[11px] text-cc-secondary">
-                Duración: {formatDuration(durationMinutes)}
+              <p className="text-[11px] text-cc-secondary">
+                Duración calculada: {formatDuration(durationMinutes)}
               </p>
             )}
-          </div>
+          </FormSection>
+        )}
+
+        {kind === 'task' && (
+          <FormField
+            label="Dificultad"
+            hint="Ayuda a repartir la carga entre la pareja según el esfuerzo que requiere."
+            required
+          >
+            <div className="flex gap-2">
+              {([1, 2, 3] as TaskDifficulty[]).map(level => (
+                <button
+                  key={level}
+                  type="button"
+                  onClick={() => setDifficulty(level)}
+                  className={`flex-1 py-2.5 rounded-xl text-[12px] font-bold border-2 transition-all ${
+                    difficulty === level
+                      ? 'text-white border-transparent'
+                      : 'cc-surface-muted text-cc-secondary border-[var(--cc-border)]'
+                  }`}
+                  style={
+                    difficulty === level
+                      ? { backgroundColor: TASK_DIFFICULTY_COLORS[level] }
+                      : undefined
+                  }
+                >
+                  {TASK_DIFFICULTY_LABELS[level]}
+                </button>
+              ))}
+            </div>
+          </FormField>
         )}
 
         {kind === 'time' && nature === 'variable' && (
-          <div>
-            <label className="text-[11px] font-semibold text-cc-secondary">Fecha</label>
+          <FormField
+            label="Fecha"
+            hint="El día en que ocurrió esta actividad. No puede ser futura."
+            required
+          >
             <input
               type="date"
               value={date}
               max={getTodayString()}
               onChange={e => setDate(e.target.value)}
-              className={`mt-1 w-full px-4 py-3 rounded-xl cc-input text-[14px] outline-none ${TIME_THEME.focus}`}
+              className={inputClass}
             />
-          </div>
+          </FormField>
         )}
 
         {kind === 'time' && nature === 'fixed' && (
-          <>
-            <div>
-              <label className="text-[11px] font-semibold text-cc-secondary">
-                Fecha ancla / inicio
-              </label>
+          <FormSection title="¿Se repite?" description="Define desde cuándo y con qué frecuencia aparece en el horario.">
+            <FormField
+              label="Fecha de inicio"
+              hint="El primer día en que empieza esta rutina."
+              required
+            >
               <input
                 type="date"
                 value={anchorDate}
                 onChange={e => setAnchorDate(e.target.value)}
-                className={`mt-1 w-full px-4 py-3 rounded-xl cc-input text-[14px] outline-none ${TIME_THEME.focus}`}
+                className={inputClass}
               />
-            </div>
-            <div>
-              <label className="text-[11px] font-semibold text-cc-secondary">Frecuencia</label>
+            </FormField>
+            <FormField
+              label="Frecuencia de repetición"
+              hint="Con qué regularidad se repite en tu calendario."
+              required
+            >
               <select
                 value={frequency}
                 onChange={e => setFrequency(e.target.value as TimeFrequency)}
-                className={`mt-1 w-full px-3 py-2.5 rounded-xl cc-input text-[13px] font-semibold outline-none ${TIME_THEME.focus}`}
+                className={`w-full px-3 py-2.5 rounded-xl cc-input text-[13px] font-semibold outline-none ${TIME_THEME.focus}`}
               >
                 <option value="daily">Diaria</option>
                 <option value="weekly">Semanal</option>
                 <option value="biweekly">Quincenal</option>
                 <option value="monthly">Mensual</option>
               </select>
-            </div>
-          </>
+            </FormField>
+          </FormSection>
         )}
 
         {(kind === 'task' || nature === 'fixed') && (
-          <div>
-            <label className="text-[11px] font-semibold text-cc-secondary">
-              {kind === 'task' ? 'Asignar a' : 'Persona'}
-            </label>
+          <FormField
+            label={kind === 'task' ? 'Asignar a' : '¿Para quién es?'}
+            hint={
+              kind === 'task'
+                ? 'Quién debe completar esta tarea.'
+                : 'De quién es este bloque en el horario semanal.'
+            }
+          >
             <select
               value={assignedTo}
               onChange={e => setAssignedTo(e.target.value)}
-              className={`mt-1 w-full px-3 py-2.5 rounded-xl cc-input text-[13px] outline-none ${TIME_THEME.focus}`}
+              className={`w-full px-3 py-2.5 rounded-xl cc-input text-[13px] outline-none ${TIME_THEME.focus}`}
             >
               <option value="">Sin asignar</option>
               {members.map(m => (
@@ -342,19 +440,18 @@ export function TiempoNuevoClient({
                 </option>
               ))}
             </select>
-          </div>
+          </FormField>
         )}
 
         {kind === 'task' && (
-          <div>
-            <label className="text-[11px] font-semibold text-cc-secondary">Fecha límite</label>
+          <FormField label="Fecha límite" hint="Opcional. Cuándo debería estar lista.">
             <input
               type="date"
               value={dueDate}
               onChange={e => setDueDate(e.target.value)}
-              className={`mt-1 w-full px-4 py-3 rounded-xl cc-input text-[14px] outline-none ${TIME_THEME.focus}`}
+              className={inputClass}
             />
-          </div>
+          </FormField>
         )}
 
         {error && <p className="text-[12px] text-red-600 text-center">{error}</p>}

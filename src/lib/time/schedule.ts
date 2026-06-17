@@ -60,9 +60,10 @@ export function minutesToTimeLabel(minutes: number): string {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
 }
 
-export function getWeekDayLabels(startDate: string): { date: string; label: string }[] {
-  const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
-  const result: { date: string; label: string }[] = []
+export function getWeekDayLabels(startDate: string): { date: string; label: string; short: string }[] {
+  const days = ['D', 'L', 'M', 'X', 'J', 'V', 'S']
+  const fullDays = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
+  const result: { date: string; label: string; short: string }[] = []
   const d = new Date(startDate + 'T12:00:00')
   for (let i = 0; i < 7; i++) {
     const date = new Date(d)
@@ -73,15 +74,25 @@ export function getWeekDayLabels(startDate: string): { date: string; label: stri
     const dateStr = `${y}-${mo}-${day}`
     result.push({
       date: dateStr,
-      label: `${days[date.getDay()]} ${day}`,
+      label: `${fullDays[date.getDay()]} ${day}`,
+      short: `${days[date.getDay()]} ${day}`,
     })
   }
   return result
 }
 
-export const SCHEDULE_HOUR_START = 6
+export const SCHEDULE_HOUR_START = 0
 export const SCHEDULE_HOUR_END = 23
-export const SCHEDULE_SLOT_HEIGHT = 48
+export const SCHEDULE_SLOT_HEIGHT = 32
+
+export function getCurrentTimeOffset(slotHeight = SCHEDULE_SLOT_HEIGHT): number | null {
+  const now = new Date()
+  const minutes = now.getHours() * 60 + now.getMinutes()
+  const startMinutes = SCHEDULE_HOUR_START * 60
+  const endMinutes = (SCHEDULE_HOUR_END + 1) * 60
+  if (minutes < startMinutes || minutes > endMinutes) return null
+  return ((minutes - startMinutes) / 60) * slotHeight
+}
 
 export function eventTopOffset(startTime: string | null, slotHeight = SCHEDULE_SLOT_HEIGHT): number {
   if (!startTime) return 0
@@ -106,6 +117,15 @@ export function eventHeight(
   }
   const hours = durationMinutes / 60
   return Math.max(slotHeight * 0.5, hours * slotHeight)
+}
+
+export function isTodayInRange(dateStr: string, rangeStart: string, rangeEnd: string): boolean {
+  const today = new Date()
+  const y = today.getFullYear()
+  const m = String(today.getMonth() + 1).padStart(2, '0')
+  const d = String(today.getDate()).padStart(2, '0')
+  const todayStr = `${y}-${m}-${d}`
+  return todayStr >= rangeStart && todayStr <= rangeEnd && dateStr === todayStr
 }
 
 export function buildWeeklyScheduleEvents(

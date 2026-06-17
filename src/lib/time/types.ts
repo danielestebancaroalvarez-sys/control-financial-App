@@ -1,3 +1,6 @@
+export type TaskDifficulty = 1 | 2 | 3
+export type GoalStepType = 'milestone' | 'action'
+
 export type TimeFrequency = 'daily' | 'weekly' | 'biweekly' | 'monthly'
 
 export type TimeCategory = {
@@ -49,6 +52,7 @@ export type HouseholdTask = {
   creatorName: string | null
   dueDate: string | null
   estimatedMinutes: number | null
+  difficulty: TaskDifficulty
   status: 'pending' | 'done' | 'cancelled'
   completedAt: string | null
 }
@@ -58,6 +62,7 @@ export type GoalStep = {
   goalId: string
   title: string
   stepOrder: number
+  stepType: GoalStepType
   estimatedMinutes: number | null
   dueDate: string | null
   assignedTo: string | null
@@ -68,6 +73,7 @@ export type GoalStep = {
 export type ProductivityGoal = {
   id: string
   title: string
+  vision: string | null
   targetDate: string | null
   color: string | null
   icon: string | null
@@ -76,6 +82,9 @@ export type ProductivityGoal = {
   totalSteps: number
   estimatedRemainingMinutes: number
   percent: number
+  nextMilestoneTitle: string | null
+  nextMilestoneDate: string | null
+  daysToNextMilestone: number | null
 }
 
 export type TimeDashboardSummary = {
@@ -128,18 +137,33 @@ export type CreateHouseholdTaskInput = {
   assignedTo?: string | null
   dueDate?: string | null
   estimatedMinutes?: number | null
+  difficulty?: TaskDifficulty
 }
 
 export type CreateProductivityGoalInput = {
   householdId: string
   title: string
+  vision?: string | null
   targetDate?: string | null
   color?: string | null
   icon?: string | null
   steps: {
     title: string
+    stepType: GoalStepType
     estimatedMinutes?: number | null
     dueDate?: string | null
     assignedTo?: string | null
   }[]
+}
+
+export const TASK_DIFFICULTY_LABELS: Record<TaskDifficulty, string> = {
+  1: 'Baja',
+  2: 'Media',
+  3: 'Alta',
+}
+
+export const TASK_DIFFICULTY_COLORS: Record<TaskDifficulty, string> = {
+  1: '#4CAF50',
+  2: '#FF9800',
+  3: '#E53935',
 }

@@ -141,6 +141,7 @@ export async function createHouseholdTask(
       description: input.description?.trim() || null,
       due_date: input.dueDate ?? null,
       estimated_minutes: input.estimatedMinutes ?? null,
+      difficulty: input.difficulty ?? 2,
     })
     .select('id')
     .single()
@@ -232,6 +233,7 @@ export async function createProductivityGoal(
       household_id: input.householdId,
       created_by: user.id,
       title: input.title.trim(),
+      vision: input.vision?.trim() || null,
       target_date: input.targetDate ?? null,
       color: input.color ?? '#6366F1',
       icon: input.icon ?? 'target',
@@ -242,12 +244,21 @@ export async function createProductivityGoal(
   if (error || !goal) return { error: error?.message ?? 'No se pudo crear la meta.' }
 
   if (input.steps.length > 0) {
+    for (const step of input.steps) {
+      if (step.stepType === 'milestone' && !step.dueDate) {
+        return { error: `El hito "${step.title}" necesita una fecha objetivo.` }
+      }
+      if (step.stepType === 'action' && !step.estimatedMinutes && !step.dueDate) {
+        return { error: `La acción "${step.title}" necesita minutos estimados o una fecha.` }
+      }
+    }
     const { error: stepsError } = await supabase.from('goal_steps').insert(
       input.steps.map((step, index) => ({
         goal_id: goal.id,
         household_id: input.householdId,
         title: step.title.trim(),
         step_order: index,
+        step_type: step.stepType,
         estimated_minutes: step.estimatedMinutes ?? null,
         due_date: step.dueDate ?? null,
         assigned_to: step.assignedTo ?? null,
@@ -265,6 +276,7 @@ export async function addGoalStep(
   goalId: string,
   input: {
     title: string
+    stepType: 'milestone' | 'action'
     estimatedMinutes?: number | null
     dueDate?: string | null
     assignedTo?: string | null
@@ -276,6 +288,12 @@ export async function addGoalStep(
   } = await supabase.auth.getUser()
   if (!user) return { error: 'Debes iniciar sesión.' }
   if (!input.title.trim()) return { error: 'El título del paso es obligatorio.' }
+  if (input.stepType === 'milestone' && !input.dueDate) {
+    return { error: 'Los hitos necesitan una fecha objetivo.' }
+  }
+  if (input.stepType === 'action' && !input.estimatedMinutes && !input.dueDate) {
+    return { error: 'Las acciones necesitan minutos estimados o una fecha.' }
+  }
 
   const { data: existing } = await supabase
     .from('goal_steps')
@@ -294,6 +312,7 @@ export async function addGoalStep(
       household_id: householdId,
       title: input.title.trim(),
       step_order: nextOrder,
+      step_type: input.stepType,
       estimated_minutes: input.estimatedMinutes ?? null,
       due_date: input.dueDate ?? null,
       assigned_to: input.assignedTo ?? null,
