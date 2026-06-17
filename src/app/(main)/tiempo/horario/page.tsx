@@ -1,0 +1,32 @@
+import { redirect } from 'next/navigation'
+import { getMainAppContext } from '@/lib/app/context'
+import { getAuthUser } from '@/lib/auth/session'
+import { getWeeklySchedule } from '@/lib/time/queries'
+import { TiempoHorarioClient } from './tiempo-horario-client'
+
+export default async function TiempoHorarioPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ block?: string }>
+}) {
+  const ctx = await getMainAppContext()
+  if (!ctx) redirect('/login')
+
+  const params = await searchParams
+  const periodOffset = Math.min(5, Math.max(0, parseInt(params.block ?? '0', 10) || 0))
+  const user = await getAuthUser()
+  const schedule = await getWeeklySchedule(ctx.household.id, periodOffset)
+
+  return (
+    <TiempoHorarioClient
+      periodStart={schedule.periodStart}
+      periodEnd={schedule.periodEnd}
+      events={schedule.events}
+      blocks={schedule.blocks}
+      members={schedule.members}
+      householdId={ctx.household.id}
+      periodOffset={periodOffset}
+      currentUserId={user!.id}
+    />
+  )
+}

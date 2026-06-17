@@ -1,4 +1,4 @@
-import { addFrequency, subtractFrequency } from '@/lib/finance/format'
+import { addTimeFrequency, subtractTimeFrequency } from './frequency'
 import type { TimeFrequency } from './types'
 
 export function countBlockOccurrencesInRange(
@@ -11,21 +11,21 @@ export function countBlockOccurrencesInRange(
   let guard = 0
 
   while (date > rangeStart && guard < 120) {
-    const prev = subtractFrequency(date, frequency)
+    const prev = subtractTimeFrequency(date, frequency)
     if (prev === date) break
     date = prev
     guard++
   }
 
   while (date < rangeStart && guard < 240) {
-    date = addFrequency(date, frequency)
+    date = addTimeFrequency(date, frequency)
     guard++
   }
 
   let count = 0
   while (date <= rangeEnd && guard < 240) {
     count++
-    date = addFrequency(date, frequency)
+    date = addTimeFrequency(date, frequency)
     guard++
   }
 

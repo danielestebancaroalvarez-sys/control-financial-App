@@ -2,6 +2,8 @@ import { cache } from 'react'
 import { createClient } from '@/utils/supabase/server'
 import { getHouseholdMembers } from '@/lib/household/queries'
 import { buildTimeDashboardSummary, mapHouseholdTask, mapProductivityGoal, mapTimeBlock, mapTimeEntry } from './dashboard'
+import { getPeriodRangeAtOffset } from './format'
+import { buildWeeklyScheduleEvents } from './schedule'
 import type {
   HouseholdTask,
   ProductivityGoal,
@@ -10,6 +12,8 @@ import type {
   TimeDashboardSummary,
   TimeEntry,
 } from './types'
+import type { ScheduleEvent } from './schedule'
+import type { HouseholdMember } from '@/lib/household/types'
 
 export const getTimeCategories = cache(
   async (householdId: string): Promise<TimeCategory[]> => {
@@ -48,7 +52,7 @@ export async function getTimeDashboard(
       supabase
         .from('time_blocks')
         .select(
-          `id, category_id, assigned_to, title, frequency, anchor_date, duration_minutes, start_time,
+          `id, category_id, assigned_to, title, frequency, anchor_date, duration_minutes, start_time, end_time,
           time_categories ( name, icon, color )`
         )
         .eq('household_id', householdId)
@@ -56,7 +60,7 @@ export async function getTimeDashboard(
       supabase
         .from('time_entries')
         .select(
-          `id, user_id, category_id, title, entry_date, duration_minutes,
+          `id, user_id, category_id, title, entry_date, duration_minutes, start_time, end_time,
           time_categories ( name, icon, color )`
         )
         .eq('household_id', householdId),
@@ -100,7 +104,7 @@ export async function getTimeBlocks(householdId: string): Promise<TimeBlock[]> {
   const { data } = await supabase
     .from('time_blocks')
     .select(
-      `id, category_id, assigned_to, title, frequency, anchor_date, duration_minutes, start_time,
+      `id, category_id, assigned_to, title, frequency, anchor_date, duration_minutes, start_time, end_time,
       time_categories ( name, icon, color )`
     )
     .eq('household_id', householdId)
@@ -125,7 +129,7 @@ export async function getTimeEntries(
   const { data } = await supabase
     .from('time_entries')
     .select(
-      `id, user_id, category_id, title, entry_date, duration_minutes,
+      `id, user_id, category_id, title, entry_date, duration_minutes, start_time, end_time,
       time_categories ( name, icon, color )`
     )
     .eq('household_id', householdId)
@@ -180,4 +184,59 @@ export async function getProductivityGoals(
     .order('created_at', { ascending: false })
 
   return (data ?? []).map(row => mapProductivityGoal(row, memberRows))
+}
+
+export type WeeklyScheduleData = {
+  periodStart: string
+  periodEnd: string
+  events: ScheduleEvent[]
+  blocks: TimeBlock[]
+  members: HouseholdMember[]
+}
+
+export async function getWeeklySchedule(
+  householdId: string,
+  periodOffset = 0
+): Promise<WeeklyScheduleData> {
+  const { start, end } = getPeriodRangeAtOffset('weekly', periodOffset)
+  const members = await getHouseholdMembers(householdId)
+  const memberRows = members.map(m => ({
+    user_id: m.user_id,
+    full_name: m.full_name,
+    avatar_url: m.avatar_url,
+  }))
+
+  const supabase = await createClient()
+
+  const [blocksRes, entriesRes] = await Promise.all([
+    supabase
+      .from('time_blocks')
+      .select(
+        `id, category_id, assigned_to, title, frequency, anchor_date, duration_minutes, start_time, end_time,
+        time_categories ( name, icon, color )`
+      )
+      .eq('household_id', householdId)
+      .eq('is_active', true),
+    supabase
+      .from('time_entries')
+      .select(
+        `id, user_id, category_id, title, entry_date, duration_minutes, start_time, end_time,
+        time_categories ( name, icon, color )`
+      )
+      .eq('household_id', householdId)
+      .gte('entry_date', start)
+      .lte('entry_date', end),
+  ])
+
+  const blocks = (blocksRes.data ?? []).map(row => mapTimeBlock(row, memberRows))
+  const entries = (entriesRes.data ?? []).map(row => mapTimeEntry(row, memberRows))
+  const events = buildWeeklyScheduleEvents(blocks, entries, start, end)
+
+  return {
+    periodStart: start,
+    periodEnd: end,
+    events,
+    blocks,
+    members,
+  }
 }

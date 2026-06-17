@@ -32,6 +32,7 @@ type BlockRow = {
   anchor_date: string
   duration_minutes: number
   start_time: string | null
+  end_time: string | null
   time_categories: CategoryRow | CategoryRow[] | null
 }
 
@@ -42,6 +43,8 @@ type EntryRow = {
   title: string
   entry_date: string
   duration_minutes: number
+  start_time: string | null
+  end_time: string | null
   time_categories: CategoryRow | CategoryRow[] | null
 }
 
@@ -101,6 +104,7 @@ export function mapTimeBlock(row: BlockRow, members: MemberRow[]): TimeBlock {
     anchorDate: row.anchor_date,
     durationMinutes: row.duration_minutes,
     startTime: row.start_time,
+    endTime: row.end_time,
   }
 }
 
@@ -117,6 +121,8 @@ export function mapTimeEntry(row: EntryRow, members: MemberRow[]): TimeEntry {
     title: row.title,
     entryDate: row.entry_date,
     durationMinutes: row.duration_minutes,
+    startTime: row.start_time,
+    endTime: row.end_time,
   }
 }
 

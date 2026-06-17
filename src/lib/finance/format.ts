@@ -285,6 +285,7 @@ export function formatFrequency(
   occurrences = 1
 ): string {
   const labels: Record<string, string> = {
+    daily: 'diaria',
     weekly: 'semanal',
     biweekly: 'quincenal',
     monthly: 'mensual',

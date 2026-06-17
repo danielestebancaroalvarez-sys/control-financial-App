@@ -10,8 +10,13 @@ import {
   createTimeEntry,
 } from '@/lib/time/actions'
 import { TIME_THEME } from '@/lib/time/theme'
-import { getTodayString, parseDurationInput } from '@/lib/time/format'
-import type { TimeCategory } from '@/lib/time/types'
+import {
+  formatDuration,
+  getTodayString,
+  minutesFromTimeRange,
+  parseDurationInput,
+} from '@/lib/time/format'
+import type { TimeCategory, TimeFrequency } from '@/lib/time/types'
 import type { HouseholdMember } from '@/lib/household/types'
 
 type EntryKind = 'time' | 'task'
@@ -22,22 +27,28 @@ export function TiempoNuevoClient({
   categories,
   members,
   currentUserId,
+  initialDate,
+  initialUserId,
 }: {
   householdId: string
   categories: TimeCategory[]
   members: HouseholdMember[]
   currentUserId: string
+  initialDate?: string
+  initialUserId?: string
 }) {
   const router = useRouter()
   const [kind, setKind] = useState<EntryKind>('time')
   const [nature, setNature] = useState<EntryNature>('variable')
   const [categoryId, setCategoryId] = useState('')
   const [title, setTitle] = useState('')
-  const [duration, setDuration] = useState('')
-  const [date, setDate] = useState(getTodayString())
+  const [startTime, setStartTime] = useState('09:00')
+  const [endTime, setEndTime] = useState('17:00')
+  const [taskDuration, setTaskDuration] = useState('')
+  const [date, setDate] = useState(initialDate || getTodayString())
   const [anchorDate, setAnchorDate] = useState(getTodayString())
-  const [frequency, setFrequency] = useState<'weekly' | 'biweekly' | 'monthly'>('weekly')
-  const [assignedTo, setAssignedTo] = useState('')
+  const [frequency, setFrequency] = useState<TimeFrequency>('weekly')
+  const [assignedTo, setAssignedTo] = useState(initialUserId || '')
   const [dueDate, setDueDate] = useState('')
   const [description, setDescription] = useState('')
   const [loading, setLoading] = useState(false)
@@ -47,10 +58,10 @@ export function TiempoNuevoClient({
     c => c.id === (categoryId || categories[0]?.id)
   )
 
-  const durationMinutes = useMemo(
-    () => parseDurationInput(duration),
-    [duration]
-  )
+  const durationMinutes = useMemo(() => {
+    if (kind === 'task') return parseDurationInput(taskDuration)
+    return minutesFromTimeRange(startTime, endTime)
+  }, [kind, startTime, endTime, taskDuration])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -84,12 +95,13 @@ export function TiempoNuevoClient({
       return
     }
 
+    if (!durationMinutes || durationMinutes <= 0) {
+      setError('La hora de fin debe ser posterior a la de inicio.')
+      setLoading(false)
+      return
+    }
+
     if (nature === 'fixed') {
-      if (!durationMinutes || durationMinutes <= 0) {
-        setError('Ingresa una duración válida (ej. 8h o 480).')
-        setLoading(false)
-        return
-      }
       const result = await createTimeBlock({
         householdId,
         categoryId: catId,
@@ -98,6 +110,8 @@ export function TiempoNuevoClient({
         frequency,
         anchorDate,
         durationMinutes,
+        startTime,
+        endTime,
       })
       if (result.error) {
         setError(result.error)
@@ -105,14 +119,8 @@ export function TiempoNuevoClient({
         return
       }
       setLoading(false)
-      router.push('/tiempo/fijos')
+      router.push('/tiempo/horario')
       router.refresh()
-      return
-    }
-
-    if (!durationMinutes || durationMinutes <= 0) {
-      setError('Ingresa una duración válida.')
-      setLoading(false)
       return
     }
 
@@ -122,6 +130,8 @@ export function TiempoNuevoClient({
       title: title.trim() || selectedCategory?.name || 'Registro',
       entryDate: date,
       durationMinutes,
+      startTime,
+      endTime,
     })
     if (result.error) {
       setError(result.error)
@@ -184,7 +194,7 @@ export function TiempoNuevoClient({
             <Repeat className="w-5 h-5 text-[#6366F1] shrink-0" />
             <div>
               <p className="text-[12px] font-bold text-cc-primary">Bloque fijo</p>
-              <p className="text-[10px] text-cc-secondary">Se repite cada semana o mes</p>
+              <p className="text-[10px] text-cc-secondary">Se repite cada día, semana o mes</p>
             </div>
           </button>
         </div>
@@ -232,18 +242,46 @@ export function TiempoNuevoClient({
           />
         )}
 
-        <div>
-          <label className="text-[11px] font-semibold text-cc-secondary">
-            Duración estimada (8h, 90, 1h 30m)
-          </label>
-          <input
-            type="text"
-            value={duration}
-            onChange={e => setDuration(e.target.value)}
-            placeholder="Ej: 8h"
-            className={`mt-1 w-full px-4 py-3 rounded-xl cc-input text-[14px] outline-none ring-2 ring-transparent ${TIME_THEME.focus}`}
-          />
-        </div>
+        {kind === 'task' ? (
+          <div>
+            <label className="text-[11px] font-semibold text-cc-secondary">
+              Duración estimada (8h, 90, 1h 30m)
+            </label>
+            <input
+              type="text"
+              value={taskDuration}
+              onChange={e => setTaskDuration(e.target.value)}
+              placeholder="Ej: 1h"
+              className={`mt-1 w-full px-4 py-3 rounded-xl cc-input text-[14px] outline-none ring-2 ring-transparent ${TIME_THEME.focus}`}
+            />
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-[11px] font-semibold text-cc-secondary">Hora inicio</label>
+              <input
+                type="time"
+                value={startTime}
+                onChange={e => setStartTime(e.target.value)}
+                className={`mt-1 w-full px-4 py-3 rounded-xl cc-input text-[14px] outline-none ${TIME_THEME.focus}`}
+              />
+            </div>
+            <div>
+              <label className="text-[11px] font-semibold text-cc-secondary">Hora fin</label>
+              <input
+                type="time"
+                value={endTime}
+                onChange={e => setEndTime(e.target.value)}
+                className={`mt-1 w-full px-4 py-3 rounded-xl cc-input text-[14px] outline-none ${TIME_THEME.focus}`}
+              />
+            </div>
+            {durationMinutes != null && durationMinutes > 0 && (
+              <p className="col-span-2 text-[11px] text-cc-secondary">
+                Duración: {formatDuration(durationMinutes)}
+              </p>
+            )}
+          </div>
+        )}
 
         {kind === 'time' && nature === 'variable' && (
           <div>
@@ -275,11 +313,10 @@ export function TiempoNuevoClient({
               <label className="text-[11px] font-semibold text-cc-secondary">Frecuencia</label>
               <select
                 value={frequency}
-                onChange={e =>
-                  setFrequency(e.target.value as 'weekly' | 'biweekly' | 'monthly')
-                }
+                onChange={e => setFrequency(e.target.value as TimeFrequency)}
                 className={`mt-1 w-full px-3 py-2.5 rounded-xl cc-input text-[13px] font-semibold outline-none ${TIME_THEME.focus}`}
               >
+                <option value="daily">Diaria</option>
                 <option value="weekly">Semanal</option>
                 <option value="biweekly">Quincenal</option>
                 <option value="monthly">Mensual</option>

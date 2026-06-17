@@ -1,4 +1,4 @@
-export type TimeFrequency = 'weekly' | 'biweekly' | 'monthly'
+export type TimeFrequency = 'daily' | 'weekly' | 'biweekly' | 'monthly'
 
 export type TimeCategory = {
   id: string
@@ -21,6 +21,7 @@ export type TimeBlock = {
   anchorDate: string
   durationMinutes: number
   startTime: string | null
+  endTime: string | null
 }
 
 export type TimeEntry = {
@@ -34,6 +35,8 @@ export type TimeEntry = {
   title: string
   entryDate: string
   durationMinutes: number
+  startTime: string | null
+  endTime: string | null
 }
 
 export type HouseholdTask = {
@@ -102,7 +105,8 @@ export type CreateTimeBlockInput = {
   frequency: TimeFrequency
   anchorDate: string
   durationMinutes: number
-  startTime?: string | null
+  startTime: string
+  endTime: string
 }
 
 export type CreateTimeEntryInput = {
@@ -110,7 +114,9 @@ export type CreateTimeEntryInput = {
   categoryId: string
   title: string
   entryDate: string
-  durationMinutes: number
+  durationMinutes?: number
+  startTime: string
+  endTime: string
   timeBlockId?: string | null
   taskId?: string | null
 }

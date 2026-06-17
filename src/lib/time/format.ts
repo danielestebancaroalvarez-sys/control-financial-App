@@ -38,6 +38,21 @@ export function parseDurationInput(value: string): number | null {
   return null
 }
 
+export function minutesFromTimeRange(startTime: string, endTime: string): number {
+  const [sh, sm] = startTime.split(':').map(Number)
+  const [eh, em] = endTime.split(':').map(Number)
+  let start = sh * 60 + (sm ?? 0)
+  let end = eh * 60 + (em ?? 0)
+  if (end <= start) end += 24 * 60
+  return end - start
+}
+
+export function formatTimeRange(startTime: string | null, endTime: string | null): string {
+  if (!startTime) return ''
+  if (!endTime) return startTime.slice(0, 5)
+  return `${startTime.slice(0, 5)} – ${endTime.slice(0, 5)}`
+}
+
 export function getTimeWeekLabel(offset = 0): string {
   const { start, end } = getPeriodRangeAtOffset('weekly', offset)
   if (offset === 0) return 'Semana actual'

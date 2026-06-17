@@ -2,6 +2,7 @@
 
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { minutesFromTimeRange } from './format'
 import type {
   CreateHouseholdTaskInput,
   CreateProductivityGoalInput,
@@ -12,6 +13,7 @@ import type {
 const TIME_PATHS = [
   '/tiempo',
   '/tiempo/nuevo',
+  '/tiempo/horario',
   '/tiempo/fijos',
   '/tiempo/tareas',
   '/tiempo/metas',
@@ -30,7 +32,12 @@ export async function createTimeBlock(
   } = await supabase.auth.getUser()
   if (!user) return { error: 'Debes iniciar sesión.' }
   if (!input.title.trim()) return { error: 'El título es obligatorio.' }
-  if (input.durationMinutes <= 0) return { error: 'La duración debe ser mayor a cero.' }
+  if (!input.startTime || !input.endTime) {
+    return { error: 'Indica hora de inicio y fin.' }
+  }
+
+  const durationMinutes = minutesFromTimeRange(input.startTime, input.endTime)
+  if (durationMinutes <= 0) return { error: 'La hora de fin debe ser posterior a la de inicio.' }
 
   const { data, error } = await supabase
     .from('time_blocks')
@@ -42,8 +49,9 @@ export async function createTimeBlock(
       title: input.title.trim(),
       frequency: input.frequency,
       anchor_date: input.anchorDate,
-      duration_minutes: input.durationMinutes,
-      start_time: input.startTime ?? null,
+      duration_minutes: durationMinutes,
+      start_time: input.startTime,
+      end_time: input.endTime,
     })
     .select('id')
     .single()
@@ -83,7 +91,13 @@ export async function createTimeEntry(
   } = await supabase.auth.getUser()
   if (!user) return { error: 'Debes iniciar sesión.' }
   if (!input.title.trim()) return { error: 'El título es obligatorio.' }
-  if (input.durationMinutes <= 0) return { error: 'La duración debe ser mayor a cero.' }
+  if (!input.startTime || !input.endTime) {
+    return { error: 'Indica hora de inicio y fin.' }
+  }
+
+  const durationMinutes =
+    input.durationMinutes ?? minutesFromTimeRange(input.startTime, input.endTime)
+  if (durationMinutes <= 0) return { error: 'La hora de fin debe ser posterior a la de inicio.' }
 
   const { data, error } = await supabase
     .from('time_entries')
@@ -93,7 +107,9 @@ export async function createTimeEntry(
       category_id: input.categoryId,
       title: input.title.trim(),
       entry_date: input.entryDate,
-      duration_minutes: input.durationMinutes,
+      duration_minutes: durationMinutes,
+      start_time: input.startTime,
+      end_time: input.endTime,
       time_block_id: input.timeBlockId ?? null,
       task_id: input.taskId ?? null,
     })
@@ -242,6 +258,73 @@ export async function createProductivityGoal(
 
   revalidateTime()
   return { id: goal.id }
+}
+
+export async function addGoalStep(
+  householdId: string,
+  goalId: string,
+  input: {
+    title: string
+    estimatedMinutes?: number | null
+    dueDate?: string | null
+    assignedTo?: string | null
+  }
+): Promise<{ error?: string; id?: string }> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Debes iniciar sesión.' }
+  if (!input.title.trim()) return { error: 'El título del paso es obligatorio.' }
+
+  const { data: existing } = await supabase
+    .from('goal_steps')
+    .select('step_order')
+    .eq('goal_id', goalId)
+    .eq('household_id', householdId)
+    .order('step_order', { ascending: false })
+    .limit(1)
+
+  const nextOrder = (existing?.[0]?.step_order ?? -1) + 1
+
+  const { data, error } = await supabase
+    .from('goal_steps')
+    .insert({
+      goal_id: goalId,
+      household_id: householdId,
+      title: input.title.trim(),
+      step_order: nextOrder,
+      estimated_minutes: input.estimatedMinutes ?? null,
+      due_date: input.dueDate ?? null,
+      assigned_to: input.assignedTo ?? null,
+    })
+    .select('id')
+    .single()
+
+  if (error || !data) return { error: error?.message ?? 'No se pudo añadir el paso.' }
+  revalidateTime()
+  return { id: data.id }
+}
+
+export async function deleteGoalStep(
+  householdId: string,
+  stepId: string
+): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Debes iniciar sesión.' }
+
+  const { error } = await supabase
+    .from('goal_steps')
+    .delete()
+    .eq('id', stepId)
+    .eq('household_id', householdId)
+
+  if (error) return { error: error.message }
+  revalidateTime()
+  return {}
 }
 
 export async function toggleGoalStep(

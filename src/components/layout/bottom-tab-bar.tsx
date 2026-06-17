@@ -9,7 +9,6 @@ import {
   CheckSquare,
   Clock,
   Plus,
-  Repeat,
   Target,
 } from 'lucide-react'
 import {
@@ -110,10 +109,10 @@ const TIME_TABS = [
     renderIcon: (_active?: boolean) => <Plus className="w-6 h-6 text-white" />,
   },
   {
-    href: '/tiempo/fijos',
-    label: 'Fijos',
+    href: '/tiempo/horario',
+    label: 'Horario',
     renderIcon: (active: boolean) => (
-      <Repeat className={`w-5 h-5 ${active ? 'text-[#6366F1]' : 'text-cc-muted'}`} />
+      <CalendarClock className={`w-5 h-5 ${active ? 'text-[#6366F1]' : 'text-cc-muted'}`} />
     ),
   },
   {

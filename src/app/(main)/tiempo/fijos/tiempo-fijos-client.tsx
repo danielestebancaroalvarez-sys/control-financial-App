@@ -6,16 +6,18 @@ import { useRouter } from 'next/navigation'
 import { CalendarClock, Loader2, Plus, Repeat, Trash2 } from 'lucide-react'
 import { CategoryIcon } from '@/components/transactions/category-icon'
 import { deactivateTimeBlock } from '@/lib/time/actions'
-import { formatDuration } from '@/lib/time/format'
-import { formatFrequency } from '@/lib/finance/format'
+import { formatDuration, formatTimeRange } from '@/lib/time/format'
+import { formatTimeFrequency } from '@/lib/time/frequency'
 import type { TimeBlock } from '@/lib/time/types'
 
 export function TiempoFijosClient({
   blocks: initialBlocks,
   householdId,
+  embedded = false,
 }: {
   blocks: TimeBlock[]
   householdId: string
+  embedded?: boolean
 }) {
   const router = useRouter()
   const [blocks, setBlocks] = useState(initialBlocks)
@@ -33,25 +35,29 @@ export function TiempoFijosClient({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h1 className="text-[20px] font-bold text-cc-primary flex items-center gap-2">
-            <Repeat className="w-5 h-5 text-[#6366F1]" />
-            Bloques fijos
-          </h1>
-          <p className="text-[12px] text-cc-secondary mt-0.5">
-            Trabajo, universidad, sueño y rutinas que se repiten.
-          </p>
-        </div>
-      </div>
+      {!embedded && (
+        <>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h1 className="text-[20px] font-bold text-cc-primary flex items-center gap-2">
+                <Repeat className="w-5 h-5 text-[#6366F1]" />
+                Bloques fijos
+              </h1>
+              <p className="text-[12px] text-cc-secondary mt-0.5">
+                Trabajo, universidad, sueño y rutinas que se repiten.
+              </p>
+            </div>
+          </div>
 
-      <Link
-        href="/tiempo/nuevo"
-        className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white text-[13px] font-bold"
-      >
-        <Plus className="w-4 h-4" />
-        Añadir bloque fijo
-      </Link>
+          <Link
+            href="/tiempo/nuevo"
+            className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white text-[13px] font-bold"
+          >
+            <Plus className="w-4 h-4" />
+            Añadir bloque fijo
+          </Link>
+        </>
+      )}
 
       {blocks.length === 0 ? (
         <section className="cc-surface rounded-[24px] p-6 text-center">
@@ -81,11 +87,11 @@ export function TiempoFijosClient({
                 </p>
                 <p className="text-[11px] text-cc-secondary">
                   {block.categoryName} · {formatDuration(block.durationMinutes)} ·{' '}
-                  {formatFrequency(block.frequency)}
+                  {formatTimeFrequency(block.frequency)}
                 </p>
                 <p className="text-[10px] text-cc-muted flex items-center gap-1 mt-0.5">
                   <CalendarClock className="w-3 h-3" />
-                  Desde {block.anchorDate}
+                  {formatTimeRange(block.startTime, block.endTime) || 'Sin horario'}
                   {block.assigneeName && <> · {block.assigneeName}</>}
                 </p>
               </div>
