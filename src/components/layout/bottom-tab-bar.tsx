@@ -6,9 +6,9 @@ import { usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
 import {
   CalendarClock,
-  CheckSquare,
   Clock,
   Plus,
+  Search,
   Target,
 } from 'lucide-react'
 import {
@@ -96,10 +96,10 @@ const TIME_TABS = [
     ),
   },
   {
-    href: '/tiempo/tareas',
-    label: 'Tareas',
+    href: '/tiempo/buscar',
+    label: 'Buscar',
     renderIcon: (active: boolean) => (
-      <CheckSquare className={`w-5 h-5 ${active ? 'text-[#6366F1]' : 'text-cc-muted'}`} />
+      <Search className={`w-5 h-5 ${active ? 'text-[#6366F1]' : 'text-cc-muted'}`} />
     ),
   },
   {

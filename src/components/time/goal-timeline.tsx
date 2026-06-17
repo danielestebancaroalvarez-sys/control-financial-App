@@ -1,6 +1,6 @@
 'use client'
 
-import { Check, Loader2, Trash2 } from 'lucide-react'
+import { Check, Loader2, MapPin, Trash2, Zap } from 'lucide-react'
 import { formatDuration, formatRelativeDate, formatShortDate } from '@/lib/time/format'
 import type { GoalStep, ProductivityGoal } from '@/lib/time/types'
 
@@ -28,77 +28,87 @@ export function GoalTimeline({
 
   const firstPendingIdx = sortedMilestones.findIndex(s => s.status === 'pending')
 
+  if (compact) {
+    const next = sortedMilestones[firstPendingIdx]
+    if (!next) return null
+    return (
+      <p className="text-[11px] text-cc-secondary">
+        Próximo: <span className="font-semibold text-cc-primary">{next.title}</span>
+        {next.dueDate && ` · ${formatShortDate(next.dueDate)}`}
+      </p>
+    )
+  }
+
   return (
     <div className="space-y-4">
-      {!compact && goal.vision && (
-        <p className="text-[12px] text-cc-secondary italic border-l-2 border-[#6366F1] pl-3">
-          {goal.vision}
-        </p>
+      {goal.vision && (
+        <p className="text-[12px] text-cc-secondary leading-relaxed px-1">{goal.vision}</p>
       )}
 
-      <div className="space-y-0">
-        {sortedMilestones.map((step, index) => {
-          const isDone = step.status === 'done'
-          const isCurrent = !isDone && index === firstPendingIdx
-          return (
-            <TimelineNode
-              key={step.id}
-              step={step}
-              isLast={index === sortedMilestones.length - 1 && actions.length === 0}
-              isDone={isDone}
-              isCurrent={isCurrent}
-              goalId={goal.id}
-              onToggle={onToggleStep}
-              onDelete={onDeleteStep}
-              loadingId={stepLoadingId}
-              isFinal={index === sortedMilestones.length - 1 && !!goal.targetDate}
-            />
-          )
-        })}
-      </div>
+      {sortedMilestones.length > 0 && (
+        <div className="relative">
+          <div className="absolute left-[15px] top-3 bottom-3 w-0.5 bg-gradient-to-b from-[#6366F1] via-[#A5B4FC] to-[#E2E8F0] rounded-full" />
+          <ul className="space-y-3">
+            {sortedMilestones.map((step, index) => {
+              const isDone = step.status === 'done'
+              const isCurrent = !isDone && index === firstPendingIdx
+              return (
+                <MilestoneCard
+                  key={step.id}
+                  step={step}
+                  isDone={isDone}
+                  isCurrent={isCurrent}
+                  isFinal={index === sortedMilestones.length - 1 && !!goal.targetDate}
+                  goalId={goal.id}
+                  onToggle={onToggleStep}
+                  onDelete={onDeleteStep}
+                  loadingId={stepLoadingId}
+                />
+              )
+            })}
+          </ul>
+        </div>
+      )}
 
       {actions.length > 0 && (
-        <div className="mt-2">
-          <p className="text-[11px] font-bold text-cc-secondary mb-2">Próximas acciones</p>
+        <div className="rounded-2xl bg-[#F8FAFC] dark:bg-[var(--cc-surface-muted)] p-3">
+          <p className="text-[11px] font-bold text-cc-secondary mb-2 flex items-center gap-1.5">
+            <Zap className="w-3.5 h-3.5 text-[#F59E0B]" />
+            Acciones rápidas
+          </p>
           <ul className="space-y-2">
             {actions.map(step => (
-              <li key={step.id} className="flex items-center gap-2 pl-4">
+              <li
+                key={step.id}
+                className="flex items-center gap-2.5 p-2 rounded-xl bg-white dark:bg-[var(--cc-surface)]"
+              >
                 {onToggleStep && (
-                  <button
-                    type="button"
-                    disabled={stepLoadingId === step.id}
+                  <StepCheckbox
+                    done={step.status === 'done'}
+                    loading={stepLoadingId === step.id}
                     onClick={() => onToggleStep(goal.id, step.id, step.status === 'done')}
-                    className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${
-                      step.status === 'done'
-                        ? 'bg-[#E8F5E9] text-[#2E7D32]'
-                        : 'bg-[#EEF2FF] text-[#6366F1]'
-                    }`}
-                  >
-                    {stepLoadingId === step.id ? (
-                      <Loader2 className="w-3 h-3 animate-spin" />
-                    ) : (
-                      <Check className="w-3 h-3" />
-                    )}
-                  </button>
+                  />
                 )}
                 <div className="flex-1 min-w-0">
                   <p
-                    className={`text-[12px] ${
-                      step.status === 'done' ? 'line-through text-cc-muted' : 'text-cc-primary font-medium'
+                    className={`text-[12px] font-medium ${
+                      step.status === 'done' ? 'line-through text-cc-muted' : 'text-cc-primary'
                     }`}
                   >
                     {step.title}
                   </p>
-                  <p className="text-[10px] text-cc-muted">
-                    {step.estimatedMinutes ? formatDuration(step.estimatedMinutes) : ''}
-                    {step.dueDate ? ` · ${formatShortDate(step.dueDate)}` : ''}
-                  </p>
+                  {(step.estimatedMinutes || step.dueDate) && (
+                    <p className="text-[10px] text-cc-muted">
+                      {step.estimatedMinutes ? formatDuration(step.estimatedMinutes) : ''}
+                      {step.dueDate ? ` · ${formatShortDate(step.dueDate)}` : ''}
+                    </p>
+                  )}
                 </div>
                 {onDeleteStep && (
                   <button
                     type="button"
                     onClick={() => onDeleteStep(goal.id, step.id)}
-                    className="text-cc-muted hover:text-red-500"
+                    className="text-cc-muted hover:text-red-500 p-1"
                     aria-label="Eliminar acción"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -113,73 +123,72 @@ export function GoalTimeline({
   )
 }
 
-function TimelineNode({
+function MilestoneCard({
   step,
-  isLast,
   isDone,
   isCurrent,
+  isFinal,
   goalId,
   onToggle,
   onDelete,
   loadingId,
-  isFinal,
 }: {
   step: GoalStep
-  isLast: boolean
   isDone: boolean
   isCurrent: boolean
+  isFinal?: boolean
   goalId: string
   onToggle?: (goalId: string, stepId: string, done: boolean) => void
   onDelete?: (goalId: string, stepId: string) => void
   loadingId?: string | null
-  isFinal?: boolean
 }) {
-  const nodeColor = isDone ? '#2E7D32' : isCurrent ? '#6366F1' : '#CBD5E1'
+  const accent = isDone ? '#10B981' : isCurrent ? '#6366F1' : '#94A3B8'
 
   return (
-    <div className="flex gap-3">
-      <div className="flex flex-col items-center shrink-0 w-5">
-        <div
-          className="w-3.5 h-3.5 rounded-full border-2 shrink-0 mt-1"
-          style={{
-            borderColor: nodeColor,
-            backgroundColor: isDone ? nodeColor : isCurrent ? nodeColor : 'transparent',
-          }}
-        />
-        {!isLast && <div className="w-0.5 flex-1 bg-[var(--cc-border)] min-h-[2rem]" />}
+    <li className="flex gap-3 pl-0">
+      <div
+        className="relative z-10 w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-2 border-2 bg-white dark:bg-[var(--cc-surface)]"
+        style={{ borderColor: accent }}
+      >
+        <MapPin className="w-3.5 h-3.5" style={{ color: accent }} />
       </div>
-      <div className={`flex-1 pb-4 ${isLast ? 'pb-0' : ''}`}>
+      <div
+        className={`flex-1 rounded-2xl border p-3 transition-shadow ${
+          isCurrent ? 'border-[#6366F1]/40 shadow-md shadow-[#6366F1]/10' : 'border-[var(--cc-border)]'
+        } ${isDone ? 'opacity-75' : ''}`}
+        style={isCurrent ? { backgroundColor: '#EEF2FF33' } : undefined}
+      >
         <div className="flex items-start gap-2">
           {onToggle && (
-            <button
-              type="button"
-              disabled={loadingId === step.id}
+            <StepCheckbox
+              done={isDone}
+              loading={loadingId === step.id}
               onClick={() => onToggle(goalId, step.id, step.status === 'done')}
-              className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 mt-0.5 ${
-                isDone ? 'bg-[#E8F5E9] text-[#2E7D32]' : 'bg-[#EEF2FF] text-[#6366F1]'
-              }`}
-            >
-              {loadingId === step.id ? (
-                <Loader2 className="w-3 h-3 animate-spin" />
-              ) : (
-                <Check className="w-3 h-3" />
-              )}
-            </button>
+            />
           )}
           <div className="flex-1 min-w-0">
-            <p
-              className={`text-[13px] font-semibold ${
-                isDone ? 'line-through text-cc-muted' : 'text-cc-primary'
-              }`}
-            >
-              {step.title}
-            </p>
+            <div className="flex items-center gap-2 flex-wrap">
+              <p
+                className={`text-[13px] font-bold ${
+                  isDone ? 'line-through text-cc-muted' : 'text-cc-primary'
+                }`}
+              >
+                {step.title}
+              </p>
+              {isCurrent && (
+                <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md bg-[#6366F1] text-white">
+                  Actual
+                </span>
+              )}
+              {isFinal && (
+                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-[#FEF3C7] text-[#B45309]">
+                  Meta final
+                </span>
+              )}
+            </div>
             {step.dueDate && (
-              <p className="text-[11px] text-cc-secondary mt-0.5">
-                {formatShortDate(step.dueDate)}
-                {' · '}
-                {formatRelativeDate(step.dueDate)}
-                {isFinal && ' · meta final'}
+              <p className="text-[11px] text-cc-secondary mt-1">
+                {formatShortDate(step.dueDate)} · {formatRelativeDate(step.dueDate)}
               </p>
             )}
           </div>
@@ -187,7 +196,7 @@ function TimelineNode({
             <button
               type="button"
               onClick={() => onDelete(goalId, step.id)}
-              className="text-cc-muted hover:text-red-500 shrink-0"
+              className="text-cc-muted hover:text-red-500 shrink-0 p-1"
               aria-label="Eliminar hito"
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -195,25 +204,79 @@ function TimelineNode({
           )}
         </div>
       </div>
-    </div>
+    </li>
+  )
+}
+
+function StepCheckbox({
+  done,
+  loading,
+  onClick,
+}: {
+  done: boolean
+  loading: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      disabled={loading}
+      onClick={onClick}
+      className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
+        done ? 'bg-[#D1FAE5] text-[#059669]' : 'bg-[#EEF2FF] text-[#6366F1]'
+      }`}
+    >
+      {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+    </button>
   )
 }
 
 export function GoalProgressSummary({ goal }: { goal: ProductivityGoal }) {
   return (
-    <p className="text-[11px] font-semibold text-[#6366F1]">
-      {goal.percent}% · {goal.doneSteps}/{goal.totalSteps} pasos
+    <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-cc-secondary">
+      <span className="font-bold text-[#6366F1]">{goal.percent}% completado</span>
+      <span>
+        {goal.doneSteps}/{goal.totalSteps} pasos
+      </span>
       {goal.nextMilestoneDate && goal.daysToNextMilestone !== null && (
-        <>
-          {' · próximo hito '}
+        <span>
+          Próximo hito{' '}
           {goal.daysToNextMilestone >= 0
             ? `en ${goal.daysToNextMilestone} días`
             : `vencido hace ${Math.abs(goal.daysToNextMilestone)} días`}
-        </>
+        </span>
       )}
       {goal.estimatedRemainingMinutes > 0 && (
-        <> · {formatDuration(goal.estimatedRemainingMinutes)} de acciones pendientes</>
+        <span>{formatDuration(goal.estimatedRemainingMinutes)} de acciones pendientes</span>
       )}
-    </p>
+    </div>
+  )
+}
+
+export function GoalProgressRing({ percent }: { percent: number }) {
+  const r = 22
+  const c = 2 * Math.PI * r
+  const offset = c - (percent / 100) * c
+
+  return (
+    <div className="relative w-14 h-14 shrink-0">
+      <svg className="w-full h-full -rotate-90" viewBox="0 0 56 56">
+        <circle cx="28" cy="28" r={r} fill="none" stroke="var(--cc-border)" strokeWidth="4" />
+        <circle
+          cx="28"
+          cy="28"
+          r={r}
+          fill="none"
+          stroke="#6366F1"
+          strokeWidth="4"
+          strokeLinecap="round"
+          strokeDasharray={c}
+          strokeDashoffset={offset}
+        />
+      </svg>
+      <span className="absolute inset-0 flex items-center justify-center text-[11px] font-bold text-[#6366F1]">
+        {percent}%
+      </span>
+    </div>
   )
 }

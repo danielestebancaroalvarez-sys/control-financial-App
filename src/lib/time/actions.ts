@@ -142,6 +142,10 @@ export async function createHouseholdTask(
       due_date: input.dueDate ?? null,
       estimated_minutes: input.estimatedMinutes ?? null,
       difficulty: input.difficulty ?? 2,
+      color: input.color ?? '#6366F1',
+      icon: input.icon ?? 'package',
+      scheduled_start: input.scheduledStart ?? null,
+      scheduled_end: input.scheduledEnd ?? null,
     })
     .select('id')
     .single()

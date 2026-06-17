@@ -117,7 +117,7 @@ export function TiempoHorarioClient({
 
       <div className="flex gap-2">
         <Link
-          href="/tiempo/nuevo?tipo=tiempo"
+          href="/tiempo/nuevo"
           className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white text-[13px] font-bold"
         >
           Añadir actividad

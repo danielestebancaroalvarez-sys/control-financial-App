@@ -1,7 +1,7 @@
 import { addTimeFrequency, subtractTimeFrequency } from './frequency'
-import type { TimeBlock, TimeEntry, TimeFrequency } from './types'
+import type { HouseholdTask, TimeBlock, TimeEntry, TimeFrequency } from './types'
 
-export type ScheduleEventSource = 'block' | 'entry'
+export type ScheduleEventSource = 'block' | 'entry' | 'task'
 
 export type ScheduleEvent = {
   id: string
@@ -131,6 +131,7 @@ export function isTodayInRange(dateStr: string, rangeStart: string, rangeEnd: st
 export function buildWeeklyScheduleEvents(
   blocks: TimeBlock[],
   entries: TimeEntry[],
+  tasks: HouseholdTask[],
   rangeStart: string,
   rangeEnd: string
 ): ScheduleEvent[] {
@@ -176,6 +177,32 @@ export function buildWeeklyScheduleEvents(
       categoryColor: entry.categoryColor ?? '#6366F1',
       categoryIcon: entry.categoryIcon,
       userId: entry.userId,
+    })
+  }
+
+  for (const task of tasks) {
+    if (task.status === 'cancelled' || !task.dueDate) continue
+    if (task.dueDate < rangeStart || task.dueDate > rangeEnd) continue
+
+    const duration =
+      task.estimatedMinutes ??
+      (task.scheduledStart && task.scheduledEnd
+        ? timeToMinutes(task.scheduledEnd) - timeToMinutes(task.scheduledStart)
+        : 60)
+
+    events.push({
+      id: `task-${task.id}`,
+      source: 'task',
+      sourceId: task.id,
+      title: task.title,
+      date: task.dueDate,
+      startTime: task.scheduledStart,
+      endTime: task.scheduledEnd,
+      durationMinutes: Math.max(duration, 30),
+      categoryName: 'Tarea',
+      categoryColor: task.color,
+      categoryIcon: task.icon,
+      userId: task.assignedTo,
     })
   }
 

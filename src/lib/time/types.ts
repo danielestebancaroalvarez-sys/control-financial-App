@@ -53,6 +53,10 @@ export type HouseholdTask = {
   dueDate: string | null
   estimatedMinutes: number | null
   difficulty: TaskDifficulty
+  color: string
+  icon: string
+  scheduledStart: string | null
+  scheduledEnd: string | null
   status: 'pending' | 'done' | 'cancelled'
   completedAt: string | null
 }
@@ -138,6 +142,10 @@ export type CreateHouseholdTaskInput = {
   dueDate?: string | null
   estimatedMinutes?: number | null
   difficulty?: TaskDifficulty
+  color?: string
+  icon?: string
+  scheduledStart?: string | null
+  scheduledEnd?: string | null
 }
 
 export type CreateProductivityGoalInput = {

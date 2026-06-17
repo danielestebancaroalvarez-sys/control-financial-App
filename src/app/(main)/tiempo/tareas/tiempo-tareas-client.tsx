@@ -1,16 +1,15 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
   Check,
   CheckSquare,
   Loader2,
-  Plus,
   RotateCcw,
   Trash2,
 } from 'lucide-react'
+import { CategoryIcon } from '@/components/transactions/category-icon'
 import {
   completeHouseholdTask,
   deleteHouseholdTask,
@@ -92,18 +91,9 @@ export function TiempoTareasClient({
           Tareas del hogar
         </h1>
         <p className="text-[12px] text-cc-secondary mt-0.5">
-          Asigna, completa y reparte tareas con tu pareja. Ej: Limpiar horno · Alta · Asignar a
-          pareja.
+          Asigna, completa y reparte tareas con tu pareja. Crea nuevas desde el botón central +.
         </p>
       </div>
-
-      <Link
-        href="/tiempo/nuevo?tipo=tarea"
-        className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white text-[13px] font-bold"
-      >
-        <Plus className="w-4 h-4" />
-        Nueva tarea
-      </Link>
 
       <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
         {filters.map(f => (
@@ -126,7 +116,7 @@ export function TiempoTareasClient({
         <section className="cc-surface rounded-[24px] p-6 text-center">
           <p className="text-[13px] text-cc-secondary">No hay tareas en este filtro.</p>
           <p className="text-[11px] text-cc-muted mt-2">
-            Crea una tarea y elige su dificultad para equilibrar la carga del hogar.
+            Pulsa + en la barra inferior, elige Tarea y personaliza color e icono.
           </p>
         </section>
       ) : (
@@ -134,8 +124,15 @@ export function TiempoTareasClient({
           {filtered.map(task => (
             <li
               key={task.id}
-              className="flex items-start gap-3 p-3 rounded-2xl cc-surface-muted"
+              className="flex items-start gap-3 p-3 rounded-2xl cc-surface-muted border-l-4"
+              style={{ borderLeftColor: task.color }}
             >
+              <div
+                className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                style={{ backgroundColor: `${task.color}22`, color: task.color }}
+              >
+                <CategoryIcon icon={task.icon} className="w-4 h-4" />
+              </div>
               <button
                 type="button"
                 disabled={loadingId === task.id}
@@ -181,6 +178,9 @@ export function TiempoTareasClient({
                     ? ` · ${formatDuration(task.estimatedMinutes)}`
                     : ''}
                   {task.dueDate ? ` · vence ${formatShortDate(task.dueDate)}` : ''}
+                  {task.scheduledStart && task.scheduledEnd
+                    ? ` · ${task.scheduledStart}–${task.scheduledEnd}`
+                    : ''}
                 </p>
                 {task.description && (
                   <p className="text-[10px] text-cc-muted mt-0.5">{task.description}</p>

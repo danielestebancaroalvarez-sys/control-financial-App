@@ -1,12 +1,10 @@
 'use client'
 
-import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { CoupleCashLogo } from '@/components/login/couple-cash-logo'
-import { AccountAvatarLink } from './account-avatar-link'
-import { ModuleSwitcher } from './module-switcher'
+import { AppModulePicker } from './app-module-picker'
 import { NotificationInbox } from '@/components/notifications/notification-inbox'
-import { getAppModule, moduleHomePath } from '@/lib/app/module'
+import { AccountAvatarLink } from './account-avatar-link'
+import { getAppModule } from '@/lib/app/module'
 
 export function AppHeader({
   firstName,
@@ -19,27 +17,27 @@ export function AppHeader({
 }) {
   const pathname = usePathname()
   const module = getAppModule(pathname)
-  const home = moduleHomePath(module)
+  const isTime = module === 'time'
 
   return (
-    <header className="py-2">
-      <div className="flex items-center justify-between">
-        <Link href={home} className="flex items-center gap-2">
-          <CoupleCashLogo className="w-8 h-8" />
-          <span className="text-[17px] font-bold text-cc-primary tracking-tight">
-            Couple Hub
-          </span>
-        </Link>
-        <div className="flex items-center gap-2">
-          <NotificationInbox />
-          <AccountAvatarLink
-            firstName={firstName}
-            email={email}
-            avatarUrl={avatarUrl}
-          />
-        </div>
+    <header
+      className={`py-2 mb-1 transition-colors ${
+        isTime ? 'border-b border-[#6366F1]/10' : 'border-b border-[#00BFA5]/10'
+      }`}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <AppModulePicker />
+        {!isTime && (
+          <div className="flex items-center gap-2 shrink-0">
+            <NotificationInbox />
+            <AccountAvatarLink
+              firstName={firstName}
+              email={email}
+              avatarUrl={avatarUrl}
+            />
+          </div>
+        )}
       </div>
-      <ModuleSwitcher />
     </header>
   )
 }

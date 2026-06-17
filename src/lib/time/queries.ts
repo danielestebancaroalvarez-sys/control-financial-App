@@ -67,7 +67,7 @@ export async function getTimeDashboard(
       supabase
         .from('household_tasks')
         .select(
-          'id, title, description, assigned_to, created_by, due_date, estimated_minutes, difficulty, status, completed_at'
+          'id, title, description, assigned_to, created_by, due_date, estimated_minutes, difficulty, color, icon, scheduled_start, scheduled_end, status, completed_at'
         )
         .eq('household_id', householdId)
         .neq('status', 'cancelled'),
@@ -153,7 +153,7 @@ export async function getHouseholdTasks(
   const { data } = await supabase
     .from('household_tasks')
     .select(
-      'id, title, description, assigned_to, created_by, due_date, estimated_minutes, difficulty, status, completed_at'
+      'id, title, description, assigned_to, created_by, due_date, estimated_minutes, difficulty, color, icon, scheduled_start, scheduled_end, status, completed_at'
     )
     .eq('household_id', householdId)
     .neq('status', 'cancelled')
@@ -208,7 +208,7 @@ export async function getWeeklySchedule(
 
   const supabase = await createClient()
 
-  const [blocksRes, entriesRes] = await Promise.all([
+  const [blocksRes, entriesRes, tasksRes] = await Promise.all([
     supabase
       .from('time_blocks')
       .select(
@@ -226,11 +226,22 @@ export async function getWeeklySchedule(
       .eq('household_id', householdId)
       .gte('entry_date', start)
       .lte('entry_date', end),
+    supabase
+      .from('household_tasks')
+      .select(
+        'id, title, description, assigned_to, created_by, due_date, estimated_minutes, difficulty, color, icon, scheduled_start, scheduled_end, status, completed_at'
+      )
+      .eq('household_id', householdId)
+      .neq('status', 'cancelled')
+      .not('due_date', 'is', null)
+      .gte('due_date', start)
+      .lte('due_date', end),
   ])
 
   const blocks = (blocksRes.data ?? []).map(row => mapTimeBlock(row, memberRows))
   const entries = (entriesRes.data ?? []).map(row => mapTimeEntry(row, memberRows))
-  const events = buildWeeklyScheduleEvents(blocks, entries, start, end)
+  const tasks = (tasksRes.data ?? []).map(row => mapHouseholdTask(row, memberRows))
+  const events = buildWeeklyScheduleEvents(blocks, entries, tasks, start, end)
 
   return {
     periodStart: start,

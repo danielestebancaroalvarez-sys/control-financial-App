@@ -57,6 +57,10 @@ type TaskRow = {
   due_date: string | null
   estimated_minutes: number | null
   difficulty: number
+  color: string | null
+  icon: string | null
+  scheduled_start: string | null
+  scheduled_end: string | null
   status: 'pending' | 'done' | 'cancelled'
   completed_at: string | null
 }
@@ -141,6 +145,10 @@ export function mapHouseholdTask(row: TaskRow, members: MemberRow[]): HouseholdT
     dueDate: row.due_date,
     estimatedMinutes: row.estimated_minutes,
     difficulty: (row.difficulty ?? 2) as 1 | 2 | 3,
+    color: row.color ?? '#6366F1',
+    icon: row.icon ?? 'package',
+    scheduledStart: row.scheduled_start,
+    scheduledEnd: row.scheduled_end,
     status: row.status,
     completedAt: row.completed_at,
   }

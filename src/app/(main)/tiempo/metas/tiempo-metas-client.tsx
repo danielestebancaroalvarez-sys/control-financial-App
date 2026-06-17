@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Loader2, Plus, Target, Trash2 } from 'lucide-react'
-import { GoalProgressSummary, GoalTimeline } from '@/components/time/goal-timeline'
+import { GoalProgressRing, GoalProgressSummary, GoalTimeline } from '@/components/time/goal-timeline'
 import { FormField, FormSection } from '@/components/time/form-field'
 import {
   addGoalStep,
@@ -330,42 +330,41 @@ export function TiempoMetasClient({
       ) : (
         <div className="space-y-4">
           {goals.map(goal => (
-            <section key={goal.id} className="cc-surface rounded-[24px] p-4">
-              <div className="flex items-start justify-between gap-2 mb-2">
-                <div className="min-w-0">
-                  <h2 className="text-[14px] font-bold text-cc-primary">{goal.title}</h2>
-                  {goal.targetDate && (
-                    <p className="text-[11px] text-cc-secondary">
-                      Meta final: {formatShortDate(goal.targetDate)}
-                    </p>
-                  )}
+            <section
+              key={goal.id}
+              className="rounded-[24px] overflow-hidden border border-[#6366F1]/15 bg-white dark:bg-[var(--cc-surface)] shadow-sm"
+            >
+              <div className="bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] px-4 py-3 flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3 min-w-0">
+                  <GoalProgressRing percent={goal.percent} />
+                  <div className="min-w-0 pt-0.5">
+                    <h2 className="text-[15px] font-bold text-white leading-tight">{goal.title}</h2>
+                    {goal.targetDate && (
+                      <p className="text-[11px] text-white/80 mt-0.5">
+                        Objetivo: {formatShortDate(goal.targetDate)}
+                      </p>
+                    )}
+                  </div>
                 </div>
                 <button
                   type="button"
                   onClick={() => handleDeleteGoal(goal.id)}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center text-cc-muted hover:text-red-500 shrink-0"
+                  className="w-8 h-8 rounded-lg flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 shrink-0"
                   aria-label="Eliminar meta"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
-              <div className="h-2 rounded-full cc-track overflow-hidden mb-2">
-                <div
-                  className="h-full rounded-full bg-[#6366F1]"
-                  style={{ width: `${goal.percent}%` }}
-                />
-              </div>
-              <GoalProgressSummary goal={goal} />
-              <div className="mt-4">
+              <div className="p-4 space-y-3">
+                <GoalProgressSummary goal={goal} />
                 <GoalTimeline
                   goal={goal}
                   onToggleStep={handleToggleStep}
                   onDeleteStep={handleDeleteStep}
                   stepLoadingId={stepLoadingId}
                 />
-              </div>
               {addingToGoalId === goal.id ? (
-                <div className="mt-3 space-y-2">
+                <div className="space-y-2 pt-1">
                   <StepDraftFields step={newStep} onChange={setNewStep} />
                   <button
                     type="button"
@@ -383,11 +382,12 @@ export function TiempoMetasClient({
                     setAddingToGoalId(goal.id)
                     setNewStep({ title: '', stepType: 'milestone', dueDate: '', minutes: '' })
                   }}
-                  className="mt-3 text-[12px] font-bold text-[#6366F1]"
+                  className="text-[12px] font-bold text-[#6366F1] pt-1"
                 >
                   + Añadir paso
                 </button>
               )}
+              </div>
             </section>
           ))}
         </div>

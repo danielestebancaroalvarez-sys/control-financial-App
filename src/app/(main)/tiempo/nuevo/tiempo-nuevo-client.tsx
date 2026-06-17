@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { CalendarClock, Check, Clock, ListTodo, Loader2, Repeat } from 'lucide-react'
 import { CategoryIcon } from '@/components/transactions/category-icon'
 import { FormField, FormSection } from '@/components/time/form-field'
+import { TaskAppearancePicker } from '@/components/time/task-appearance-picker'
 import {
   createHouseholdTask,
   createTimeBlock,
@@ -24,6 +25,8 @@ import {
   type TimeCategory,
   type TimeFrequency,
 } from '@/lib/time/types'
+import type { CategoryIconId } from '@/lib/finance/category-icons'
+import { TASK_COLOR_PRESETS } from '@/lib/time/task-icons'
 import type { HouseholdMember } from '@/lib/household/types'
 
 type EntryKind = 'time' | 'task'
@@ -38,7 +41,6 @@ export function TiempoNuevoClient({
   currentUserId,
   initialDate,
   initialUserId,
-  initialTipo,
 }: {
   householdId: string
   categories: TimeCategory[]
@@ -46,13 +48,9 @@ export function TiempoNuevoClient({
   currentUserId: string
   initialDate?: string
   initialUserId?: string
-  initialTipo?: string
 }) {
   const router = useRouter()
-  const lockKind = initialTipo === 'tarea' || initialTipo === 'tiempo'
-  const [kind, setKind] = useState<EntryKind>(
-    initialTipo === 'tarea' ? 'task' : 'time'
-  )
+  const [kind, setKind] = useState<EntryKind>('time')
   const [nature, setNature] = useState<EntryNature>('variable')
   const [categoryId, setCategoryId] = useState('')
   const [title, setTitle] = useState('')
@@ -65,6 +63,10 @@ export function TiempoNuevoClient({
   const [frequency, setFrequency] = useState<TimeFrequency>('weekly')
   const [assignedTo, setAssignedTo] = useState(initialUserId || '')
   const [dueDate, setDueDate] = useState('')
+  const [taskColor, setTaskColor] = useState<string>(TASK_COLOR_PRESETS[0])
+  const [taskIcon, setTaskIcon] = useState<CategoryIconId>('package')
+  const [scheduledStart, setScheduledStart] = useState('')
+  const [scheduledEnd, setScheduledEnd] = useState('')
   const [description, setDescription] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -108,6 +110,10 @@ export function TiempoNuevoClient({
         dueDate: dueDate || null,
         estimatedMinutes: durationMinutes,
         difficulty,
+        color: taskColor,
+        icon: taskIcon,
+        scheduledStart: scheduledStart || null,
+        scheduledEnd: scheduledEnd || null,
       })
       if (result.error) {
         setError(result.error)
@@ -181,30 +187,28 @@ export function TiempoNuevoClient({
         <p className="text-[12px] text-cc-secondary mt-0.5">{pageHint}</p>
       </div>
 
-      {!lockKind && (
-        <FormSection title="¿Qué vas a registrar?" description="Elige entre tiempo o una tarea del hogar.">
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={() => setKind('time')}
-              className={`rounded-2xl border-2 p-4 text-left ${kind === 'time' ? TIME_THEME.cardActive : 'cc-surface-muted border-[var(--cc-border)]'}`}
-            >
-              <Clock className="w-5 h-5 text-[#6366F1] mb-2" />
-              <p className="text-[13px] font-bold text-cc-primary">Tiempo</p>
-              <p className="text-[10px] text-cc-secondary">Trabajo, sueño, hogar…</p>
-            </button>
-            <button
-              type="button"
-              onClick={() => setKind('task')}
-              className={`rounded-2xl border-2 p-4 text-left ${kind === 'task' ? TIME_THEME.cardActive : 'cc-surface-muted border-[var(--cc-border)]'}`}
-            >
-              <ListTodo className="w-5 h-5 text-[#6366F1] mb-2" />
-              <p className="text-[13px] font-bold text-cc-primary">Tarea</p>
-              <p className="text-[10px] text-cc-secondary">Reparar, limpiar, comprar…</p>
-            </button>
-          </div>
-        </FormSection>
-      )}
+      <FormSection title="¿Qué vas a registrar?" description="Elige entre tiempo o una tarea del hogar.">
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={() => setKind('time')}
+            className={`rounded-2xl border-2 p-4 text-left ${kind === 'time' ? TIME_THEME.cardActive : 'cc-surface-muted border-[var(--cc-border)]'}`}
+          >
+            <Clock className="w-5 h-5 text-[#6366F1] mb-2" />
+            <p className="text-[13px] font-bold text-cc-primary">Tiempo</p>
+            <p className="text-[10px] text-cc-secondary">Trabajo, sueño, hogar…</p>
+          </button>
+          <button
+            type="button"
+            onClick={() => setKind('task')}
+            className={`rounded-2xl border-2 p-4 text-left ${kind === 'task' ? TIME_THEME.cardActive : 'cc-surface-muted border-[var(--cc-border)]'}`}
+          >
+            <ListTodo className="w-5 h-5 text-[#6366F1] mb-2" />
+            <p className="text-[13px] font-bold text-cc-primary">Tarea</p>
+            <p className="text-[10px] text-cc-secondary">Reparar, limpiar, comprar…</p>
+          </button>
+        </div>
+      </FormSection>
 
       {kind === 'time' && (
         <FormSection
@@ -370,6 +374,20 @@ export function TiempoNuevoClient({
           </FormField>
         )}
 
+        {kind === 'task' && (
+          <FormSection
+            title="Apariencia"
+            description="Personaliza el color e icono para identificarla en la lista y el calendario."
+          >
+            <TaskAppearancePicker
+              color={taskColor}
+              icon={taskIcon}
+              onColorChange={setTaskColor}
+              onIconChange={setTaskIcon}
+            />
+          </FormSection>
+        )}
+
         {kind === 'time' && nature === 'variable' && (
           <FormField
             label="Fecha"
@@ -444,7 +462,33 @@ export function TiempoNuevoClient({
         )}
 
         {kind === 'task' && (
-          <FormField label="Fecha límite" hint="Opcional. Cuándo debería estar lista.">
+          <FormSection
+            title="Horario en calendario"
+            description="Opcional. Si indicas hora, la tarea aparece en el horario semanal ese día."
+          >
+            <div className="grid grid-cols-2 gap-3">
+              <FormField label="Hora inicio" hint="Ej: 10:00">
+                <input
+                  type="time"
+                  value={scheduledStart}
+                  onChange={e => setScheduledStart(e.target.value)}
+                  className={inputClass}
+                />
+              </FormField>
+              <FormField label="Hora fin" hint="Ej: 11:00">
+                <input
+                  type="time"
+                  value={scheduledEnd}
+                  onChange={e => setScheduledEnd(e.target.value)}
+                  className={inputClass}
+                />
+              </FormField>
+            </div>
+          </FormSection>
+        )}
+
+        {kind === 'task' && (
+          <FormField label="Fecha límite" hint="Opcional. Cuándo debería estar lista y en qué día del calendario aparece.">
             <input
               type="date"
               value={dueDate}
