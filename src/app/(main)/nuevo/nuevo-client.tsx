@@ -2,13 +2,14 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { CalendarPlus, Repeat } from 'lucide-react'
+import { ArrowDownLeft, ArrowUpRight, CalendarPlus, Repeat } from 'lucide-react'
 import { AddTransactionForm } from '@/components/transactions/add-transaction-form'
 import { FixedScheduleForm } from '@/components/transactions/fixed-schedule-form'
+import { TX_TYPE_THEME, type TxType } from '@/components/transactions/tx-type-theme'
 import type { Category } from '@/lib/finance/types'
 import type { CurrencyCode } from '@/lib/household/types'
 
-type NuevoTab = 'registro' | 'fijos'
+type EntryMode = 'variable' | 'fixed'
 
 export function NuevoClient({
   householdId,
@@ -21,68 +22,144 @@ export function NuevoClient({
   categories: Category[]
   authorName: string
 }) {
-  const [tab, setTab] = useState<NuevoTab>('registro')
+  const [txType, setTxType] = useState<TxType>('expense')
+  const [mode, setMode] = useState<EntryMode>('variable')
+  const theme = TX_TYPE_THEME[txType]
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <div>
         <h1 className="text-[20px] font-bold text-cc-primary">Nuevo registro</h1>
         <p className="text-[12px] text-cc-secondary mt-0.5">
-          {tab === 'registro'
-            ? 'Ingreso o gasto que ya ocurrió hoy o antes.'
-            : 'Programa ingresos o gastos que se repiten solos.'}
+          Elige si es ingreso o gasto, y si ya ocurrió o se repite cada periodo.
         </p>
       </div>
 
-      <div className="flex rounded-2xl cc-surface-muted p-1">
-        <button
-          type="button"
-          onClick={() => setTab('registro')}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[12px] font-bold transition-all ${
-            tab === 'registro'
-              ? 'bg-gradient-to-r from-[#00BFA5] to-[#2DD4BF] text-white shadow-sm'
-              : 'text-cc-secondary'
-          }`}
-        >
-          <CalendarPlus className="w-3.5 h-3.5" />
-          Registro
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab('fijos')}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[12px] font-bold transition-all ${
-            tab === 'fijos'
-              ? 'bg-gradient-to-r from-[#00BFA5] to-[#2DD4BF] text-white shadow-sm'
-              : 'text-cc-secondary'
-          }`}
-        >
-          <Repeat className="w-3.5 h-3.5" />
-          Fijos
-        </button>
+      <div className="space-y-2">
+        <p className="text-[11px] font-bold text-cc-secondary uppercase tracking-wide">
+          1 · Tipo
+        </p>
+        <div className="grid grid-cols-2 gap-3">
+          {(['income', 'expense'] as const).map(type => {
+            const t = TX_TYPE_THEME[type]
+            const active = txType === type
+            const Icon = type === 'income' ? ArrowDownLeft : ArrowUpRight
+            return (
+              <button
+                key={type}
+                type="button"
+                onClick={() => setTxType(type)}
+                className={`rounded-2xl border-2 p-4 text-left transition-all ${
+                  active ? t.cardActive : t.cardIdle
+                }`}
+              >
+                <div
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center mb-2 bg-gradient-to-br ${t.gradient} text-white`}
+                >
+                  <Icon className="w-4 h-4" />
+                </div>
+                <p className={`text-[14px] font-bold ${active ? t.text : 'text-cc-primary'}`}>
+                  {t.label}
+                </p>
+                <p className="text-[10px] text-cc-secondary mt-0.5">
+                  {type === 'income' ? 'Dinero que entra' : 'Dinero que sale'}
+                </p>
+              </button>
+            )
+          })}
+        </div>
       </div>
 
-      {tab === 'registro' ? (
-        <AddTransactionForm
-          householdId={householdId}
-          baseCurrency={baseCurrency}
-          categories={categories}
-          authorName={authorName}
-        />
-      ) : (
-        <>
-          <FixedScheduleForm
+      <div className="space-y-2">
+        <p className="text-[11px] font-bold text-cc-secondary uppercase tracking-wide">
+          2 · Forma de registro
+        </p>
+        <div className="grid grid-cols-1 gap-2">
+          <button
+            type="button"
+            onClick={() => setMode('variable')}
+            className={`flex items-start gap-3 rounded-2xl border-2 p-4 text-left transition-all ${
+              mode === 'variable' ? theme.cardActive : theme.cardIdle
+            }`}
+          >
+            <div
+              className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-gradient-to-br ${theme.gradient} text-white`}
+            >
+              <CalendarPlus className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <p className={`text-[13px] font-bold ${mode === 'variable' ? theme.text : 'text-cc-primary'}`}>
+                {theme.variableLabel}
+              </p>
+              <p className="text-[11px] text-cc-secondary mt-0.5">
+                Ya ocurrió hoy o antes: mercado, cena, taxi, pago puntual…
+              </p>
+            </div>
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode('fixed')}
+            className={`flex items-start gap-3 rounded-2xl border-2 p-4 text-left transition-all ${
+              mode === 'fixed' ? theme.cardActive : theme.cardIdle
+            }`}
+          >
+            <div
+              className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-gradient-to-br ${theme.gradient} text-white`}
+            >
+              <Repeat className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <p className={`text-[13px] font-bold ${mode === 'fixed' ? theme.text : 'text-cc-primary'}`}>
+                {theme.fixedLabel}
+              </p>
+              <p className="text-[11px] text-cc-secondary mt-0.5">
+                Se repite cada semana o mes: arriendo, salario, servicios…
+              </p>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <div
+        className={`rounded-[24px] border-2 p-4 space-y-4 ${
+          mode === 'variable' ? theme.cardActive : theme.cardActive
+        }`}
+      >
+        <div className="flex items-center gap-2">
+          <span className={`text-[12px] font-bold px-2.5 py-1 rounded-lg bg-gradient-to-r ${theme.gradient} text-white`}>
+            {mode === 'variable' ? theme.variableLabel : theme.fixedLabel}
+          </span>
+        </div>
+
+        {mode === 'variable' ? (
+          <AddTransactionForm
+            key={`var-${txType}`}
             householdId={householdId}
             baseCurrency={baseCurrency}
             categories={categories}
+            authorName={authorName}
+            defaultType={txType}
+            hideTypeSelector
           />
-          <Link
-            href="/fijos"
-            className="block text-center text-[12px] font-semibold text-[#00BFA5]"
-          >
-            Ver todos los fijos configurados →
-          </Link>
-        </>
-      )}
+        ) : (
+          <>
+            <FixedScheduleForm
+              key={`fix-${txType}`}
+              householdId={householdId}
+              baseCurrency={baseCurrency}
+              categories={categories}
+              defaultType={txType}
+              hideTypeSelector
+            />
+            <Link
+              href="/fijos"
+              className={`block text-center text-[12px] font-semibold ${theme.text}`}
+            >
+              Ver todos los fijos configurados →
+            </Link>
+          </>
+        )}
+      </div>
     </div>
   )
 }

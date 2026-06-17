@@ -6,8 +6,42 @@ import { ConsumptionPredictionCard } from '@/components/predictions/consumption-
 import { WeeklyInsightsCard } from '@/components/predictions/weekly-insights-card'
 import { CategoryIcon } from '@/components/transactions/category-icon'
 import { formatMoney, formatFrequency, formatShortDate, getPeriodLabels } from '@/lib/finance/format'
-import type { PredictionsSummary, Period } from '@/lib/finance/types'
+import type { FixedServiceStatus, PredictionsSummary, Period } from '@/lib/finance/types'
 import type { CurrencyCode } from '@/lib/household/types'
+
+function paymentStatusUi(payment: FixedServiceStatus): {
+  badge: string
+  badgeClass: string
+  detail: string | null
+} {
+  if (payment.status === 'paid') {
+    return {
+      badge: 'Pagado',
+      badgeClass: 'bg-[#E8F5E9] text-[#2E7D32]',
+      detail: payment.paidDate
+        ? `Registrado el ${formatShortDate(payment.paidDate)}`
+        : 'Pago detectado en la app',
+    }
+  }
+
+  if (payment.status === 'overdue') {
+    return {
+      badge: 'Sin pagar',
+      badgeClass: 'bg-[#FFEBEE] text-[#C62828]',
+      detail: payment.dueDate
+        ? `Debía pagarse el ${formatShortDate(payment.dueDate)} · no hay registro`
+        : 'No hay registro del pago en la app',
+    }
+  }
+
+  return {
+    badge: 'Por pagar',
+    badgeClass: 'bg-[#FFF8E1] text-[#F59E0B]',
+    detail: payment.dueDate
+      ? `Vence el ${formatShortDate(payment.dueDate)}`
+      : 'Aún no se registra el pago',
+  }
+}
 
 export function PrediccionesClient({
   summary,
@@ -80,60 +114,59 @@ export function PrediccionesClient({
           Pagos de {labels.current}
         </h2>
         <p className="text-[11px] text-cc-secondary mb-4">
-          Gastos recurrentes del periodo. Se marcan como pagados al detectar un gasto
-          similar.
+          Gastos fijos del periodo. Pagado = hay un gasto registrado. Sin pagar = pasó la
+          fecha y no hay registro. Por pagar = aún no vence.
         </p>
         {summary.currentPeriodPayments.length === 0 ? (
           <p className="text-[13px] text-cc-secondary">
-            Al registrar un gasto en Nuevo, activa &quot;Recurrente&quot; y elige la frecuencia
-            para verlo en este radar.
+            Configura gastos fijos en Nuevo → programación fija, o en la sección de fijos.
           </p>
         ) : (
           <ul className="space-y-3">
-            {summary.currentPeriodPayments.map(payment => (
-              <li
-                key={payment.id}
-                className="flex items-center gap-3 p-3 rounded-2xl bg-[#F5F5F5]"
-              >
-                <div
-                  className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-white"
-                  style={{ color: '#636E72' }}
+            {summary.currentPeriodPayments.map(payment => {
+              const status = paymentStatusUi(payment)
+              return (
+                <li
+                  key={payment.id}
+                  className="flex items-center gap-3 p-3 rounded-2xl bg-[#F5F5F5]"
                 >
-                  <CategoryIcon icon={payment.categoryIcon} className="w-4 h-4" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[14px] font-semibold text-cc-primary">{payment.name}</p>
-                  <p className="text-[11px] text-cc-secondary">
-                    {payment.categoryName && <span>{payment.categoryName} · </span>}
-                    {fmt(payment.amount)}
-                    {payment.occurrences && payment.occurrences > 1 && (
-                      <> · {formatFrequency(payment.frequency, payment.occurrences)}</>
+                  <div
+                    className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-white"
+                    style={{ color: '#636E72' }}
+                  >
+                    <CategoryIcon icon={payment.categoryIcon} className="w-4 h-4" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[14px] font-semibold text-cc-primary">{payment.name}</p>
+                    <p className="text-[11px] text-cc-secondary">
+                      {payment.categoryName && <span>{payment.categoryName} · </span>}
+                      {fmt(payment.amount)}
+                      {payment.occurrences && payment.occurrences > 1 && (
+                        <> · {formatFrequency(payment.frequency, payment.occurrences)}</>
+                      )}
+                    </p>
+                    {status.detail && (
+                      <p
+                        className={`text-[10px] mt-0.5 ${
+                          payment.status === 'overdue'
+                            ? 'text-[#C62828] font-medium'
+                            : payment.status === 'paid'
+                              ? 'text-[#2E7D32]'
+                              : 'text-cc-muted'
+                        }`}
+                      >
+                        {status.detail}
+                      </p>
                     )}
-                    {payment.dueDate && payment.status !== 'paid' && (
-                      <> · vence {formatShortDate(payment.dueDate)}</>
-                    )}
-                    {payment.status === 'paid' && payment.paidDate && (
-                      <> · pagado {formatShortDate(payment.paidDate)}</>
-                    )}
-                  </p>
-                </div>
-                <span
-                  className={`text-[11px] font-bold px-2 py-1 rounded-lg shrink-0 ${
-                    payment.status === 'paid'
-                      ? 'bg-[#E8F5E9] text-[#2E7D32]'
-                      : payment.status === 'overdue'
-                        ? 'bg-[#FFEBEE] text-[#C62828]'
-                        : 'bg-[#FFF8E1] text-[#F59E0B]'
-                  }`}
-                >
-                  {payment.status === 'paid'
-                    ? 'Pagado'
-                    : payment.status === 'overdue'
-                      ? 'Vencido'
-                      : 'Pendiente'}
-                </span>
-              </li>
-            ))}
+                  </div>
+                  <span
+                    className={`text-[11px] font-bold px-2 py-1 rounded-lg shrink-0 ${status.badgeClass}`}
+                  >
+                    {status.badge}
+                  </span>
+                </li>
+              )
+            })}
           </ul>
         )}
       </section>
@@ -164,7 +197,7 @@ export function PrediccionesClient({
                     {payment.categoryName && <span>{payment.categoryName} · </span>}
                     {fmt(payment.amount)}
                     {payment.dueDate && (
-                      <> · {formatShortDate(payment.dueDate)}</>
+                      <> · vence {formatShortDate(payment.dueDate)}</>
                     )}
                   </p>
                 </div>

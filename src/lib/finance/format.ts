@@ -151,6 +151,15 @@ export function formatShortDate(dateStr: string): string {
   return d.toLocaleDateString('es', { day: 'numeric', month: 'short' })
 }
 
+/** Subtítulo de gráficos: periodo seleccionado con rango de fechas. */
+export function formatChartPeriodCaption(
+  periodLabel: string,
+  start: string,
+  end: string
+): string {
+  return `${periodLabel} · ${formatShortDate(start)} – ${formatShortDate(end)}`
+}
+
 export function getPeriodBlockLabel(
   period: Period,
   offset: number,

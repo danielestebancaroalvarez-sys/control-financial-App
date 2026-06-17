@@ -4,7 +4,7 @@ import { CategoryBarChart } from '@/components/dashboard/category-bar-chart'
 import { PeriodBlockSelector } from '@/components/dashboard/period-block-selector'
 import { ProactiveInsightBanner } from '@/components/dashboard/proactive-insight-banner'
 import { BalanceEditButton } from '@/app/(main)/balance-edit-button'
-import { formatMoney, getPeriodLabels } from '@/lib/finance/format'
+import { formatMoney, formatChartPeriodCaption, getPeriodLabels } from '@/lib/finance/format'
 import type { DashboardSummary } from '@/lib/finance/types'
 import type { CurrencyCode } from '@/lib/household/types'
 import type { ProactiveInsight } from '@/lib/insights/proactive-insight'
@@ -37,7 +37,7 @@ function buildBudgetSlices(summary: DashboardSummary) {
     slices.push({
       value: savingsAmount,
       color: '#F59E0B',
-      label: summary.isClosedPeriod ? 'Ahorro' : 'Metas',
+      label: summary.isClosedPeriod ? 'Ahorro' : 'Ahorros',
     })
   }
 
@@ -78,6 +78,12 @@ export function DashboardView({
   const savingsInChart = summary.isClosedPeriod
     ? summary.periodRealSavings
     : summary.periodSavings
+  const periodCaption = formatChartPeriodCaption(
+    summary.periodLabel,
+    summary.periodStart,
+    summary.periodEnd
+  )
+
   const periodModeLabel = summary.isClosedPeriod ? 'real del periodo' : 'proyectado'
 
   return (
@@ -148,9 +154,10 @@ export function DashboardView({
             <div className="flex items-center gap-2 mb-2">
               <Sparkles className="w-4 h-4 text-[#F59E0B]" />
               <span className="text-[13px] font-bold text-cc-primary">
-                Dinero libre de culpa
+                Dinero libre
               </span>
             </div>
+            <p className="text-[10px] font-semibold text-cc-secondary mb-1">{periodCaption}</p>
             <p
               className={`text-[24px] font-bold ${
                 summary.guiltFreeMoney < 0 ? 'text-[#EC4899]' : 'text-[#F59E0B]'
@@ -163,7 +170,7 @@ export function DashboardView({
                 ? 'Ingresos reales − gastos fijos − ahorro depositado − gasto variable'
                 : 'Ingresos prometidos ' +
                   labels.ofPeriod +
-                  ' − gastos fijos prometidos − metas − gasto variable'}
+                  ' − gastos fijos prometidos − ahorros − gasto variable'}
             </p>
             <div className="flex flex-wrap gap-2 mt-2 text-[10px] text-cc-muted">
               {summary.scheduledFixedIncome > 0 && (
@@ -186,7 +193,7 @@ export function DashboardView({
               {!summary.isClosedPeriod && (
                 <>
                   <span>·</span>
-                  <span>Metas planificadas: {fmt(summary.periodSavings)}</span>
+                  <span>Ahorros planificados: {fmt(summary.periodSavings)}</span>
                 </>
               )}
               {summary.periodRealSavings > 0 && (
@@ -258,6 +265,7 @@ export function DashboardView({
                   Gastos extra por miembro
                 </p>
               </div>
+              <p className="text-[10px] font-semibold text-cc-secondary mb-1">{periodCaption}</p>
               <p className="text-[10px] text-cc-secondary mb-3">
                 Ocio, mercado, restaurantes y otros gastos no fijos. Muestra cuánto
                 gasta cada uno y si va por encima de la media del hogar.
@@ -317,10 +325,11 @@ export function DashboardView({
             <p className="text-[12px] font-bold text-cc-primary mb-1">
               Distribución del ingreso
             </p>
-            <p className="text-[10px] text-cc-secondary mb-4">
-              Fijos, variable, {summary.isClosedPeriod ? 'ahorro depositado' : 'metas de ahorro'}{' '}
+            <p className="text-[10px] text-cc-secondary mb-1">
+              Fijos, variable, {summary.isClosedPeriod ? 'ahorro depositado' : 'ahorros planificados'}{' '}
               y dinero libre · datos {periodModeLabel}
             </p>
+            <p className="text-[10px] font-semibold text-cc-primary mb-4">{periodCaption}</p>
             <DonutChart
               slices={budgetSlices}
               centerValue={fmt(summary.monthlyIncome)}
@@ -340,7 +349,7 @@ export function DashboardView({
                 Variable: {fmt(summary.variableSpent)}
               </div>
               <div className="text-[#F59E0B] font-bold">
-                {summary.isClosedPeriod ? 'Ahorro' : 'Metas'}: {fmt(savingsInChart)}
+                {summary.isClosedPeriod ? 'Ahorro' : 'Ahorros'}: {fmt(savingsInChart)}
               </div>
               <div className="text-cc-secondary font-bold col-span-2">
                 Libre: {fmt(Math.max(0, summary.guiltFreeMoney))}
@@ -351,14 +360,14 @@ export function DashboardView({
                 </div>
               )}
             </div>
-            {summary.periodRealSavings > 0 && (
+            {summary.periodRealSavings > 0 && !summary.isClosedPeriod && (
               <p className="text-[10px] text-cc-secondary mt-2">
-                Metas planificadas este periodo: {fmt(summary.periodSavings)}
+                Ahorros planificados este periodo: {fmt(summary.periodSavings)}
               </p>
             )}
             {summary.totalSavings > 0 && (
               <p className="text-[10px] text-cc-secondary mt-2">
-                Total acumulado en metas: {fmt(summary.totalSavings)}
+                Total acumulado en ahorros: {fmt(summary.totalSavings)}
               </p>
             )}
           </div>
@@ -368,9 +377,10 @@ export function DashboardView({
               <p className="text-[12px] font-bold text-cc-primary mb-1">
                 ¿En qué se va la plata?
               </p>
-              <p className="text-[10px] text-cc-secondary mb-4">
-                Gastos, ahorros depositados por meta y consumo del periodo
+              <p className="text-[10px] text-cc-secondary mb-1">
+                Gastos, ahorros depositados y consumo del periodo
               </p>
+              <p className="text-[10px] font-semibold text-cc-primary mb-4">{periodCaption}</p>
               <DonutChart
                 slices={summary.expenseGroups.map(g => ({
                   value: g.amount,
@@ -397,19 +407,23 @@ export function DashboardView({
                 </span>
               </div>
             </div>
-            <p className="text-[10px] text-cc-secondary mb-3">
+            <p className="text-[10px] text-cc-secondary mb-1">
               {summary.isClosedPeriod
                 ? 'Ingresos y gastos registrados en cada bloque'
                 : `Ingresos y gastos fijos prometidos ${labels.ofPeriod} + variable real`}
+            </p>
+            <p className="text-[10px] font-semibold text-cc-primary mb-3">
+              Periodo seleccionado: {periodCaption}
             </p>
             <TrendBarChart data={summary.trend} />
           </div>
 
           {summary.allCategories.length > 0 && (
             <div className="rounded-2xl cc-surface-muted p-4">
-              <p className="text-[12px] font-bold text-cc-primary mb-3">
-                Gastos por categoría · {summary.periodLabel.toLowerCase()}
+              <p className="text-[12px] font-bold text-cc-primary mb-1">
+                Gastos por categoría
               </p>
+              <p className="text-[10px] font-semibold text-cc-primary mb-3">{periodCaption}</p>
               <CategoryBarChart items={summary.allCategories} formatValue={fmt} />
             </div>
           )}
@@ -417,7 +431,7 @@ export function DashboardView({
           {summary.savingsGoals.length > 0 && (
             <div className="rounded-2xl cc-surface-muted p-4">
               <p className="text-[12px] font-bold text-cc-primary mb-3">
-                Metas de ahorro
+                Ahorros
               </p>
               <div className="space-y-3">
                 {summary.savingsGoals.map(goal => (

@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Loader2, Plus, Trash2, Check, ShoppingCart,
@@ -12,11 +12,10 @@ import type { ParsedReceipt } from '@/lib/receipts/types'
 import { ReceiptAttachment } from './receipt-attachment'
 import { ReceiptScanner } from './receipt-scanner'
 import { getTodayString } from '@/lib/finance/format'
+import { TX_TYPE_THEME, type TxType } from './tx-type-theme'
 import { CategoryIcon } from './category-icon'
 import type { Category, LineItem } from '@/lib/finance/types'
 import type { CurrencyCode } from '@/lib/household/types'
-
-type TxType = 'income' | 'expense'
 
 const TODAY = getTodayString()
 
@@ -26,15 +25,24 @@ export function AddTransactionForm({
   categories,
   authorName,
   onSuccess,
+  defaultType = 'expense',
+  hideTypeSelector = false,
 }: {
   householdId: string
   baseCurrency: CurrencyCode
   categories: Category[]
   authorName: string
   onSuccess?: () => void
+  defaultType?: TxType
+  hideTypeSelector?: boolean
 }) {
   const router = useRouter()
-  const [txType, setTxType] = useState<TxType>('expense')
+  const [txType, setTxType] = useState<TxType>(defaultType)
+  const theme = TX_TYPE_THEME[txType]
+
+  useEffect(() => {
+    setTxType(defaultType)
+  }, [defaultType])
   const [categoryId, setCategoryId] = useState('')
   const [description, setDescription] = useState('')
   const [amount, setAmount] = useState('')
@@ -223,30 +231,35 @@ export function AddTransactionForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <p className="text-[12px] font-semibold text-cc-secondary text-center mb-2">
-          Tipo de movimiento
-        </p>
-        <div className="flex rounded-2xl bg-[#F5F5F5] p-1">
-          {(['income', 'expense'] as const).map(type => (
-            <button
-              key={type}
-              type="button"
-              onClick={() => handleTypeChange(type)}
-              className={`flex-1 py-2.5 rounded-xl text-[13px] font-bold transition-all ${
-                txType === type
-                  ? 'bg-gradient-to-r from-[#00BFA5] to-[#2DD4BF] text-white shadow-sm'
-                  : 'text-cc-secondary'
-              }`}
-            >
-              {type === 'income' ? 'Ingreso' : 'Gasto'}
-            </button>
-          ))}
+      {!hideTypeSelector && (
+        <div>
+          <p className="text-[12px] font-semibold text-cc-secondary text-center mb-2">
+            Tipo de movimiento
+          </p>
+          <div className="flex rounded-2xl cc-surface-muted p-1">
+            {(['income', 'expense'] as const).map(type => {
+              const t = TX_TYPE_THEME[type]
+              return (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => handleTypeChange(type)}
+                  className={`flex-1 py-2.5 rounded-xl text-[13px] font-bold transition-all ${
+                    txType === type
+                      ? `bg-gradient-to-r ${t.gradient} text-white shadow-sm`
+                      : 'text-cc-secondary'
+                  }`}
+                >
+                  {t.label}
+                </button>
+              )
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="text-center py-2">
-        <p className="text-[36px] font-bold text-cc-primary tracking-tight">
+        <p className={`text-[36px] font-bold tracking-tight ${theme.text}`}>
           {baseCurrency === 'COP' ? '$' : '$ '}
           {displayAmount.toFixed(baseCurrency === 'COP' ? 0 : 2)}
         </p>
@@ -260,7 +273,7 @@ export function AddTransactionForm({
               value={amount}
               onChange={e => setAmount(e.target.value)}
               placeholder="0.00"
-              className="mt-1 w-40 mx-auto block text-center text-[14px] px-3 py-2 rounded-xl bg-[#F5F5F5] outline-none focus:ring-2 focus:ring-[#00BFA5]/30"
+              className={`mt-1 w-40 mx-auto block text-center text-[14px] px-3 py-2 rounded-xl cc-surface-muted outline-none ring-2 ring-transparent ${theme.focus}`}
             />
           </div>
         )}
@@ -281,8 +294,8 @@ export function AddTransactionForm({
                 }}
                 className={`shrink-0 flex flex-col items-center gap-1.5 w-[4.5rem] py-3 rounded-2xl transition-all ${
                   active
-                    ? 'bg-gradient-to-br from-[#00BFA5] to-[#2DD4BF] text-white shadow-md'
-                    : 'bg-[#F5F5F5] text-cc-secondary'
+                    ? `bg-gradient-to-br ${theme.gradient} text-white shadow-md`
+                    : 'cc-surface-muted text-cc-secondary'
                 }`}
               >
                 <CategoryIcon icon={cat.icon} className="w-5 h-5" />
@@ -295,7 +308,7 @@ export function AddTransactionForm({
           <button
             type="button"
             onClick={() => setShowNewCategory(v => !v)}
-            className="shrink-0 flex flex-col items-center justify-center gap-1 w-[4.5rem] py-3 rounded-2xl border-2 border-dashed border-[#00BFA5]/40 text-[#00BFA5]"
+            className={`shrink-0 flex flex-col items-center justify-center gap-1 w-[4.5rem] py-3 rounded-2xl border-2 border-dashed ${theme.ring} ${theme.text}`}
           >
             <Plus className="w-5 h-5" />
             <span className="text-[9px] font-semibold">Nueva</span>
@@ -314,7 +327,7 @@ export function AddTransactionForm({
               type="button"
               onClick={handleCreateCategory}
               disabled={creatingCategory}
-              className="px-4 py-2 rounded-xl bg-[#00BFA5] text-white text-[12px] font-bold disabled:opacity-60"
+              className={`px-4 py-2 rounded-xl text-white text-[12px] font-bold disabled:opacity-60 bg-gradient-to-r ${theme.gradient}`}
             >
               {creatingCategory ? '...' : 'Crear'}
             </button>
@@ -333,7 +346,7 @@ export function AddTransactionForm({
               ? 'Ej: Netflix, Spotify, Disney+...'
               : 'Ej: Cena, Salario marzo...'
           }
-          className="mt-1 w-full px-4 py-3 rounded-xl bg-[#F5F5F5] text-[14px] outline-none focus:ring-2 focus:ring-[#00BFA5]/30"
+          className={`mt-1 w-full px-4 py-3 rounded-xl cc-surface-muted text-[14px] outline-none ring-2 ring-transparent ${theme.focus}`}
         />
       </div>
 
@@ -349,7 +362,7 @@ export function AddTransactionForm({
           value={date}
           max={TODAY}
           onChange={e => setDate(e.target.value)}
-          className="w-full px-4 py-3 rounded-xl bg-[#F5F5F5] text-[14px] outline-none focus:ring-2 focus:ring-[#00BFA5]/30"
+          className={`w-full px-4 py-3 rounded-xl cc-surface-muted text-[14px] outline-none ring-2 ring-transparent ${theme.focus}`}
         />
       </div>
 
@@ -461,7 +474,7 @@ export function AddTransactionForm({
       <button
         type="submit"
         disabled={loading}
-        className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#00BFA5] to-[#2DD4BF] text-white text-[15px] font-bold disabled:opacity-60 flex items-center justify-center gap-2 shadow-lg shadow-[#00BFA5]/25"
+        className={`w-full py-4 rounded-2xl text-white text-[15px] font-bold disabled:opacity-60 flex items-center justify-center gap-2 shadow-lg ${theme.submit}`}
       >
         {loading ? (
           <><Loader2 className="w-5 h-5 animate-spin" /> Guardando...</>

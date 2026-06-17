@@ -1,28 +1,32 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { CalendarClock, Check, Loader2 } from 'lucide-react'
 import { createRecurringSchedule } from '@/lib/finance/actions'
 import { getCategoryRadarKind } from '@/lib/finance/category-radar'
 import { getTodayString } from '@/lib/finance/format'
+import { TX_TYPE_THEME, type TxType } from './tx-type-theme'
 import { CategoryIcon } from './category-icon'
 import type { Category } from '@/lib/finance/types'
 import type { CurrencyCode } from '@/lib/household/types'
-
-type ScheduleType = 'income' | 'expense'
 
 export function FixedScheduleForm({
   householdId,
   baseCurrency,
   categories,
+  defaultType = 'expense',
+  hideTypeSelector = false,
 }: {
   householdId: string
   baseCurrency: CurrencyCode
   categories: Category[]
+  defaultType?: TxType
+  hideTypeSelector?: boolean
 }) {
   const router = useRouter()
-  const [scheduleType, setScheduleType] = useState<ScheduleType>('expense')
+  const [scheduleType, setScheduleType] = useState<TxType>(defaultType)
+  const theme = TX_TYPE_THEME[scheduleType]
   const [categoryId, setCategoryId] = useState('')
   const [description, setDescription] = useState('')
   const [amount, setAmount] = useState('')
@@ -31,6 +35,11 @@ export function FixedScheduleForm({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+
+  useEffect(() => {
+    setScheduleType(defaultType)
+    setCategoryId('')
+  }, [defaultType])
 
   const filteredCategories = useMemo(
     () => categories.filter(c => c.type === scheduleType),
@@ -93,29 +102,34 @@ export function FixedScheduleForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <p className="text-[11px] text-cc-secondary leading-relaxed cc-surface rounded-2xl px-4 py-3">
-        No crea un registro del día: solo programa el parámetro para el radar y el
-        presupuesto (arriendo, salario, servicios…).
+        No crea un movimiento hoy: programa el {scheduleType === 'income' ? 'ingreso' : 'gasto'}{' '}
+        para el radar y el presupuesto (arriendo, salario, servicios…).
       </p>
 
-      <div className="flex rounded-2xl cc-surface-muted p-1">
-        {(['expense', 'income'] as const).map(type => (
-          <button
-            key={type}
-            type="button"
-            onClick={() => {
-              setScheduleType(type)
-              setCategoryId('')
-            }}
-            className={`flex-1 py-2.5 rounded-xl text-[13px] font-bold transition-all ${
-              scheduleType === type
-                ? 'bg-gradient-to-r from-[#00BFA5] to-[#2DD4BF] text-white shadow-sm'
-                : 'text-cc-secondary'
-            }`}
-          >
-            {type === 'income' ? 'Ingreso fijo' : 'Gasto fijo'}
-          </button>
-        ))}
-      </div>
+      {!hideTypeSelector && (
+        <div className="flex rounded-2xl cc-surface-muted p-1">
+          {(['expense', 'income'] as const).map(type => {
+            const t = TX_TYPE_THEME[type]
+            return (
+              <button
+                key={type}
+                type="button"
+                onClick={() => {
+                  setScheduleType(type)
+                  setCategoryId('')
+                }}
+                className={`flex-1 py-2.5 rounded-xl text-[13px] font-bold transition-all ${
+                  scheduleType === type
+                    ? `bg-gradient-to-r ${t.gradient} text-white shadow-sm`
+                    : 'text-cc-secondary'
+                }`}
+              >
+                {t.fixedLabel}
+              </button>
+            )
+          })}
+        </div>
+      )}
 
       <div>
         <p className="text-[11px] font-semibold text-cc-secondary mb-2">Categoría</p>
@@ -129,7 +143,7 @@ export function FixedScheduleForm({
                 onClick={() => setCategoryId(cat.id)}
                 className={`shrink-0 flex flex-col items-center gap-1.5 w-[4.5rem] py-3 rounded-2xl transition-all ${
                   active
-                    ? 'bg-gradient-to-br from-[#00BFA5] to-[#2DD4BF] text-white shadow-md'
+                    ? `bg-gradient-to-br ${theme.gradient} text-white shadow-md`
                     : 'cc-surface-muted text-cc-secondary'
                 }`}
               >
@@ -162,7 +176,7 @@ export function FixedScheduleForm({
           placeholder={
             scheduleType === 'income' ? 'Ej: Salario mensual' : 'Ej: Arriendo, Netflix...'
           }
-          className="mt-1 w-full px-4 py-3 rounded-xl cc-input text-[14px] outline-none"
+          className={`mt-1 w-full px-4 py-3 rounded-xl cc-input text-[14px] outline-none ring-2 ring-transparent ${theme.focus}`}
         />
       </div>
 
@@ -177,7 +191,7 @@ export function FixedScheduleForm({
           value={amount}
           onChange={e => setAmount(e.target.value)}
           placeholder="0.00"
-          className="mt-1 w-full px-4 py-3 rounded-xl cc-input text-[14px] outline-none"
+          className={`mt-1 w-full px-4 py-3 rounded-xl cc-input text-[14px] outline-none ring-2 ring-transparent ${theme.focus}`}
         />
       </div>
 
@@ -187,13 +201,13 @@ export function FixedScheduleForm({
           Primera fecha programada
         </label>
         <p className="text-[10px] text-cc-muted mb-1">
-          Puede ser hoy, pasada o futura. Ahí empieza la repetición automática.
+          Día del mes o semana en que se repite. Puede ser hoy, pasada o futura.
         </p>
         <input
           type="date"
           value={startDate}
           onChange={e => setStartDate(e.target.value)}
-          className="w-full px-4 py-3 rounded-xl cc-input text-[14px] outline-none"
+          className={`w-full px-4 py-3 rounded-xl cc-input text-[14px] outline-none ring-2 ring-transparent ${theme.focus}`}
         />
       </div>
 
@@ -204,7 +218,7 @@ export function FixedScheduleForm({
           onChange={e =>
             setFrequency(e.target.value as 'weekly' | 'biweekly' | 'monthly')
           }
-          className="mt-1 w-full px-3 py-2.5 rounded-xl cc-input text-[13px] font-semibold outline-none"
+          className={`mt-1 w-full px-3 py-2.5 rounded-xl cc-input text-[13px] font-semibold outline-none ring-2 ring-transparent ${theme.focus}`}
         >
           <option value="weekly">Semanal</option>
           <option value="biweekly">Quincenal</option>
@@ -214,22 +228,22 @@ export function FixedScheduleForm({
 
       {error && <p className="text-[12px] text-red-600 text-center">{error}</p>}
       {success && (
-        <p className="text-[12px] text-[#00796B] text-center cc-surface-muted rounded-xl px-3 py-2">
-          Movimiento fijo guardado. Se registrará automáticamente en la fecha indicada.
+        <p className={`text-[12px] text-center cc-surface-muted rounded-xl px-3 py-2 ${theme.text}`}>
+          {theme.fixedLabel} guardado. Aparecerá en el radar y el presupuesto.
         </p>
       )}
 
       <button
         type="submit"
         disabled={loading}
-        className="w-full py-3.5 rounded-2xl bg-[#00BFA5] text-white text-[14px] font-bold disabled:opacity-60 flex items-center justify-center gap-2"
+        className={`w-full py-3.5 rounded-2xl text-white text-[14px] font-bold disabled:opacity-60 flex items-center justify-center gap-2 bg-gradient-to-r ${theme.gradient}`}
       >
         {loading ? (
           <Loader2 className="w-4 h-4 animate-spin" />
         ) : (
           <>
             <Check className="w-4 h-4" />
-            Guardar {scheduleType === 'income' ? 'ingreso' : 'gasto'} fijo
+            Guardar {theme.fixedLabel.toLowerCase()}
           </>
         )}
       </button>
