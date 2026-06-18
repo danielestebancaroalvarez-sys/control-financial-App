@@ -31,7 +31,9 @@ export function NuevoClient({
       <div>
         <h1 className="text-[20px] font-bold text-cc-primary">Nuevo registro</h1>
         <p className="text-[12px] text-cc-secondary mt-0.5">
-          Elige si es ingreso o gasto, y si ya ocurrió o se repite cada periodo.
+          {txType === 'income'
+            ? 'Registra dinero que entra o programa ingresos recurrentes.'
+            : 'Registra dinero que sale o programa gastos recurrentes.'}
         </p>
       </div>
 
@@ -92,7 +94,7 @@ export function NuevoClient({
                 {theme.variableLabel}
               </p>
               <p className="text-[11px] text-cc-secondary mt-0.5">
-                Ya ocurrió hoy o antes: mercado, cena, taxi, pago puntual…
+                {theme.variableHint}
               </p>
             </div>
           </button>
@@ -113,7 +115,7 @@ export function NuevoClient({
                 {theme.fixedLabel}
               </p>
               <p className="text-[11px] text-cc-secondary mt-0.5">
-                Se repite cada semana o mes: arriendo, salario, servicios…
+                {theme.fixedHint}
               </p>
             </div>
           </button>
@@ -121,9 +123,7 @@ export function NuevoClient({
       </div>
 
       <div
-        className={`rounded-[24px] border-2 p-4 space-y-4 ${
-          mode === 'variable' ? theme.cardActive : theme.cardActive
-        }`}
+        className={`rounded-[24px] border-2 p-4 space-y-4 ${theme.cardActive}`}
       >
         <div className="flex items-center gap-2">
           <span className={`text-[12px] font-bold px-2.5 py-1 rounded-lg bg-gradient-to-r ${theme.gradient} text-white`}>

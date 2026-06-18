@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { Suspense } from 'react'
 import { getAuthUser } from '@/lib/auth/session'
 import { getUserHousehold } from '@/lib/household/queries'
 import { getUserTheme } from '@/lib/profile/queries'
@@ -8,6 +9,7 @@ import { HouseholdSync } from '@/components/realtime/household-sync'
 import { PaymentReminderManager } from '@/components/notifications/payment-reminder-manager'
 import { PartnerActivityWatcher } from '@/components/notifications/partner-activity-watcher'
 import { ApplyTheme } from '@/components/theme/apply-theme'
+import { SavedFlashToast } from '@/components/ui/saved-flash-toast'
 import { getFirstName } from '@/lib/utils/name'
 
 export default async function MainLayout({
@@ -45,6 +47,9 @@ export default async function MainLayout({
         currency={household.base_currency}
       />
       <PaymentReminderManager />
+      <Suspense fallback={null}>
+        <SavedFlashToast />
+      </Suspense>
       <div className="mx-auto flex min-h-screen max-w-md flex-col px-5 pt-[max(0.5rem,env(safe-area-inset-top))] pb-[calc(7rem+env(safe-area-inset-bottom))]">
         <AppHeader firstName={firstName} email={user.email} avatarUrl={avatarUrl} />
         <main className="flex-1">{children}</main>

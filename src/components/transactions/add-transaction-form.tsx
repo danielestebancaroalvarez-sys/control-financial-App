@@ -218,14 +218,12 @@ export function AddTransactionForm({
         setReceiptUploadWarning(
           'Gasto guardado, pero no se pudo adjuntar el recibo: ' + uploadResult.error
         )
-        setLoading(false)
-        return
       }
     }
 
     setLoading(false)
     onSuccess?.()
-    router.push('/')
+    router.push(`/?saved=${txType}`)
     router.refresh()
   }
 
@@ -422,7 +420,7 @@ export function AddTransactionForm({
                     value={item.name}
                     onChange={e => updateLineItem(i, 'name', e.target.value)}
                     placeholder="Producto"
-                    className="flex-1 px-3 py-2 rounded-xl bg-white text-[13px] outline-none"
+                    className="flex-1 px-3 py-2 rounded-xl cc-input text-[13px] outline-none"
                   />
                   <input
                     type="number"
@@ -431,7 +429,7 @@ export function AddTransactionForm({
                     value={item.price || ''}
                     onChange={e => updateLineItem(i, 'price', e.target.value)}
                     placeholder="0.00"
-                    className="w-20 px-3 py-2 rounded-xl bg-white text-[13px] outline-none"
+                    className="w-20 px-3 py-2 rounded-xl cc-input text-[13px] outline-none"
                   />
                   {lineItems.length > 1 && (
                     <button
@@ -474,7 +472,7 @@ export function AddTransactionForm({
       <button
         type="submit"
         disabled={loading}
-        className={`w-full py-4 rounded-2xl text-white text-[15px] font-bold disabled:opacity-60 flex items-center justify-center gap-2 shadow-lg ${theme.submit}`}
+        className={`w-full py-4 rounded-2xl text-white text-[15px] font-bold disabled:opacity-60 flex items-center justify-center gap-2 ${theme.submit}`}
       >
         {loading ? (
           <><Loader2 className="w-5 h-5 animate-spin" /> Guardando...</>

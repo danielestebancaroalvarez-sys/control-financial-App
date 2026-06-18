@@ -34,7 +34,6 @@ export function FixedScheduleForm({
   const [frequency, setFrequency] = useState<'weekly' | 'biweekly' | 'monthly'>('monthly')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
 
   useEffect(() => {
     setScheduleType(defaultType)
@@ -54,7 +53,6 @@ export function FixedScheduleForm({
     e.preventDefault()
     setLoading(true)
     setError(null)
-    setSuccess(false)
 
     const catId = categoryId || filteredCategories[0]?.id
     if (!catId) {
@@ -92,18 +90,15 @@ export function FixedScheduleForm({
       return
     }
 
-    setSuccess(true)
-    setDescription('')
-    setAmount('')
     setLoading(false)
+    router.push(`/?saved=fixed-${scheduleType}`)
     router.refresh()
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <p className="text-[11px] text-cc-secondary leading-relaxed cc-surface rounded-2xl px-4 py-3">
-        No crea un movimiento hoy: programa el {scheduleType === 'income' ? 'ingreso' : 'gasto'}{' '}
-        para el radar y el presupuesto (arriendo, salario, servicios…).
+        {theme.fixedFormHint}
       </p>
 
       {!hideTypeSelector && (
@@ -227,16 +222,11 @@ export function FixedScheduleForm({
       </div>
 
       {error && <p className="text-[12px] text-red-600 text-center">{error}</p>}
-      {success && (
-        <p className={`text-[12px] text-center cc-surface-muted rounded-xl px-3 py-2 ${theme.text}`}>
-          {theme.fixedLabel} guardado. Aparecerá en el radar y el presupuesto.
-        </p>
-      )}
 
       <button
         type="submit"
         disabled={loading}
-        className={`w-full py-3.5 rounded-2xl text-white text-[14px] font-bold disabled:opacity-60 flex items-center justify-center gap-2 bg-gradient-to-r ${theme.gradient}`}
+        className={`w-full py-3.5 rounded-2xl text-white text-[14px] font-bold disabled:opacity-60 flex items-center justify-center gap-2 ${theme.submit}`}
       >
         {loading ? (
           <Loader2 className="w-4 h-4 animate-spin" />

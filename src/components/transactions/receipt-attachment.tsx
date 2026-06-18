@@ -21,7 +21,7 @@ export function ReceiptAttachment({
   }
 
   return (
-    <div className="rounded-2xl bg-[#F5F5F5] p-4 space-y-3">
+    <div className="rounded-2xl cc-surface-muted p-4 space-y-3">
       <div className="flex items-center gap-2">
         <Camera className="w-4 h-4 text-[#00BFA5]" />
         <span className="text-[13px] font-semibold text-cc-primary">Comprobante (opcional)</span>
@@ -31,7 +31,7 @@ export function ReceiptAttachment({
       </p>
 
       {previewUrl ? (
-        <div className="relative rounded-xl overflow-hidden bg-white">
+        <div className="relative rounded-xl overflow-hidden cc-surface-solid">
           <img
             src={previewUrl}
             alt="Vista previa del recibo"
@@ -51,7 +51,7 @@ export function ReceiptAttachment({
           <button
             type="button"
             onClick={() => cameraRef.current?.click()}
-            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-white text-[12px] font-bold text-cc-primary"
+            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl cc-surface-solid text-[12px] font-bold text-cc-primary"
           >
             <Camera className="w-4 h-4 text-[#00BFA5]" />
             Tomar foto
@@ -59,7 +59,7 @@ export function ReceiptAttachment({
           <button
             type="button"
             onClick={() => galleryRef.current?.click()}
-            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-white text-[12px] font-bold text-cc-primary"
+            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl cc-surface-solid text-[12px] font-bold text-cc-primary"
           >
             <ImageIcon className="w-4 h-4 text-[#00BFA5]" />
             Galería
