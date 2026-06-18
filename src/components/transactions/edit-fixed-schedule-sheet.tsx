@@ -6,8 +6,14 @@ import { useRouter } from 'next/navigation'
 import { CalendarClock, Loader2, X } from 'lucide-react'
 import { updateRecurringSchedule } from '@/lib/finance/actions'
 import { getCategoryColor } from '@/lib/finance/categories'
+import {
+  autoRegisterToMode,
+  modeToAutoRegister,
+  type PaymentMode,
+} from '@/lib/finance/payment-mode'
 import { getNextBillingDate } from '@/lib/finance/recurring-occurrences'
 import { CategoryIcon } from './category-icon'
+import { PaymentModeSelector } from './payment-mode-selector'
 import type { Category, RecurringScheduleItem } from '@/lib/finance/types'
 import type { CurrencyCode } from '@/lib/household/types'
 
@@ -32,7 +38,10 @@ export function EditFixedScheduleSheet({
   const [description, setDescription] = useState(item.description)
   const [amount, setAmount] = useState(String(item.amount))
   const [startDate, setStartDate] = useState(item.nextOccurrence)
-  const [frequency, setFrequency] = useState(item.frequency)
+  const [frequency, setFrequency] = useState<'weekly' | 'monthly'>(item.frequency)
+  const [paymentMode, setPaymentMode] = useState<PaymentMode>(
+    autoRegisterToMode(item.autoRegister)
+  )
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [mounted, setMounted] = useState(false)
@@ -85,6 +94,7 @@ export function EditFixedScheduleSheet({
       currency,
       frequency,
       startDate,
+      autoRegister: modeToAutoRegister(paymentMode),
     })
 
     if (result.error) {
@@ -108,6 +118,7 @@ export function EditFixedScheduleSheet({
       categoryColor: cat
         ? getCategoryColor(cat.name, cat.color)
         : item.categoryColor,
+      autoRegister: modeToAutoRegister(paymentMode),
     })
 
     setLoading(false)
@@ -210,17 +221,25 @@ export function EditFixedScheduleSheet({
             />
           </div>
 
-          <select
-            value={frequency}
-            onChange={e =>
-              setFrequency(e.target.value as 'weekly' | 'biweekly' | 'monthly')
-            }
-            className="w-full px-3 py-2.5 rounded-xl cc-input text-[13px] font-semibold outline-none"
-          >
-            <option value="weekly">Semanal</option>
-            <option value="biweekly">Quincenal</option>
-            <option value="monthly">Mensual</option>
-          </select>
+          <div>
+            <label className="text-[11px] font-semibold text-cc-secondary">Frecuencia</label>
+            <select
+              value={frequency}
+              onChange={e =>
+                setFrequency(e.target.value as 'weekly' | 'monthly')
+              }
+              className="mt-1 w-full px-3 py-2.5 rounded-xl cc-input text-[13px] font-semibold outline-none"
+            >
+              <option value="weekly">Semanal</option>
+              <option value="monthly">Mensual</option>
+            </select>
+          </div>
+
+          <PaymentModeSelector
+            value={paymentMode}
+            onChange={setPaymentMode}
+            scheduleType={scheduleType}
+          />
 
           {error && <p className="text-[12px] text-red-600 text-center">{error}</p>}
 

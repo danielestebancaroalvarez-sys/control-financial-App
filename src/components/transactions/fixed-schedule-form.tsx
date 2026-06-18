@@ -5,9 +5,15 @@ import { useRouter } from 'next/navigation'
 import { CalendarClock, Check, Loader2 } from 'lucide-react'
 import { createRecurringSchedule } from '@/lib/finance/actions'
 import { getCategoryRadarKind } from '@/lib/finance/category-radar'
+import {
+  defaultPaymentModeForCategory,
+  modeToAutoRegister,
+  type PaymentMode,
+} from '@/lib/finance/payment-mode'
 import { getTodayString } from '@/lib/finance/format'
 import { TX_TYPE_THEME, type TxType } from './tx-type-theme'
 import { CategoryIcon } from './category-icon'
+import { PaymentModeSelector } from './payment-mode-selector'
 import type { Category } from '@/lib/finance/types'
 import type { CurrencyCode } from '@/lib/household/types'
 
@@ -31,7 +37,8 @@ export function FixedScheduleForm({
   const [description, setDescription] = useState('')
   const [amount, setAmount] = useState('')
   const [startDate, setStartDate] = useState(getTodayString())
-  const [frequency, setFrequency] = useState<'weekly' | 'biweekly' | 'monthly'>('monthly')
+  const [frequency, setFrequency] = useState<'weekly' | 'monthly'>('monthly')
+  const [paymentMode, setPaymentMode] = useState<PaymentMode>('reminder')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -48,6 +55,12 @@ export function FixedScheduleForm({
   const selectedCategory = filteredCategories.find(
     c => c.id === (categoryId || filteredCategories[0]?.id)
   )
+
+  useEffect(() => {
+    if (selectedCategory) {
+      setPaymentMode(defaultPaymentModeForCategory(selectedCategory, scheduleType))
+    }
+  }, [selectedCategory, scheduleType])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -82,6 +95,7 @@ export function FixedScheduleForm({
       currency: baseCurrency,
       frequency,
       startDate,
+      autoRegister: modeToAutoRegister(paymentMode),
     })
 
     if (result.error) {
@@ -211,15 +225,20 @@ export function FixedScheduleForm({
         <select
           value={frequency}
           onChange={e =>
-            setFrequency(e.target.value as 'weekly' | 'biweekly' | 'monthly')
+            setFrequency(e.target.value as 'weekly' | 'monthly')
           }
           className={`mt-1 w-full px-3 py-2.5 rounded-xl cc-input text-[13px] font-semibold outline-none ring-2 ring-transparent ${theme.focus}`}
         >
           <option value="weekly">Semanal</option>
-          <option value="biweekly">Quincenal</option>
           <option value="monthly">Mensual</option>
         </select>
       </div>
+
+      <PaymentModeSelector
+        value={paymentMode}
+        onChange={setPaymentMode}
+        scheduleType={scheduleType}
+      />
 
       {error && <p className="text-[12px] text-red-600 text-center">{error}</p>}
 

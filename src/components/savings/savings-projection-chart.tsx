@@ -165,7 +165,7 @@ export function formToSavingsGoalInput(form: {
   target: string
   current: string
   contribution: string
-  contributionFrequency: 'weekly' | 'biweekly' | 'monthly'
+  contributionFrequency: 'weekly' | 'monthly'
   mode: 'static' | 'compound'
   rate: string
   targetDate: string

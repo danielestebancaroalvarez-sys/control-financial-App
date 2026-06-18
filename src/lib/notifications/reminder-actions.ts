@@ -33,11 +33,12 @@ export async function getPaymentReminderPayload(): Promise<PaymentReminderPayloa
   const { data } = await supabase
     .from('recurring_schedules')
     .select(
-      'id, description, amount_original, frequency, next_occurrence, categories (name)'
+      'id, description, amount_original, frequency, next_occurrence, auto_register, categories (name)'
     )
     .eq('household_id', ctx.household.id)
     .eq('is_active', true)
     .eq('type', 'expense')
+    .eq('auto_register', false)
 
   const { start, end } = getNextPeriodRange('weekly')
   const currency = ctx.household.base_currency

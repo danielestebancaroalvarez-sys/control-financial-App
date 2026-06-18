@@ -123,7 +123,7 @@ export type SavingsGoal = {
   current_amount: number
   target_date: string | null
   contribution_amount: number | null
-  contribution_frequency: 'weekly' | 'biweekly' | 'monthly' | null
+  contribution_frequency: 'weekly' | 'monthly' | null
   savings_mode: 'static' | 'compound'
   annual_interest_rate: number | null
   is_active: boolean
@@ -133,7 +133,7 @@ export type SavingsGoalInput = {
   target_amount: number
   current_amount: number
   contribution_amount: number | null
-  contribution_frequency: 'weekly' | 'biweekly' | 'monthly' | null
+  contribution_frequency: 'weekly' | 'monthly' | null
   savings_mode: 'static' | 'compound'
   annual_interest_rate: number | null
   target_date: string | null
@@ -157,6 +157,8 @@ export type FixedServiceStatus = {
   categoryIcon: string | null
   occurrences?: number
   dueInNextPeriod?: boolean
+  autoRegister?: boolean
+  assumedPaid?: boolean
 }
 
 export type ItemPurchasePrediction = {
@@ -196,12 +198,13 @@ export type RecurringScheduleItem = {
   description: string
   amount: number
   currency: CurrencyCode
-  frequency: 'weekly' | 'biweekly' | 'monthly'
+  frequency: 'weekly' | 'monthly'
   nextOccurrence: string
   nextBillingDate: string
   categoryName: string
   categoryIcon: string | null
   categoryColor: string | null
+  autoRegister: boolean
 }
 
 export type UpdateRecurringScheduleInput = {
@@ -212,8 +215,9 @@ export type UpdateRecurringScheduleInput = {
   description: string
   amount: number
   currency?: CurrencyCode
-  frequency: 'weekly' | 'biweekly' | 'monthly'
+  frequency: 'weekly' | 'monthly'
   startDate: string
+  autoRegister?: boolean
 }
 
 export type CreateRecurringScheduleInput = {
@@ -223,8 +227,9 @@ export type CreateRecurringScheduleInput = {
   description: string
   amount: number
   currency?: CurrencyCode
-  frequency: 'weekly' | 'biweekly' | 'monthly'
+  frequency: 'weekly' | 'monthly'
   startDate: string
+  autoRegister?: boolean
 }
 
 export type CreateTransactionInput = {
@@ -236,7 +241,7 @@ export type CreateTransactionInput = {
   currency?: CurrencyCode
   transactionDate: string
   isRecurring?: boolean
-  frequency?: 'weekly' | 'biweekly' | 'monthly'
+  frequency?: 'weekly' | 'monthly'
   lineItems?: LineItem[]
   savingsGoalId?: string
 }
@@ -271,7 +276,7 @@ export type CreateSavingsGoalInput = {
   currentAmount?: number
   targetDate?: string
   contributionAmount?: number
-  contributionFrequency?: 'weekly' | 'biweekly' | 'monthly'
+  contributionFrequency?: 'weekly' | 'monthly'
   savingsMode?: 'static' | 'compound'
   annualInterestRate?: number
 }

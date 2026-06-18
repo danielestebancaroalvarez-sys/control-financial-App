@@ -25,6 +25,7 @@ type RecurringRow = {
   amount_original: number
   frequency: string
   next_occurrence: string
+  auto_register: boolean
   category_id: string
   categories: {
     name: string
@@ -117,7 +118,9 @@ function mapRecurringPayment(
   transactions: TxRow[],
   dueInNextPeriod: boolean
 ): FixedServiceStatus | null {
-  const frequency = r.frequency as 'weekly' | 'biweekly' | 'monthly'
+  const frequency = (r.frequency === 'biweekly' ? 'monthly' : r.frequency) as
+    | 'weekly'
+    | 'monthly'
   const occurrences = countOccurrencesInRange(
     r.next_occurrence,
     frequency,
@@ -129,13 +132,30 @@ function mapRecurringPayment(
 
   const cat = r.categories
   const unitAmount = Number(r.amount_original)
-  const paymentStatus = detectPaymentStatus(r, rangeStart, rangeEnd, transactions)
   const dueDate =
     getPrimaryDueDateInRange(r.next_occurrence, frequency, rangeStart, rangeEnd) ??
     undefined
   const today = getTodayString()
+
+  let paymentStatus = detectPaymentStatus(r, rangeStart, rangeEnd, transactions)
+  let assumedPaid = false
+
+  if (
+    r.auto_register &&
+    paymentStatus.status === 'pending' &&
+    dueDate &&
+    dueDate <= today
+  ) {
+    paymentStatus = {
+      status: 'paid',
+      paidAmount: Math.round(unitAmount * occurrences * 100) / 100,
+      paidDate: dueDate,
+    }
+    assumedPaid = true
+  }
+
   let status = paymentStatus.status
-  if (status === 'pending' && dueDate && dueDate < today) {
+  if (!r.auto_register && status === 'pending' && dueDate && dueDate < today) {
     status = 'overdue'
   }
 
@@ -149,6 +169,8 @@ function mapRecurringPayment(
     categoryIcon: cat?.icon ?? null,
     dueInNextPeriod,
     dueDate,
+    autoRegister: r.auto_register,
+    assumedPaid,
     ...paymentStatus,
     status,
   }

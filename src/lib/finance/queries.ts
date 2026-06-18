@@ -127,7 +127,7 @@ export const getRecurringScheduleItems = cache(
       .select(
         `
         id, type, category_id, description, amount_original, currency_original,
-        frequency, next_occurrence,
+        frequency, next_occurrence, auto_register,
         categories ( name, icon, color )
       `
       )
@@ -147,17 +147,18 @@ export const getRecurringScheduleItems = cache(
         description: row.description,
         amount: Number(row.amount_original),
         currency: row.currency_original as CurrencyCode,
-        frequency: row.frequency as 'weekly' | 'biweekly' | 'monthly',
+        frequency: row.frequency as 'weekly' | 'monthly',
         nextOccurrence: row.next_occurrence,
         nextBillingDate: getNextBillingDate(
           row.next_occurrence,
-          row.frequency as 'weekly' | 'biweekly' | 'monthly'
+          row.frequency as 'weekly' | 'monthly'
         ),
         categoryName: cat?.name ?? 'Sin categoría',
         categoryIcon: cat?.icon ?? null,
         categoryColor: cat?.color
           ? getCategoryColor(cat.name, cat.color)
           : null,
+        autoRegister: row.auto_register ?? false,
       }
     })
   }
@@ -529,7 +530,7 @@ export async function getPredictionsSummary(
     supabase
       .from('recurring_schedules')
       .select(
-        'id, description, amount_original, frequency, next_occurrence, category_id, categories (name, icon, is_fixed, is_subscription)'
+        'id, description, amount_original, frequency, next_occurrence, auto_register, category_id, categories (name, icon, is_fixed, is_subscription)'
       )
       .eq('household_id', householdId)
       .eq('is_active', true)
@@ -557,6 +558,7 @@ export async function getPredictionsSummary(
       amount_original: r.amount_original,
       frequency: r.frequency,
       next_occurrence: r.next_occurrence,
+      auto_register: r.auto_register ?? false,
       category_id: r.category_id,
       categories: cat
         ? {

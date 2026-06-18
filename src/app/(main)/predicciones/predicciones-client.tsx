@@ -14,6 +14,15 @@ function paymentStatusUi(payment: FixedServiceStatus): {
   detail: string | null
 } {
   if (payment.status === 'paid') {
+    if (payment.assumedPaid && payment.autoRegister) {
+      return {
+        badge: 'Pagado',
+        badgeClass: 'bg-[#E8F5E9] text-[#2E7D32]',
+        detail: payment.dueDate
+          ? `Débito automático el ${formatShortDate(payment.dueDate)}`
+          : 'Marcado por débito automático',
+      }
+    }
     return {
       badge: 'Pagado',
       badgeClass: 'bg-[#E8F5E9] text-[#2E7D32]',
@@ -107,8 +116,8 @@ export function PrediccionesClient({
           Pagos de {labels.current}
         </h2>
         <p className="text-[11px] text-cc-secondary mb-4">
-          Gastos fijos del periodo. Pagado = hay un gasto registrado. Sin pagar = pasó la
-          fecha y no hay registro. Por pagar = aún no vence.
+          Gastos fijos del periodo. Débito automático = se marca pagado en la fecha.
+          Recordatorio = Pagado si hay gasto registrado; Sin pagar si pasó la fecha sin registro.
         </p>
         {summary.currentPeriodPayments.length === 0 ? (
           <p className="text-[13px] text-cc-secondary">

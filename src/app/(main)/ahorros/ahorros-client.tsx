@@ -30,7 +30,7 @@ type FormState = {
   target: string
   current: string
   contribution: string
-  contributionFrequency: 'weekly' | 'biweekly' | 'monthly'
+  contributionFrequency: 'weekly' | 'monthly'
   mode: 'static' | 'compound'
   rate: string
   targetDate: string
@@ -228,7 +228,6 @@ function SavingsGoalForm({
             className="w-full px-4 py-3 rounded-xl bg-[#F5F5F5] text-[14px] outline-none"
           >
             <option value="weekly">Semanal</option>
-            <option value="biweekly">Quincenal</option>
             <option value="monthly">Mensual</option>
           </select>
         </Field>
@@ -505,11 +504,7 @@ export function AhorrosClient({
               {goal.contribution_amount && (
                 <p className="text-[11px] text-cc-secondary mt-2">
                   Aporte: {fmt(goal.contribution_amount)}{' '}
-                  {goal.contribution_frequency === 'weekly'
-                    ? 'semanal'
-                    : goal.contribution_frequency === 'biweekly'
-                      ? 'quincenal'
-                      : 'mensual'}
+                  {goal.contribution_frequency === 'weekly' ? 'semanal' : 'mensual'}
                   {goal.savings_mode === 'compound' &&
                     goal.annual_interest_rate &&
                     ` · ${(goal.annual_interest_rate * 100).toFixed(1)}% anual`}

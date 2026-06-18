@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import { CategoryIcon } from '@/components/transactions/category-icon'
 import { EditFixedScheduleSheet } from '@/components/transactions/edit-fixed-schedule-sheet'
+import { PaymentModeBadge } from '@/components/transactions/payment-mode-selector'
 import { deactivateRecurringSchedule } from '@/lib/finance/actions'
 import { formatFrequency, formatMoney, formatShortDate, getPeriodLabels } from '@/lib/finance/format'
 import type { Category, Period, RecurringScheduleItem } from '@/lib/finance/types'
@@ -74,8 +75,9 @@ function ScheduleList({
               <CategoryIcon icon={item.categoryIcon} className="w-4 h-4" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[13px] font-semibold text-cc-primary truncate">
+              <p className="text-[13px] font-semibold text-cc-primary truncate flex items-center gap-1.5 flex-wrap">
                 {item.description}
+                <PaymentModeBadge autoRegister={item.autoRegister} />
               </p>
               <p className="text-[11px] text-cc-secondary">
                 {item.categoryName} · {fmt(item.amount)} ·{' '}

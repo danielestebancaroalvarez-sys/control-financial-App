@@ -1,4 +1,3 @@
-import { addFrequency } from './format'
 import type { Period, SavingsGoal } from './types'
 
 const SAVINGS_COLORS = ['#F59E0B', '#FBBF24', '#F97316', '#EAB308', '#D97706']
@@ -10,7 +9,7 @@ function daysBetween(start: string, end: string): number {
 }
 
 function countContributionSlots(
-  frequency: 'weekly' | 'biweekly' | 'monthly',
+  frequency: 'weekly' | 'monthly',
   rangeStart: string,
   rangeEnd: string,
   period: Period
@@ -20,18 +19,6 @@ function countContributionSlots(
 
   if (frequency === 'weekly') {
     return Math.max(1, Math.floor(days / 7))
-  }
-
-  if (frequency === 'biweekly') {
-    let date = rangeStart
-    let count = 0
-    let guard = 0
-    while (date <= rangeEnd && guard < 60) {
-      count++
-      date = addFrequency(date, 'biweekly')
-      guard++
-    }
-    return count
   }
 
   if (period === 'monthly') return 1

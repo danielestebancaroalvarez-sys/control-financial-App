@@ -130,7 +130,7 @@ export async function createRecurringSchedule(
       currency_original: currency,
       frequency: input.frequency,
       next_occurrence: input.startDate,
-      auto_register: false,
+      auto_register: input.autoRegister ?? false,
     })
     .select('id')
     .single()
@@ -193,6 +193,7 @@ export async function updateRecurringSchedule(
       currency_original: currency,
       frequency: input.frequency,
       next_occurrence: input.startDate,
+      auto_register: input.autoRegister ?? false,
     })
     .eq('id', input.id)
     .eq('household_id', input.householdId)
