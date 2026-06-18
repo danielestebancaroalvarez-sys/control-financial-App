@@ -13,8 +13,6 @@ export default async function PrediccionesPage() {
     <PrediccionesClient
       summary={summary}
       currency={ctx.household.base_currency}
-      householdId={ctx.household.id}
-      period={ctx.period}
     />
   )
 }

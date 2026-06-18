@@ -3,10 +3,9 @@
 import Link from 'next/link'
 import { CalendarClock, Repeat, ShoppingBag } from 'lucide-react'
 import { ConsumptionPredictionCard } from '@/components/predictions/consumption-prediction-card'
-import { WeeklyInsightsCard } from '@/components/predictions/weekly-insights-card'
 import { CategoryIcon } from '@/components/transactions/category-icon'
 import { formatMoney, formatFrequency, formatShortDate, getPeriodLabels } from '@/lib/finance/format'
-import type { FixedServiceStatus, PredictionsSummary, Period } from '@/lib/finance/types'
+import type { FixedServiceStatus, PredictionsSummary } from '@/lib/finance/types'
 import type { CurrencyCode } from '@/lib/household/types'
 
 function paymentStatusUi(payment: FixedServiceStatus): {
@@ -46,13 +45,9 @@ function paymentStatusUi(payment: FixedServiceStatus): {
 export function PrediccionesClient({
   summary,
   currency,
-  householdId,
-  period,
 }: {
   summary: PredictionsSummary
   currency: CurrencyCode
-  householdId: string
-  period: Period
 }) {
   const fmt = (n: number) => formatMoney(n, currency)
   const labels = getPeriodLabels(summary.period)
@@ -65,8 +60,6 @@ export function PrediccionesClient({
           {labels.current} · {summary.currentPeriodStart} → {summary.currentPeriodEnd}
         </p>
       </div>
-
-      <WeeklyInsightsCard householdId={householdId} period={period} />
 
       <Link
         href="/fijos"

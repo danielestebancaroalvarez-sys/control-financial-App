@@ -27,7 +27,7 @@ export function ReceiptAttachment({
         <span className="text-[13px] font-semibold text-cc-primary">Comprobante (opcional)</span>
       </div>
       <p className="text-[11px] text-cc-secondary">
-        Guarda la foto del recibo con este gasto. No usa IA salvo que escanees en Mercado.
+        Guarda la foto del recibo con este gasto. Para extraer productos automáticamente, escanéalo en Mercado.
       </p>
 
       {previewUrl ? (

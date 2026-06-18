@@ -283,21 +283,6 @@
     border-color: var(--cc-accent-danger-border) !important;
   }
 
-  .cc-insight-card {
-    background: linear-gradient(
-      to bottom right,
-      var(--cc-accent-teal-bg),
-      var(--cc-surface-solid)
-    );
-    border: 1px solid rgb(0 191 165 / 0.2);
-    box-shadow: 0 1px 3px rgb(0 0 0 / 0.06);
-  }
-
-  .dark .cc-insight-card {
-    border-color: rgb(0 191 165 / 0.25);
-    box-shadow: 0 1px 3px rgb(0 0 0 / 0.25);
-  }
-
   .cc-scan-card {
     background: linear-gradient(
       to bottom right,

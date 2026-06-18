@@ -188,18 +188,6 @@ export type PredictionsSummary = {
   period: Period
 }
 
-export type WeeklyInsight = {
-  summary: string
-  tips: string[]
-  generatedAt: string
-}
-
-export type InsightHighlight = {
-  label: string
-  value: string
-  tone?: 'positive' | 'negative' | 'neutral' | 'warning'
-}
-
 export type RecurringScheduleItem = {
   id: string
   type: 'income' | 'expense'

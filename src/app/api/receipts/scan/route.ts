@@ -33,7 +33,7 @@ export async function POST(request: Request) {
 
     if (!category || category.name !== 'Mercado' || category.type !== 'expense') {
       return NextResponse.json(
-        { error: 'El escaneo con IA solo está disponible para Mercado.' },
+        { error: 'El escaneo de recibos solo está disponible para la categoría Mercado.' },
         { status: 400 }
       )
     }
