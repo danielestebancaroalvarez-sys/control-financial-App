@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { formatMoney } from '@/lib/finance/format'
+import { toMonthlyAmount } from '@/lib/finance/guilt-free'
 import {
   applyContributionBoost,
   estimateMonthsForGoalInput,
@@ -28,6 +29,14 @@ export function SavingsScenarioPanel({
   const fmt = (n: number) => formatMoney(n, currency)
 
   const baseMonths = useMemo(() => estimateMonthsForGoalInput(baseGoal), [baseGoal])
+  const baseMonthly = useMemo(() => {
+    if (!baseGoal.contribution_amount) return 0
+    return toMonthlyAmount(
+      Number(baseGoal.contribution_amount),
+      baseGoal.contribution_frequency ?? 'monthly'
+    )
+  }, [baseGoal])
+
   const scenarioGoal = useMemo(
     () => applyContributionBoost(baseGoal, extraContribution),
     [baseGoal, extraContribution]
@@ -47,14 +56,35 @@ export function SavingsScenarioPanel({
       ? guiltFreeMoney - extraContribution
       : null
 
+  const chartGoal = extraContribution > 0 ? scenarioGoal : baseGoal
+
   return (
     <div className="space-y-3">
+      <div className="rounded-xl bg-white px-3 py-2.5 space-y-1">
+        <p className="text-[11px] text-cc-secondary">
+          Tiempo estimado:{' '}
+          <span className="font-bold text-cc-primary">{formatMonthsLabel(baseMonths)}</span>
+        </p>
+        {baseMonthly > 0 && (
+          <p className="text-[10px] text-cc-muted">
+            Con aporte de {fmt(baseMonthly)}/mes hacia la meta de{' '}
+            {fmt(Number(baseGoal.target_amount) || 0)}
+          </p>
+        )}
+      </div>
+
+      <SavingsProjectionChart goal={chartGoal} accentColor={accentColor} height={130} />
+
       <div>
         <div className="flex items-center justify-between mb-1">
           <p className="text-[11px] font-bold text-cc-primary">
             ¿Y si aportas más al mes?
           </p>
-          <span className="text-[12px] font-bold text-[#00BFA5]">
+          <span
+            className={`text-[12px] font-bold ${
+              extraContribution > 0 ? 'text-[#00BFA5]' : 'text-cc-muted'
+            }`}
+          >
             +{fmt(extraContribution)}
           </span>
         </div>
@@ -76,9 +106,8 @@ export function SavingsScenarioPanel({
       {extraContribution > 0 && (
         <div className="rounded-xl bg-white px-3 py-2 space-y-1">
           <p className="text-[11px] text-cc-secondary">
-            Base: <span className="font-semibold">{formatMonthsLabel(baseMonths)}</span>
+            {formatMonthsLabel(baseMonths)}
             {' → '}
-            Con +{fmt(extraContribution)}:{' '}
             <span className="font-semibold text-[#00BFA5]">
               {formatMonthsLabel(scenarioMonths)}
             </span>
@@ -99,12 +128,6 @@ export function SavingsScenarioPanel({
           )}
         </div>
       )}
-
-      <SavingsProjectionChart
-        goal={extraContribution > 0 ? scenarioGoal : baseGoal}
-        accentColor={accentColor}
-        height={100}
-      />
     </div>
   )
 }

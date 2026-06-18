@@ -43,9 +43,8 @@ export function SavingsSimulationCollapsible({
       </button>
 
       {open && (
-        <div className="px-3 pb-3 space-y-3 border-t border-white/80">
-          <SavingsProjectionChart goal={goal} accentColor={accentColor} height={100} />
-          {hasContribution && (
+        <div className="px-3 pb-3 border-t border-white/80">
+          {hasContribution ? (
             <SavingsScenarioPanel
               baseGoal={goal}
               accentColor={accentColor}
@@ -53,6 +52,10 @@ export function SavingsSimulationCollapsible({
               guiltFreeMoney={guiltFreeMoney}
               periodSavings={periodSavings}
             />
+          ) : (
+            <div className="pt-3">
+              <SavingsProjectionChart goal={goal} accentColor={accentColor} height={130} />
+            </div>
           )}
         </div>
       )}
