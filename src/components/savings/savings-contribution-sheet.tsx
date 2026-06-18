@@ -174,7 +174,7 @@ export function SavingsContributionButton({
         className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[#E0F2F1] text-[#00796B] text-[12px] font-bold"
       >
         <Plus className="w-4 h-4" />
-        Registrar aporte real
+        {goal.auto_contribute ? 'Registrar aporte extra' : 'Registrar aporte real'}
       </button>
       {open && (
         <SavingsContributionSheet

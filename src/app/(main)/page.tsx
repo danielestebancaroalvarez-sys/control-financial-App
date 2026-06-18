@@ -4,6 +4,7 @@ import { getMainAppContextWithPeriod } from '@/lib/app/context'
 import { getDashboardSummary, getPredictionsSummary } from '@/lib/finance/queries'
 import { buildProactiveInsight } from '@/lib/insights/proactive-insight'
 import { processDueRecurringSchedules } from '@/lib/finance/recurring'
+import { processDueSavingsContributions } from '@/lib/finance/savings-recurring'
 import { getFirstName } from '@/lib/utils/name'
 import { DashboardView } from '@/components/dashboard/dashboard-view'
 
@@ -19,7 +20,10 @@ export default async function DashboardPage({
   if (!ctx) redirect('/login')
 
   after(async () => {
-    await processDueRecurringSchedules()
+    await Promise.all([
+      processDueRecurringSchedules(),
+      processDueSavingsContributions(),
+    ])
   })
 
   const periodOffset = Math.max(

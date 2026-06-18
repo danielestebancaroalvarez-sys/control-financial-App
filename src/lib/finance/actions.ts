@@ -464,6 +464,12 @@ export async function createSavingsGoal(
       target_date: input.targetDate ?? null,
       contribution_amount: input.contributionAmount ?? null,
       contribution_frequency: input.contributionFrequency ?? null,
+      auto_contribute: input.contributionAmount
+        ? (input.autoContribute ?? false)
+        : false,
+      next_contribution: input.contributionAmount
+        ? (input.nextContribution ?? getTodayString())
+        : null,
       savings_mode: input.savingsMode ?? 'static',
       annual_interest_rate: input.annualInterestRate ?? 0,
     })
@@ -506,6 +512,12 @@ export async function updateSavingsGoal(
       target_date: input.targetDate ?? null,
       contribution_amount: input.contributionAmount ?? null,
       contribution_frequency: input.contributionFrequency ?? null,
+      auto_contribute: input.contributionAmount
+        ? (input.autoContribute ?? false)
+        : false,
+      next_contribution: input.contributionAmount
+        ? (input.nextContribution ?? getTodayString())
+        : null,
       savings_mode: input.savingsMode ?? 'static',
       annual_interest_rate:
         input.savingsMode === 'compound' ? (input.annualInterestRate ?? 0) : 0,

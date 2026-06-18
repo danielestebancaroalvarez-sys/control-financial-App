@@ -124,6 +124,8 @@ export type SavingsGoal = {
   target_date: string | null
   contribution_amount: number | null
   contribution_frequency: 'weekly' | 'monthly' | null
+  auto_contribute: boolean
+  next_contribution: string | null
   savings_mode: 'static' | 'compound'
   annual_interest_rate: number | null
   is_active: boolean
@@ -277,6 +279,8 @@ export type CreateSavingsGoalInput = {
   targetDate?: string
   contributionAmount?: number
   contributionFrequency?: 'weekly' | 'monthly'
+  autoContribute?: boolean
+  nextContribution?: string
   savingsMode?: 'static' | 'compound'
   annualInterestRate?: number
 }

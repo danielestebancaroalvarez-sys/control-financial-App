@@ -7,18 +7,25 @@ export function PaymentModeSelector({
   value,
   onChange,
   scheduleType,
+  variant = 'schedule',
 }: {
   value: PaymentMode
   onChange: (mode: PaymentMode) => void
-  scheduleType: 'income' | 'expense'
+  scheduleType?: 'income' | 'expense'
+  variant?: 'schedule' | 'savings'
 }) {
-  const isExpense = scheduleType === 'expense'
+  const isSavings = variant === 'savings'
+  const isExpense = scheduleType !== 'income'
+
+  const title = isSavings
+    ? '¿Cómo harás el aporte?'
+    : isExpense
+      ? '¿Cómo se paga este gasto?'
+      : '¿Cómo entra este ingreso?'
 
   return (
     <div className="space-y-2">
-      <p className="text-[11px] font-semibold text-cc-secondary">
-        {isExpense ? '¿Cómo se paga este gasto?' : '¿Cómo entra este ingreso?'}
-      </p>
+      <p className="text-[11px] font-semibold text-cc-secondary">{title}</p>
       <div className="grid grid-cols-1 gap-2">
         <button
           type="button"
@@ -33,11 +40,15 @@ export function PaymentModeSelector({
             <Zap className="w-4 h-4" />
           </div>
           <div className="min-w-0">
-            <p className="text-[12px] font-bold text-cc-primary">Débito automático</p>
+            <p className="text-[12px] font-bold text-cc-primary">
+              {isSavings ? 'Ahorro automático' : 'Débito automático'}
+            </p>
             <p className="text-[10px] text-cc-secondary mt-0.5">
-              {isExpense
-                ? 'Suscripciones y domiciliaciones: se marcan pagadas en la fecha programada.'
-                : 'Ingreso recurrente: se registra solo en la fecha programada.'}
+              {isSavings
+                ? 'Se registra el aporte en la fecha programada y actualiza la meta.'
+                : isExpense
+                  ? 'Suscripciones y domiciliaciones: se marcan pagadas en la fecha programada.'
+                  : 'Ingreso recurrente: se registra solo en la fecha programada.'}
             </p>
           </div>
         </button>
@@ -54,11 +65,15 @@ export function PaymentModeSelector({
             <Bell className="w-4 h-4" />
           </div>
           <div className="min-w-0">
-            <p className="text-[12px] font-bold text-cc-primary">Recordatorio de pago</p>
+            <p className="text-[12px] font-bold text-cc-primary">
+              {isSavings ? 'Recordatorio de aporte' : 'Recordatorio de pago'}
+            </p>
             <p className="text-[10px] text-cc-secondary mt-0.5">
-              {isExpense
-                ? 'Arriendo, transferencias manuales: te avisa y debes registrar el pago.'
-                : 'Te recordamos y debes confirmar cuando recibas el ingreso.'}
+              {isSavings
+                ? 'Te avisamos cuando toque aportar; debes registrarlo manualmente.'
+                : isExpense
+                  ? 'Arriendo, transferencias manuales: te avisa y debes registrar el pago.'
+                  : 'Te recordamos y debes confirmar cuando recibas el ingreso.'}
             </p>
           </div>
         </button>

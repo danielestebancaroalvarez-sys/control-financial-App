@@ -95,6 +95,8 @@ export const getSavingsGoals = cache(
       target_date: g.target_date,
       contribution_amount: g.contribution_amount ? Number(g.contribution_amount) : null,
       contribution_frequency: g.contribution_frequency,
+      auto_contribute: g.auto_contribute ?? false,
+      next_contribution: g.next_contribution,
       savings_mode: g.savings_mode,
       annual_interest_rate: g.annual_interest_rate
         ? Number(g.annual_interest_rate)

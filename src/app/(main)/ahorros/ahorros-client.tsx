@@ -8,13 +8,19 @@ import {
   updateSavingsGoal,
   deleteSavingsGoal,
 } from '@/lib/finance/actions'
-import { formatMoney } from '@/lib/finance/format'
+import { formatMoney, getTodayString } from '@/lib/finance/format'
 import { formatEstimatedTime } from '@/lib/finance/savings'
+import {
+  autoRegisterToMode,
+  modeToAutoRegister,
+  type PaymentMode,
+} from '@/lib/finance/payment-mode'
 import { SavingsCategoryPicker } from '@/components/savings/savings-category-picker'
 import { SavingsSimulationCollapsible } from '@/components/savings/savings-simulation-collapsible'
 import { SavingsContributionButton } from '@/components/savings/savings-contribution-sheet'
 import { formToSavingsGoalInput } from '@/components/savings/savings-projection-chart'
 import { CategoryIcon } from '@/components/transactions/category-icon'
+import { PaymentModeBadge, PaymentModeSelector } from '@/components/transactions/payment-mode-selector'
 import {
   DEFAULT_SAVINGS_CATEGORY,
   getSavingsCategory,
@@ -31,6 +37,8 @@ type FormState = {
   current: string
   contribution: string
   contributionFrequency: 'weekly' | 'monthly'
+  contributionMode: PaymentMode
+  contributionStartDate: string
   mode: 'static' | 'compound'
   rate: string
   targetDate: string
@@ -43,6 +51,8 @@ const emptyForm = (): FormState => ({
   current: '0',
   contribution: '',
   contributionFrequency: 'monthly',
+  contributionMode: 'reminder',
+  contributionStartDate: getTodayString(),
   mode: 'static',
   rate: '',
   targetDate: '',
@@ -59,6 +69,8 @@ function goalToForm(goal: SavingsGoal): FormState {
     current: String(goal.current_amount),
     contribution: goal.contribution_amount ? String(goal.contribution_amount) : '',
     contributionFrequency: goal.contribution_frequency ?? 'monthly',
+    contributionMode: autoRegisterToMode(goal.auto_contribute),
+    contributionStartDate: goal.next_contribution ?? getTodayString(),
     mode: goal.savings_mode,
     rate: goal.annual_interest_rate
       ? String(goal.annual_interest_rate * 100)
@@ -137,6 +149,12 @@ function SavingsGoalForm({
         : undefined,
       contributionFrequency: form.contribution
         ? form.contributionFrequency
+        : undefined,
+      autoContribute: form.contribution
+        ? modeToAutoRegister(form.contributionMode)
+        : undefined,
+      nextContribution: form.contribution
+        ? form.contributionStartDate
         : undefined,
       savingsMode: form.mode,
       annualInterestRate:
@@ -232,6 +250,28 @@ function SavingsGoalForm({
           </select>
         </Field>
       </div>
+
+      {form.contribution && parseFloat(form.contribution) > 0 && (
+        <>
+          <Field
+            label="Fecha del primer aporte"
+            hint="Día en que se repite el aporte según la frecuencia"
+          >
+            <input
+              type="date"
+              value={form.contributionStartDate}
+              onChange={e => set('contributionStartDate', e.target.value)}
+              className="w-full px-4 py-3 rounded-xl bg-[#F5F5F5] text-[14px] outline-none"
+            />
+          </Field>
+
+          <PaymentModeSelector
+            variant="savings"
+            value={form.contributionMode}
+            onChange={mode => setForm(prev => ({ ...prev, contributionMode: mode }))}
+          />
+        </>
+      )}
 
       <Field label="Fecha objetivo (opcional)" hint="Cuándo te gustaría lograrlo">
         <input
@@ -438,8 +478,11 @@ export function AhorrosClient({
                     <CategoryIcon icon={goal.icon} className="w-5 h-5" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[16px] font-bold text-cc-primary truncate">
+                    <p className="text-[16px] font-bold text-cc-primary truncate flex items-center gap-1.5 flex-wrap">
                       {goal.name}
+                      {goal.contribution_amount && goal.contribution_amount > 0 && (
+                        <PaymentModeBadge autoRegister={goal.auto_contribute} />
+                      )}
                     </p>
                     <p className="text-[11px] text-cc-secondary mt-0.5">
                       {savingsCat.label}
@@ -505,6 +548,7 @@ export function AhorrosClient({
                 <p className="text-[11px] text-cc-secondary mt-2">
                   Aporte: {fmt(goal.contribution_amount)}{' '}
                   {goal.contribution_frequency === 'weekly' ? 'semanal' : 'mensual'}
+                  {goal.auto_contribute ? ' · automático' : ' · recordatorio'}
                   {goal.savings_mode === 'compound' &&
                     goal.annual_interest_rate &&
                     ` · ${(goal.annual_interest_rate * 100).toFixed(1)}% anual`}

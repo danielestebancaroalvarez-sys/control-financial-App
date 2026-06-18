@@ -46,6 +46,7 @@ export function buildInAppNotifications(
 
   for (const payment of payload.formattedPayments) {
     const isTomorrow = payment.dueDate === tomorrowStr
+    const href = payment.href ?? '/predicciones'
     items.push({
       id: `payment-${payment.id}`,
       type: isTomorrow ? 'payment-tomorrow' : 'payment-upcoming',
@@ -53,7 +54,7 @@ export function buildInAppNotifications(
       body: `${payment.amountLabel} · ${payment.dueDateLabel}${
         payment.categoryName ? ` · ${payment.categoryName}` : ''
       }`,
-      href: '/predicciones',
+      href,
       dueDate: payment.dueDate,
       createdAt: now,
     })

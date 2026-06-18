@@ -22,6 +22,7 @@ export type PaymentReminderPayload = {
     dueDate: string
     dueDateLabel: string
     categoryName: string | null
+    href: string
   }[]
 }
 
@@ -40,6 +41,17 @@ export async function getPaymentReminderPayload(): Promise<PaymentReminderPayloa
     .eq('type', 'expense')
     .eq('auto_register', false)
 
+  const { data: savingsData } = await supabase
+    .from('savings_goals')
+    .select(
+      'id, name, contribution_amount, contribution_frequency, next_contribution'
+    )
+    .eq('household_id', ctx.household.id)
+    .eq('is_active', true)
+    .eq('auto_contribute', false)
+    .not('contribution_amount', 'is', null)
+    .gt('contribution_amount', 0)
+
   const { start, end } = getNextPeriodRange('weekly')
   const currency = ctx.household.base_currency
 
@@ -57,11 +69,27 @@ export async function getPaymentReminderPayload(): Promise<PaymentReminderPayloa
 
   const payments = listPaymentDueDates(recurring, start, end)
 
+  const savingsRecurring = (savingsData ?? [])
+    .filter(g => g.next_contribution && g.contribution_frequency)
+    .map(g => ({
+      id: g.id,
+      description: `Aporte: ${g.name}`,
+      amount_original: g.contribution_amount,
+      frequency: g.contribution_frequency as string,
+      next_occurrence: g.next_contribution as string,
+      categories: null,
+    }))
+
+  const savingsPayments = listPaymentDueDates(savingsRecurring, start, end)
+  const allPayments = [...payments, ...savingsPayments].sort((a, b) =>
+    a.dueDate.localeCompare(b.dueDate)
+  )
+
   return {
     nextWeekStart: start,
     nextWeekEnd: end,
-    payments,
-    formattedPayments: payments.map(p => ({
+    payments: allPayments,
+    formattedPayments: allPayments.map(p => ({
       id: p.id,
       scheduleId: p.scheduleId,
       name: p.name,
@@ -69,6 +97,7 @@ export async function getPaymentReminderPayload(): Promise<PaymentReminderPayloa
       dueDate: p.dueDate,
       dueDateLabel: formatReminderDate(p.dueDate),
       categoryName: p.categoryName,
+      href: p.name.startsWith('Aporte:') ? '/ahorros' : '/predicciones',
     })),
   }
 }
