@@ -1,11 +1,14 @@
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { createClient } from '@/utils/supabase/server'
 
-export async function processDueRecurringSchedules(): Promise<{
+export async function processDueRecurringSchedules(
+  supabase?: SupabaseClient
+): Promise<{
   processed: number
   error?: string
 }> {
-  const supabase = await createClient()
-  const { data, error } = await supabase.rpc('process_due_recurring_schedules')
+  const client = supabase ?? (await createClient())
+  const { data, error } = await client.rpc('process_due_recurring_schedules')
 
   if (error) {
     return { processed: 0, error: error.message }

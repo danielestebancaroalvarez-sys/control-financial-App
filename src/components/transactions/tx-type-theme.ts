@@ -39,17 +39,17 @@ export const TX_TYPE_THEME = {
       'No crea un movimiento hoy: programa el gasto para el radar y el presupuesto (arriendo, servicios, suscripciones…).',
     gradient: 'from-[#D4737E] to-[#E8A8B5]',
     solid: 'bg-[#D4737E]',
-    text: 'text-[#9B6B78] dark:text-[#EBBEC8]',
-    ring: 'ring-[#E8A8B5]/40',
+    text: 'text-[#9B6B78] dark:text-[#f9a8c4]',
+    ring: 'ring-[#EC4899]/40',
     chipActive: 'bg-[#D4737E] text-white shadow-md',
     chipIdle:
-      'bg-[#FCEEF2] text-[#9B6B78] border border-[#F5DDE4] dark:bg-[#3a2228] dark:text-[#EBBEC8] dark:border-[#5a3a42]',
+      'bg-[#FCEEF2] text-[#9B6B78] border border-[#F5DDE4] dark:bg-[#243034] dark:text-[#f9a8c4] dark:border-[#EC4899]/25',
     cardActive:
-      'border-[#D4737E] bg-[#FFF5F7] dark:bg-[#3a2228] dark:border-[#9B6B78] ring-2 ring-[#E8A8B5]/25',
+      'border-[#D4737E] bg-[#FFF5F7] dark:bg-[#1e2830] dark:border-[#EC4899]/50 ring-2 ring-[#EC4899]/25',
     cardIdle: 'border-[var(--cc-border)] cc-surface-muted',
     submit:
-      'bg-gradient-to-r from-[#D4737E] to-[#E8A8B5] shadow-lg shadow-[#D4737E]/35',
-    focus: 'focus:ring-[#E8A8B5]/30',
+      'bg-gradient-to-r from-[#D4737E] to-[#E8A8B5] shadow-lg shadow-[#EC4899]/25',
+    focus: 'focus:ring-[#EC4899]/30',
     savedMessage: 'Gasto guardado',
     savedFixedMessage: 'Gasto fijo programado',
   },

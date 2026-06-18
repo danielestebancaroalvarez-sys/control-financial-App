@@ -1,54 +1,44 @@
 'use client'
 
 import Link from 'next/link'
-import { CalendarClock, Repeat, ShoppingBag } from 'lucide-react'
+import { CalendarClock, HelpCircle, Repeat, ShoppingBag, TrendingUp } from 'lucide-react'
 import { ConsumptionPredictionCard } from '@/components/predictions/consumption-prediction-card'
-import { CategoryIcon } from '@/components/transactions/category-icon'
-import { formatMoney, formatFrequency, formatShortDate, getPeriodLabels } from '@/lib/finance/format'
-import type { FixedServiceStatus, PredictionsSummary } from '@/lib/finance/types'
+import { PaymentRadarRow } from '@/components/predictions/payment-radar-row'
+import { CollapsibleSection } from '@/components/ui/collapsible-section'
+import { formatMoney, getPeriodLabels } from '@/lib/finance/format'
+import type { PredictionsSummary } from '@/lib/finance/types'
 import type { CurrencyCode } from '@/lib/household/types'
+import { useState } from 'react'
 
-function paymentStatusUi(payment: FixedServiceStatus): {
-  badge: string
-  badgeClass: string
-  detail: string | null
-} {
-  if (payment.status === 'paid') {
-    if (payment.assumedPaid && payment.autoRegister) {
-      return {
-        badge: 'Pagado',
-        badgeClass: 'bg-[#E8F5E9] text-[#2E7D32]',
-        detail: payment.dueDate
-          ? `Débito automático el ${formatShortDate(payment.dueDate)}`
-          : 'Marcado por débito automático',
-      }
-    }
-    return {
-      badge: 'Pagado',
-      badgeClass: 'bg-[#E8F5E9] text-[#2E7D32]',
-      detail: payment.paidDate
-        ? `Registrado el ${formatShortDate(payment.paidDate)}`
-        : 'Pago detectado en la app',
-    }
-  }
+function PaymentsHelp() {
+  const [open, setOpen] = useState(false)
 
-  if (payment.status === 'overdue') {
-    return {
-      badge: 'Sin pagar',
-      badgeClass: 'bg-[#FFEBEE] text-[#C62828]',
-      detail: payment.dueDate
-        ? `Debía pagarse el ${formatShortDate(payment.dueDate)} · no hay registro`
-        : 'No hay registro del pago en la app',
-    }
-  }
-
-  return {
-    badge: 'Por pagar',
-    badgeClass: 'bg-[#FFF8E1] text-[#F59E0B]',
-    detail: payment.dueDate
-      ? `Vence el ${formatShortDate(payment.dueDate)}`
-      : 'Aún no se registra el pago',
-  }
+  return (
+    <span className="relative inline-flex">
+      <button
+        type="button"
+        onClick={() => setOpen(v => !v)}
+        className="w-5 h-5 rounded-full cc-surface-muted flex items-center justify-center text-cc-muted"
+        aria-label="Ayuda sobre estados de pago"
+      >
+        <HelpCircle className="w-3.5 h-3.5" />
+      </button>
+      {open && (
+        <>
+          <button
+            type="button"
+            className="fixed inset-0 z-40"
+            aria-label="Cerrar ayuda"
+            onClick={() => setOpen(false)}
+          />
+          <span className="absolute left-0 top-6 z-50 w-56 p-3 rounded-xl cc-surface-solid border border-[var(--cc-border)] shadow-lg text-[10px] text-cc-secondary leading-relaxed">
+            Débito automático: se marca pagado en la fecha. Recordatorio: pagado si
+            hay gasto registrado; sin pagar si pasó la fecha sin registro.
+          </span>
+        </>
+      )}
+    </span>
+  )
 }
 
 export function PrediccionesClient({
@@ -61,10 +51,29 @@ export function PrediccionesClient({
   const fmt = (n: number) => formatMoney(n, currency)
   const labels = getPeriodLabels(summary.period)
 
+  const pendingCount = summary.currentPeriodPayments.filter(
+    p => p.status === 'pending' || p.status === 'overdue'
+  ).length
+  const paidCount = summary.currentPeriodPayments.filter(p => p.status === 'paid').length
+  const paymentsSummary =
+    summary.currentPeriodPayments.length === 0
+      ? 'Sin pagos programados'
+      : `${pendingCount} pendiente${pendingCount === 1 ? '' : 's'} · ${paidCount} pagado${paidCount === 1 ? '' : 's'}`
+
+  const topConsumption = summary.consumptionPredictions.reduce(
+    (best, p) =>
+      Math.abs(p.percentVsAverage) > Math.abs(best?.percentVsAverage ?? 0) ? p : best,
+    summary.consumptionPredictions[0]
+  )
+  const consumptionHasAlert = topConsumption && Math.abs(topConsumption.percentVsAverage) > 5
+  const consumptionSummary = topConsumption
+    ? `${topConsumption.categoryName}: ${topConsumption.percentVsAverage > 0 ? '+' : ''}${topConsumption.percentVsAverage}% vs promedio`
+    : undefined
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div>
-        <h1 className="text-[22px] font-bold text-cc-primary">Radar y Predicciones</h1>
+        <h1 className="text-[22px] font-bold text-cc-primary">Radar</h1>
         <p className="text-[13px] text-cc-secondary">
           {labels.current} · {summary.currentPeriodStart} → {summary.currentPeriodEnd}
         </p>
@@ -72,163 +81,92 @@ export function PrediccionesClient({
 
       <Link
         href="/fijos"
-        className="flex items-center justify-between gap-3 cc-surface rounded-[24px] px-5 py-4 active:opacity-80"
+        className="flex items-center justify-between gap-2 text-[12px] font-semibold text-[#00BFA5] px-1 py-1"
       >
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="w-10 h-10 rounded-xl bg-[#E0F2F1] flex items-center justify-center shrink-0">
-            <Repeat className="w-5 h-5 text-[#00BFA5]" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-[14px] font-bold text-cc-primary">
-              Ingresos y gastos fijos
-            </p>
-            <p className="text-[11px] text-cc-secondary truncate">
-              Ver y gestionar lo programado {labels.ofPeriod}
-            </p>
-          </div>
-        </div>
-        <span className="text-[12px] font-semibold text-[#00BFA5] shrink-0">
-          Ver →
+        <span className="flex items-center gap-2">
+          <Repeat className="w-4 h-4" />
+          Gestionar ingresos y gastos fijos
         </span>
+        <span>→</span>
       </Link>
 
-      {summary.consumptionPredictions.length > 0 && (
-        <section className="space-y-3">
-          <div>
-            <h2 className="text-[14px] font-bold text-cc-primary">Predicción de consumo</h2>
-            <p className="text-[11px] text-cc-secondary mt-0.5">
-              Mercado, restaurantes y transporte al ritmo actual del periodo
-            </p>
-          </div>
-          {summary.consumptionPredictions.map(prediction => (
-            <ConsumptionPredictionCard
-              key={prediction.categoryName}
-              prediction={prediction}
-              formatValue={fmt}
-            />
-          ))}
-        </section>
-      )}
-
-      <section className="cc-surface rounded-[24px] p-5">
-        <h2 className="text-[14px] font-bold text-cc-primary mb-1 flex items-center gap-2">
-          <CalendarClock className="w-4 h-4 text-[#00BFA5]" />
-          Pagos de {labels.current}
-        </h2>
-        <p className="text-[11px] text-cc-secondary mb-4">
-          Gastos fijos del periodo. Débito automático = se marca pagado en la fecha.
-          Recordatorio = Pagado si hay gasto registrado; Sin pagar si pasó la fecha sin registro.
-        </p>
+      <CollapsibleSection
+        title={`Pagos de ${labels.current}`}
+        summary={paymentsSummary}
+        icon={<CalendarClock className="w-4 h-4 text-[#00BFA5]" />}
+        badge={<PaymentsHelp />}
+        defaultOpen
+      >
         {summary.currentPeriodPayments.length === 0 ? (
-          <p className="text-[13px] text-cc-secondary">
-            Configura gastos fijos en Nuevo → programación fija, o en la sección de fijos.
+          <p className="text-[13px] text-cc-secondary pt-2">
+            Configura gastos fijos en Nuevo o en la sección de fijos.
           </p>
         ) : (
-          <ul className="space-y-3">
-            {summary.currentPeriodPayments.map(payment => {
-              const status = paymentStatusUi(payment)
-              return (
-                <li
-                  key={payment.id}
-                  className="flex items-center gap-3 p-3 rounded-2xl bg-[#F5F5F5]"
-                >
-                  <div
-                    className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-white"
-                    style={{ color: '#636E72' }}
-                  >
-                    <CategoryIcon icon={payment.categoryIcon} className="w-4 h-4" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[14px] font-semibold text-cc-primary">{payment.name}</p>
-                    <p className="text-[11px] text-cc-secondary">
-                      {payment.categoryName && <span>{payment.categoryName} · </span>}
-                      {fmt(payment.amount)}
-                      {payment.occurrences && payment.occurrences > 1 && (
-                        <> · {formatFrequency(payment.frequency, payment.occurrences)}</>
-                      )}
-                    </p>
-                    {status.detail && (
-                      <p
-                        className={`text-[10px] mt-0.5 ${
-                          payment.status === 'overdue'
-                            ? 'text-[#C62828] font-medium'
-                            : payment.status === 'paid'
-                              ? 'text-[#2E7D32]'
-                              : 'text-cc-muted'
-                        }`}
-                      >
-                        {status.detail}
-                      </p>
-                    )}
-                  </div>
-                  <span
-                    className={`text-[11px] font-bold px-2 py-1 rounded-lg shrink-0 ${status.badgeClass}`}
-                  >
-                    {status.badge}
-                  </span>
-                </li>
-              )
-            })}
-          </ul>
-        )}
-      </section>
-
-      {summary.upcomingPayments.length > 0 && (
-        <section className="cc-surface rounded-[24px] p-5">
-          <h2 className="text-[14px] font-bold text-cc-primary mb-3 flex items-center gap-2">
-            <CalendarClock className="w-4 h-4 text-[#00BFA5]" />
-            Vista {labels.next}
-          </h2>
-          <ul className="space-y-2">
-            {summary.upcomingPayments.slice(0, 5).map(payment => (
-              <li
-                key={`next-${payment.id}`}
-                className="flex items-center gap-3 p-3 rounded-2xl bg-[#F5F5F5]"
-              >
-                <div
-                  className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-white"
-                  style={{ color: '#636E72' }}
-                >
-                  <CategoryIcon icon={payment.categoryIcon} className="w-4 h-4" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[13px] font-semibold text-cc-primary truncate">
-                    {payment.name}
-                  </p>
-                  <p className="text-[11px] text-cc-secondary">
-                    {payment.categoryName && <span>{payment.categoryName} · </span>}
-                    {fmt(payment.amount)}
-                    {payment.dueDate && (
-                      <> · vence {formatShortDate(payment.dueDate)}</>
-                    )}
-                  </p>
-                </div>
-                <span className="text-[11px] font-bold px-2 py-1 rounded-lg bg-[#E0F2F1] text-[#00BFA5] shrink-0">
-                  Próximo
-                </span>
-              </li>
+          <ul className="space-y-2 pt-2">
+            {summary.currentPeriodPayments.map(payment => (
+              <PaymentRadarRow
+                key={payment.id}
+                payment={payment}
+                formatValue={fmt}
+                variant="current"
+              />
             ))}
           </ul>
-        </section>
+        )}
+
+        {summary.upcomingPayments.length > 0 && (
+          <>
+            <p className="text-[11px] font-bold text-cc-primary mt-4 mb-2">
+              {labels.next}
+            </p>
+            <ul className="space-y-2">
+              {summary.upcomingPayments.slice(0, 5).map(payment => (
+                <PaymentRadarRow
+                  key={`next-${payment.id}`}
+                  payment={payment}
+                  formatValue={fmt}
+                  variant="upcoming"
+                />
+              ))}
+            </ul>
+          </>
+        )}
+      </CollapsibleSection>
+
+      {summary.consumptionPredictions.length > 0 && (
+        <CollapsibleSection
+          title="Consumo al ritmo actual"
+          summary={consumptionSummary}
+          icon={<TrendingUp className="w-4 h-4 text-[#EC4899]" />}
+          defaultOpen={consumptionHasAlert}
+        >
+          <div className="space-y-2 pt-2">
+            {summary.consumptionPredictions.map(prediction => (
+              <ConsumptionPredictionCard
+                key={prediction.categoryName}
+                prediction={prediction}
+                formatValue={fmt}
+                compact
+              />
+            ))}
+          </div>
+        </CollapsibleSection>
       )}
 
-      <section className="cc-surface rounded-[24px] p-5">
-        <div className="flex items-center gap-2 mb-2">
-          <ShoppingBag className="w-4 h-4 text-[#00BFA5]" />
-          <h2 className="text-[14px] font-bold text-cc-primary">Mercado inteligente</h2>
-        </div>
-        <p className="text-[13px] text-cc-secondary mb-4">
-          Gasto semanal, cuánto llevas en carne o aseo, frecuencia de compra y una lista
-          sugerida según tu historial de Mercado.
-        </p>
+      <CollapsibleSection
+        title="Mercado"
+        summary="Análisis de compras y lista sugerida"
+        icon={<ShoppingBag className="w-4 h-4 text-[#00BFA5]" />}
+        defaultOpen={false}
+      >
         <Link
           href="/mercado"
-          className="inline-flex w-full items-center justify-center gap-2 py-3 rounded-xl bg-[#00BFA5] text-white font-bold text-[13px]"
+          className="inline-flex w-full items-center justify-center gap-2 py-3 mt-2 rounded-xl bg-[#00BFA5] text-white font-bold text-[13px]"
         >
           <ShoppingBag className="w-4 h-4" />
           Ver análisis de mercado
         </Link>
-      </section>
+      </CollapsibleSection>
     </div>
   )
 }

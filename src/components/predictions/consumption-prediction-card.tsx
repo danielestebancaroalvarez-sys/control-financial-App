@@ -17,10 +17,10 @@ export function ConsumptionPredictionCard({
   const TrendIcon = isOver ? TrendingUp : isUnder ? TrendingDown : Minus
   const trendColor = isOver ? 'text-[#E53935]' : isUnder ? 'text-[#00BFA5]' : 'text-cc-secondary'
   const trendBg = isOver
-    ? 'bg-[#FFEBEE]'
+    ? 'bg-[#FFEBEE] dark:bg-[#3a2228]'
     : isUnder
-      ? 'bg-[#E0F2F1]'
-      : 'bg-[#F5F5F5]'
+      ? 'bg-[#E0F2F1] dark:bg-[#1a3330]'
+      : 'cc-surface-muted'
 
   return (
     <div className={`rounded-2xl ${trendBg} p-4 space-y-3`}>
@@ -43,20 +43,20 @@ export function ConsumptionPredictionCard({
       </div>
 
       <div className={`grid ${compact ? 'grid-cols-2' : 'grid-cols-3'} gap-2`}>
-        <div className="p-2 rounded-xl bg-white/70">
+        <div className="p-2 rounded-xl cc-surface">
           <p className="text-[10px] text-cc-secondary">Llevas</p>
           <p className="text-[14px] font-bold text-cc-primary">
             {formatValue(prediction.spentSoFar)}
           </p>
         </div>
-        <div className="p-2 rounded-xl bg-white/70">
+        <div className="p-2 rounded-xl cc-surface">
           <p className="text-[10px] text-cc-secondary">Proyectado</p>
           <p className="text-[14px] font-bold text-cc-primary">
             {formatValue(prediction.projectedTotal)}
           </p>
         </div>
         {!compact && (
-          <div className="p-2 rounded-xl bg-white/70">
+          <div className="p-2 rounded-xl cc-surface">
             <p className="text-[10px] text-cc-secondary">Promedio</p>
             <p className="text-[14px] font-bold text-cc-secondary">
               {formatValue(prediction.historicalAverage)}

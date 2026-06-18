@@ -6,6 +6,7 @@ import { buildProactiveInsight } from '@/lib/insights/proactive-insight'
 import { processDueRecurringSchedules } from '@/lib/finance/recurring'
 import { processDueSavingsContributions } from '@/lib/finance/savings-recurring'
 import { getFirstName } from '@/lib/utils/name'
+import { createClient } from '@/utils/supabase/server'
 import { DashboardView } from '@/components/dashboard/dashboard-view'
 
 type SearchParams = Promise<{ block?: string }>
@@ -19,10 +20,11 @@ export default async function DashboardPage({
   const ctx = await getMainAppContextWithPeriod()
   if (!ctx) redirect('/login')
 
+  const supabase = await createClient()
   after(async () => {
     await Promise.all([
-      processDueRecurringSchedules(),
-      processDueSavingsContributions(),
+      processDueRecurringSchedules(supabase),
+      processDueSavingsContributions(supabase),
     ])
   })
 
