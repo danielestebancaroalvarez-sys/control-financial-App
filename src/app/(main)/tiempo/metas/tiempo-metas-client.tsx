@@ -1,19 +1,22 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2, Plus, Target, Trash2 } from 'lucide-react'
+import { ImagePlus, Loader2, Plus, Target, Trash2, X } from 'lucide-react'
 import { GoalProgressRing, GoalProgressSummary, GoalTimeline } from '@/components/time/goal-timeline'
 import { FormField, FormSection } from '@/components/time/form-field'
+import { UserAvatar } from '@/components/profile/user-avatar'
 import {
   addGoalStep,
   createProductivityGoal,
   deleteGoalStep,
   deleteProductivityGoal,
   toggleGoalStep,
+  uploadProductivityGoalImage,
 } from '@/lib/time/actions'
 import { formatShortDate } from '@/lib/time/format'
 import { TIME_THEME } from '@/lib/time/theme'
+import { compressReceiptImage } from '@/lib/receipts/compress-image'
 import type { GoalStepType, ProductivityGoal } from '@/lib/time/types'
 import type { HouseholdMember } from '@/lib/household/types'
 
@@ -24,18 +27,25 @@ type DraftStep = {
   minutes: string
 }
 
+type GoalFilter = 'all' | 'mine' | 'completed' | string
+
 const inputClass = `w-full px-4 py-3 rounded-xl cc-input text-[14px] outline-none ${TIME_THEME.focus}`
 
 export function TiempoMetasClient({
   goals: initialGoals,
   householdId,
+  members,
+  currentUserId,
 }: {
   goals: ProductivityGoal[]
   householdId: string
   members: HouseholdMember[]
+  currentUserId: string
 }) {
   const router = useRouter()
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [goals, setGoals] = useState(initialGoals)
+  const [filter, setFilter] = useState<GoalFilter>('all')
 
   useEffect(() => {
     setGoals(initialGoals)
@@ -45,6 +55,8 @@ export function TiempoMetasClient({
   const [title, setTitle] = useState('')
   const [vision, setVision] = useState('')
   const [targetDate, setTargetDate] = useState('')
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [imageFile, setImageFile] = useState<File | null>(null)
   const [draftSteps, setDraftSteps] = useState<DraftStep[]>([
     { title: '', stepType: 'milestone', dueDate: '', minutes: '' },
   ])
@@ -58,6 +70,31 @@ export function TiempoMetasClient({
     minutes: '',
   })
   const [error, setError] = useState<string | null>(null)
+
+  const filteredGoals = useMemo(() => {
+    return goals.filter(goal => {
+      if (filter === 'completed') return goal.percent >= 100
+      if (filter === 'mine') return goal.createdBy === currentUserId
+      if (filter === 'all') return goal.percent < 100
+      if (filter.startsWith('user:')) {
+        const userId = filter.slice(5)
+        return goal.createdBy === userId
+      }
+      return true
+    })
+  }, [goals, filter, currentUserId])
+
+  async function handleImagePick(file: File) {
+    const compressed = await compressReceiptImage(file)
+    setImageFile(new File([compressed], file.name, { type: compressed.type || 'image/jpeg' }))
+    setImagePreview(URL.createObjectURL(compressed))
+  }
+
+  function clearImage() {
+    setImageFile(null)
+    setImagePreview(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault()
@@ -88,10 +125,22 @@ export function TiempoMetasClient({
       return
     }
 
+    if (result.id && imageFile) {
+      const fd = new FormData()
+      fd.append('file', imageFile)
+      const upload = await uploadProductivityGoalImage(householdId, result.id, fd)
+      if (upload.error) {
+        setError(upload.error)
+        setLoading(false)
+        return
+      }
+    }
+
     setShowForm(false)
     setTitle('')
     setVision('')
     setTargetDate('')
+    clearImage()
     setDraftSteps([{ title: '', stepType: 'milestone', dueDate: '', minutes: '' }])
     setLoading(false)
     router.refresh()
@@ -178,8 +227,8 @@ export function TiempoMetasClient({
           onChange={e => onChange({ ...step, title: e.target.value })}
           placeholder={
             step.stepType === 'milestone'
-              ? 'Ej: Inscribirme a la universidad'
-              : 'Ej: Llamar a admisiones'
+              ? 'Ej: Reservar cita con el banco'
+              : 'Ej: Buscar comparativas de préstamos'
           }
           className={inputClass}
         />
@@ -211,6 +260,16 @@ export function TiempoMetasClient({
     )
   }
 
+  const filterOptions: { id: GoalFilter; label: string }[] = [
+    { id: 'all', label: 'Activas' },
+    { id: 'mine', label: 'Mías' },
+    ...members.map(m => ({
+      id: `user:${m.user_id}` as GoalFilter,
+      label: m.full_name?.split(' ')[0] ?? 'Miembro',
+    })),
+    { id: 'completed', label: 'Completadas' },
+  ]
+
   return (
     <div className="space-y-4">
       <div>
@@ -219,10 +278,32 @@ export function TiempoMetasClient({
           Metas y proyectos
         </h1>
         <p className="text-[12px] text-cc-secondary mt-0.5">
-          Planifica tu futuro con hitos en el tiempo. Ej: Ser profesional → inscripción (3 meses) →
-          titulación (3 años).
+          Organiza proyectos del hogar con hitos claros. Ej: Renovar el baño → pedir presupuestos
+          (2 semanas) → elegir albañil (1 mes).
         </p>
       </div>
+
+      {goals.length > 0 && (
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none -mx-1 px-1">
+          {filterOptions.map(opt => {
+            const active = filter === opt.id
+            return (
+              <button
+                key={opt.id}
+                type="button"
+                onClick={() => setFilter(opt.id)}
+                className={`shrink-0 px-3.5 py-2 rounded-xl text-[11px] font-bold transition-all ${
+                  active
+                    ? 'bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white'
+                    : 'cc-surface-muted text-cc-secondary'
+                }`}
+              >
+                {opt.label}
+              </button>
+            )
+          })}
+        </div>
+      )}
 
       {!showForm ? (
         <button
@@ -237,7 +318,7 @@ export function TiempoMetasClient({
         <form onSubmit={handleCreate} className="cc-surface rounded-[24px] p-4 space-y-4">
           <FormField
             label="Nombre de la meta"
-            hint="Ej: Ser profesional en mi área, Aprender inglés, Comprar casa."
+            hint="Ej: Ahorrar para vacaciones, Arreglar el coche, Curso de cocina."
             required
           >
             <input
@@ -248,6 +329,43 @@ export function TiempoMetasClient({
               className={inputClass}
             />
           </FormField>
+
+          <FormField label="Imagen de la meta" hint="Opcional. Una foto que te motive.">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={e => {
+                const file = e.target.files?.[0]
+                if (file) void handleImagePick(file)
+              }}
+            />
+            {imagePreview ? (
+              <div className="relative rounded-xl overflow-hidden">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={imagePreview} alt="" className="w-full h-36 object-cover" />
+                <button
+                  type="button"
+                  onClick={clearImage}
+                  className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center text-white"
+                  aria-label="Quitar imagen"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full py-8 rounded-xl border-2 border-dashed border-[#6366F1]/30 flex flex-col items-center gap-2 text-[#6366F1]"
+              >
+                <ImagePlus className="w-6 h-6" />
+                <span className="text-[12px] font-bold">Subir imagen</span>
+              </button>
+            )}
+          </FormField>
+
           <FormField
             label="¿Qué quieres lograr?"
             hint="Una frase que te motive a largo plazo."
@@ -255,7 +373,7 @@ export function TiempoMetasClient({
             <textarea
               value={vision}
               onChange={e => setVision(e.target.value)}
-              placeholder="Ej: Quiero tener mi título y trabajar en lo que me apasiona."
+              placeholder="Ej: Quiero tener el baño listo antes del verano sin endeudarnos."
               rows={2}
               className={inputClass}
             />
@@ -305,7 +423,10 @@ export function TiempoMetasClient({
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={() => setShowForm(false)}
+              onClick={() => {
+                setShowForm(false)
+                clearImage()
+              }}
               className="flex-1 py-2.5 rounded-xl cc-surface-muted text-[13px] font-bold text-cc-secondary"
             >
               Cancelar
@@ -315,81 +436,121 @@ export function TiempoMetasClient({
               disabled={loading}
               className={`flex-1 py-2.5 rounded-xl text-white text-[13px] font-bold disabled:opacity-60 ${TIME_THEME.submit}`}
             >
-              {loading ? 'Guardando…' : 'Crear meta'}
+              {loading ? (
+                <span className="inline-flex items-center gap-2 justify-center">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Guardando…
+                </span>
+              ) : (
+                'Crear meta'
+              )}
             </button>
           </div>
         </form>
       )}
 
-      {goals.length === 0 && !showForm ? (
+      {filteredGoals.length === 0 && !showForm ? (
         <section className="cc-surface rounded-[24px] p-6 text-center">
           <p className="text-[13px] text-cc-secondary">
-            Crea metas con hitos a futuro para proyectos personales o del hogar.
+            {filter === 'all'
+              ? 'Crea metas con hitos a futuro para proyectos personales o del hogar.'
+              : 'No hay metas con este filtro.'}
           </p>
         </section>
       ) : (
         <div className="space-y-4">
-          {goals.map(goal => (
-            <section
-              key={goal.id}
-              className="rounded-[24px] overflow-hidden border border-[#6366F1]/15 bg-white dark:bg-[var(--cc-surface)] shadow-sm"
-            >
-              <div className="bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] px-4 py-3 flex items-start justify-between gap-3">
-                <div className="flex items-start gap-3 min-w-0">
-                  <GoalProgressRing percent={goal.percent} />
-                  <div className="min-w-0 pt-0.5">
-                    <h2 className="text-[15px] font-bold text-white leading-tight">{goal.title}</h2>
-                    {goal.targetDate && (
-                      <p className="text-[11px] text-white/80 mt-0.5">
-                        Objetivo: {formatShortDate(goal.targetDate)}
-                      </p>
-                    )}
+          {filteredGoals.map(goal => {
+            const owner = members.find(m => m.user_id === goal.createdBy)
+            return (
+              <section
+                key={goal.id}
+                className="rounded-[24px] overflow-hidden border border-[#6366F1]/15 bg-white dark:bg-[var(--cc-surface)] shadow-sm"
+              >
+                {goal.imageUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={goal.imageUrl}
+                    alt=""
+                    className="w-full h-32 object-cover"
+                  />
+                )}
+                <div className="bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] px-4 py-3 flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3 min-w-0">
+                    <GoalProgressRing percent={goal.percent} />
+                    <div className="min-w-0 pt-0.5">
+                      <h2 className="text-[15px] font-bold text-white leading-tight">
+                        {goal.title}
+                      </h2>
+                      <div className="flex items-center gap-1.5 mt-1">
+                        {owner && (
+                          <UserAvatar
+                            name={owner.full_name ?? 'Miembro'}
+                            avatarUrl={owner.avatar_url}
+                            size="xs"
+                            className="ring-white/30"
+                          />
+                        )}
+                        <p className="text-[11px] text-white/85">
+                          De {goal.creatorName ?? 'alguien del hogar'}
+                        </p>
+                      </div>
+                      {goal.targetDate && (
+                        <p className="text-[11px] text-white/80 mt-0.5">
+                          Objetivo: {formatShortDate(goal.targetDate)}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleDeleteGoal(goal.id)}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 shrink-0"
-                  aria-label="Eliminar meta"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-              <div className="p-4 space-y-3">
-                <GoalProgressSummary goal={goal} />
-                <GoalTimeline
-                  goal={goal}
-                  onToggleStep={handleToggleStep}
-                  onDeleteStep={handleDeleteStep}
-                  stepLoadingId={stepLoadingId}
-                />
-              {addingToGoalId === goal.id ? (
-                <div className="space-y-2 pt-1">
-                  <StepDraftFields step={newStep} onChange={setNewStep} />
                   <button
                     type="button"
-                    disabled={stepLoadingId === goal.id}
-                    onClick={() => handleAddStep(goal.id)}
-                    className="w-full py-2 rounded-xl bg-[#6366F1] text-white text-[12px] font-bold"
+                    onClick={() => handleDeleteGoal(goal.id)}
+                    className="w-8 h-8 rounded-lg flex items-center justify-center text-white/70 hover:text-white hover:bg-white/10 shrink-0"
+                    aria-label="Eliminar meta"
                   >
-                    {stepLoadingId === goal.id ? 'Guardando…' : 'Añadir paso'}
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAddingToGoalId(goal.id)
-                    setNewStep({ title: '', stepType: 'milestone', dueDate: '', minutes: '' })
-                  }}
-                  className="text-[12px] font-bold text-[#6366F1] pt-1"
-                >
-                  + Añadir paso
-                </button>
-              )}
-              </div>
-            </section>
-          ))}
+                <div className="p-4 space-y-3">
+                  <GoalProgressSummary goal={goal} />
+                  <GoalTimeline
+                    goal={goal}
+                    onToggleStep={handleToggleStep}
+                    onDeleteStep={handleDeleteStep}
+                    stepLoadingId={stepLoadingId}
+                  />
+                  {addingToGoalId === goal.id ? (
+                    <div className="space-y-2 pt-1">
+                      <StepDraftFields step={newStep} onChange={setNewStep} />
+                      <button
+                        type="button"
+                        disabled={stepLoadingId === goal.id}
+                        onClick={() => handleAddStep(goal.id)}
+                        className="w-full py-2 rounded-xl bg-[#6366F1] text-white text-[12px] font-bold"
+                      >
+                        {stepLoadingId === goal.id ? 'Guardando…' : 'Añadir paso'}
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAddingToGoalId(goal.id)
+                        setNewStep({
+                          title: '',
+                          stepType: 'milestone',
+                          dueDate: '',
+                          minutes: '',
+                        })
+                      }}
+                      className="text-[12px] font-bold text-[#6366F1] pt-1"
+                    >
+                      + Añadir paso
+                    </button>
+                  )}
+                </div>
+              </section>
+            )
+          })}
         </div>
       )}
     </div>

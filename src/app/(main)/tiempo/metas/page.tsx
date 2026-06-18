@@ -18,6 +18,7 @@ export default async function TiempoMetasPage() {
       goals={goals}
       householdId={ctx.household.id}
       members={members}
+      currentUserId={ctx.user.id}
     />
   )
 }

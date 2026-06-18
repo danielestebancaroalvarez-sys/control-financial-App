@@ -1,48 +1,27 @@
 'use client'
 
 import Link from 'next/link'
-import { Clock, Moon, Users } from 'lucide-react'
+import {
+  BarChart3,
+  Clock,
+  Gamepad2,
+  Moon,
+  PieChart,
+  Target,
+  TrendingUp,
+  Users,
+  Zap,
+} from 'lucide-react'
 import { DonutChart } from '@/components/dashboard/donut-chart'
+import { CollapsibleSection } from '@/components/ui/collapsible-section'
+import { WeekSelector } from '@/components/time/week-selector'
+import { UserAvatar } from '@/components/profile/user-avatar'
 import {
   formatChartPeriodCaption,
   formatDuration,
   formatDurationHours,
 } from '@/lib/time/format'
 import type { TimeDashboardSummary } from '@/lib/time/types'
-
-function WeekSelector({
-  activeOffset,
-}: {
-  activeOffset: number
-}) {
-  const blocks = Array.from({ length: 6 }, (_, offset) => ({
-    offset,
-    label: offset === 0 ? 'Actual' : offset === 1 ? 'Anterior' : `-${offset}`,
-    href: offset === 0 ? '/tiempo' : `/tiempo?block=${offset}`,
-  }))
-
-  return (
-    <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-none">
-      {blocks.map(block => {
-        const active = block.offset === activeOffset
-        return (
-          <Link
-            key={block.offset}
-            href={block.href}
-            prefetch
-            className={`shrink-0 px-3.5 py-2 rounded-xl text-[11px] font-bold transition-all ${
-              active
-                ? 'bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white shadow-sm'
-                : 'bg-white/80 text-cc-secondary border border-white/60 dark:bg-[var(--cc-surface-muted)]'
-            }`}
-          >
-            {block.label}
-          </Link>
-        )
-      })}
-    </div>
-  )
-}
 
 export function TiempoDashboardClient({
   summary,
@@ -59,7 +38,7 @@ export function TiempoDashboardClient({
     summary.periodEnd
   )
 
-  const slices = summary.byCategory.map(c => ({
+  const generalSlices = summary.byCategory.map(c => ({
     value: c.minutes,
     color: c.color,
     label: c.name,
@@ -80,34 +59,68 @@ export function TiempoDashboardClient({
           <p className="text-[12px] font-bold text-cc-primary">Periodo semanal</p>
           <p className="text-[10px] text-cc-secondary">{periodCaption}</p>
         </div>
-        <WeekSelector activeOffset={periodOffset} />
+        <WeekSelector activeOffset={periodOffset} basePath="/tiempo" />
       </div>
 
-      <div className="cc-surface rounded-[24px] p-5">
-        <p className="text-[12px] font-bold text-cc-primary mb-1">Resumen del periodo</p>
-        <p className="text-[10px] font-semibold text-cc-secondary mb-4">{periodCaption}</p>
-        <p className="text-[28px] font-bold text-[#4F46E5]">
-          {formatDurationHours(summary.totalMinutes)}
-        </p>
-        <p className="text-[11px] text-cc-secondary mt-1">tiempo registrado y programado</p>
-        <div className="flex flex-wrap gap-3 mt-3 text-[11px] text-cc-muted">
-          <span className="flex items-center gap-1">
-            <Moon className="w-3.5 h-3.5 text-[#6366F1]" />
-            Sueño: {formatDuration(summary.sleepMinutes)}
-          </span>
-          <span>Tareas hechas: {summary.doneTasks}</span>
-          <span>Pendientes: {summary.pendingTasks}</span>
+      {/* KPIs compactos */}
+      <div className="grid grid-cols-2 gap-2">
+        <div className="cc-surface rounded-[20px] p-3.5">
+          <p className="text-[10px] font-bold text-cc-secondary uppercase tracking-wide">
+            Registrado
+          </p>
+          <p className="text-[22px] font-bold text-[#4F46E5] mt-0.5">
+            {formatDurationHours(summary.totalMinutes)}
+          </p>
+          <p className="text-[10px] text-cc-muted mt-0.5">en la semana</p>
+        </div>
+        <div className="cc-surface rounded-[20px] p-3.5">
+          <p className="text-[10px] font-bold text-cc-secondary uppercase tracking-wide flex items-center gap-1">
+            <TrendingUp className="w-3 h-3 text-[#6366F1]" />
+            Productividad
+          </p>
+          <p className="text-[22px] font-bold text-[#6366F1] mt-0.5">
+            {summary.productivityPercent}%
+          </p>
+          <p className="text-[10px] text-cc-muted mt-0.5">
+            {formatDuration(summary.productivityMinutes)}
+          </p>
+        </div>
+        <div className="cc-surface rounded-[20px] p-3.5">
+          <p className="text-[10px] font-bold text-cc-secondary uppercase tracking-wide flex items-center gap-1">
+            <Gamepad2 className="w-3 h-3 text-[#C4B5FD]" />
+            Ocio
+          </p>
+          <p className="text-[22px] font-bold text-[#8B5CF6] mt-0.5">
+            {summary.leisurePercent}%
+          </p>
+          <p className="text-[10px] text-cc-muted mt-0.5">
+            {formatDuration(summary.leisureMinutes)}
+          </p>
+        </div>
+        <div className="cc-surface rounded-[20px] p-3.5">
+          <p className="text-[10px] font-bold text-cc-secondary uppercase tracking-wide flex items-center gap-1">
+            <Moon className="w-3 h-3 text-[#4F46E5]" />
+            Sueño
+          </p>
+          <p className="text-[22px] font-bold text-[#4F46E5] mt-0.5">
+            {formatDuration(summary.sleepMinutes)}
+          </p>
+          <p className="text-[10px] text-cc-muted mt-0.5">
+            Tareas: {summary.doneTasks} hechas · {summary.pendingTasks} pend.
+          </p>
         </div>
       </div>
 
-      {slices.length > 0 && (
-        <div className="cc-surface rounded-[24px] p-5">
-          <p className="text-[12px] font-bold text-cc-primary mb-1">
-            ¿En qué se va el tiempo?
-          </p>
-          <p className="text-[10px] font-semibold text-cc-secondary mb-4">{periodCaption}</p>
+      {generalSlices.length > 0 && (
+        <CollapsibleSection
+          title="Distribución general"
+          summary={`${summary.byCategory.length} categorías · incluye sueño`}
+          icon={<PieChart className="w-4 h-4 text-[#6366F1]" />}
+          defaultOpen
+        >
+          <p className="text-[10px] text-cc-secondary mb-3">{periodCaption}</p>
           <DonutChart
-            slices={slices}
+            slices={generalSlices}
             centerValue={formatDurationHours(summary.totalMinutes)}
             centerLabel="Total"
           />
@@ -127,21 +140,117 @@ export function TiempoDashboardClient({
               </li>
             ))}
           </ul>
-        </div>
+        </CollapsibleSection>
+      )}
+
+      {summary.memberMetrics.length > 0 && (
+        <CollapsibleSection
+          title="Día típico por miembro (24 h)"
+          summary={`${summary.memberMetrics.length} persona(s)`}
+          icon={<Users className="w-4 h-4 text-[#6366F1]" />}
+        >
+          <p className="text-[10px] text-cc-secondary mb-4">
+            Promedio diario de la semana. El gris es tiempo sin registrar.
+          </p>
+          <div className="space-y-6">
+            {summary.memberMetrics.map(member => {
+              const slices = member.dailyCategories.map(c => ({
+                value: c.minutes,
+                color: c.color,
+                label: c.name,
+              }))
+              if (slices.length === 0) return null
+              return (
+                <div key={member.userId}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <UserAvatar
+                      name={member.name}
+                      avatarUrl={member.avatarUrl}
+                      size="sm"
+                    />
+                    <p className="text-[13px] font-bold text-cc-primary">{member.name}</p>
+                  </div>
+                  <DonutChart
+                    slices={slices}
+                    size={140}
+                    stroke={18}
+                    centerValue="24h"
+                    centerLabel="día"
+                  />
+                </div>
+              )
+            })}
+          </div>
+        </CollapsibleSection>
+      )}
+
+      {summary.memberMetrics.length > 1 && (
+        <CollapsibleSection
+          title="Comparativa del hogar"
+          summary="Productividad, esfuerzo y ocio"
+          icon={<BarChart3 className="w-4 h-4 text-[#6366F1]" />}
+        >
+          <div className="space-y-4">
+            {summary.memberMetrics.map(member => (
+              <div key={member.userId} className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <UserAvatar
+                    name={member.name}
+                    avatarUrl={member.avatarUrl}
+                    size="xs"
+                  />
+                  <span className="text-[12px] font-bold text-cc-primary">{member.name}</span>
+                </div>
+                <div className="space-y-1.5">
+                  <MetricBar
+                    label="Productividad"
+                    value={member.productivityPercent}
+                    detail={formatDuration(member.productivityMinutes)}
+                    color="#6366F1"
+                  />
+                  <MetricBar
+                    label="Esfuerzo"
+                    value={Math.min(
+                      100,
+                      Math.round(
+                        (member.effortMinutes / Math.max(member.totalMinutes, 1)) * 100
+                      )
+                    )}
+                    detail={formatDuration(member.effortMinutes)}
+                    color="#7C3AED"
+                    icon={<Zap className="w-3 h-3" />}
+                  />
+                  <MetricBar
+                    label="Ocio"
+                    value={member.leisurePercent}
+                    detail={formatDuration(member.leisureMinutes)}
+                    color="#C4B5FD"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </CollapsibleSection>
       )}
 
       {summary.byMember.length > 0 && (
-        <div className="cc-surface rounded-[24px] p-5">
-          <div className="flex items-center gap-2 mb-1">
-            <Users className="w-4 h-4 text-[#6366F1]" />
-            <p className="text-[12px] font-bold text-cc-primary">Por miembro</p>
-          </div>
-          <p className="text-[10px] font-semibold text-cc-secondary mb-4">{periodCaption}</p>
+        <CollapsibleSection
+          title="Tiempo por miembro"
+          summary={summary.byMember.map(m => m.name.split(' ')[0]).join(' · ')}
+          icon={<Users className="w-4 h-4 text-[#6366F1]" />}
+        >
           <div className="space-y-3">
             {summary.byMember.map(member => (
               <div key={member.userId}>
-                <div className="flex justify-between text-[12px] mb-1">
-                  <span className="font-medium text-cc-primary">{member.name}</span>
+                <div className="flex justify-between items-center text-[12px] mb-1">
+                  <span className="flex items-center gap-2 font-medium text-cc-primary">
+                    <UserAvatar
+                      name={member.name}
+                      avatarUrl={member.avatarUrl}
+                      size="xs"
+                    />
+                    {member.name}
+                  </span>
                   <span className="font-bold text-cc-primary">
                     {formatDuration(member.minutes)}
                   </span>
@@ -156,12 +265,15 @@ export function TiempoDashboardClient({
               </div>
             ))}
           </div>
-        </div>
+        </CollapsibleSection>
       )}
 
       {summary.activeGoals.length > 0 && (
-        <div className="cc-surface rounded-[24px] p-5">
-          <p className="text-[12px] font-bold text-cc-primary mb-3">Metas activas</p>
+        <CollapsibleSection
+          title="Metas activas"
+          summary={`${summary.activeGoals.length} en curso`}
+          icon={<Target className="w-4 h-4 text-[#6366F1]" />}
+        >
           <div className="space-y-3">
             {summary.activeGoals.map(goal => (
               <div key={goal.id}>
@@ -175,18 +287,8 @@ export function TiempoDashboardClient({
                     style={{ width: `${goal.percent}%` }}
                   />
                 </div>
-                {goal.nextMilestoneTitle && goal.daysToNextMilestone !== null && (
-                  <p className="text-[10px] text-[#6366F1] font-medium mt-1">
-                    Próximo: {goal.nextMilestoneTitle}
-                    {goal.daysToNextMilestone >= 0
-                      ? ` · en ${goal.daysToNextMilestone} días`
-                      : ` · vencido hace ${Math.abs(goal.daysToNextMilestone)} días`}
-                  </p>
-                )}
-                {!goal.nextMilestoneTitle && goal.estimatedRemainingMinutes > 0 && (
-                  <p className="text-[10px] text-cc-muted mt-1">
-                    Faltan {formatDuration(goal.estimatedRemainingMinutes)} de acciones
-                  </p>
+                {goal.creatorName && (
+                  <p className="text-[10px] text-cc-muted mt-1">De {goal.creatorName}</p>
                 )}
               </div>
             ))}
@@ -197,7 +299,7 @@ export function TiempoDashboardClient({
           >
             Ver todas las metas →
           </Link>
-        </div>
+        </CollapsibleSection>
       )}
 
       {summary.totalMinutes === 0 && (
@@ -213,6 +315,40 @@ export function TiempoDashboardClient({
           </Link>
         </div>
       )}
+    </div>
+  )
+}
+
+function MetricBar({
+  label,
+  value,
+  detail,
+  color,
+  icon,
+}: {
+  label: string
+  value: number
+  detail: string
+  color: string
+  icon?: React.ReactNode
+}) {
+  return (
+    <div>
+      <div className="flex justify-between text-[11px] mb-0.5">
+        <span className="flex items-center gap-1 text-cc-secondary font-medium">
+          {icon}
+          {label}
+        </span>
+        <span className="text-cc-muted">
+          {value}% · {detail}
+        </span>
+      </div>
+      <div className="h-1.5 rounded-full cc-track overflow-hidden">
+        <div
+          className="h-full rounded-full transition-all"
+          style={{ width: `${value}%`, backgroundColor: color }}
+        />
+      </div>
     </div>
   )
 }

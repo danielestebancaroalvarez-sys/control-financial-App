@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { CheckSquare, Clock, Repeat } from 'lucide-react'
 import { CategoryIcon } from '@/components/transactions/category-icon'
 import { formatTimeRange } from '@/lib/time/format'
 import { DAY_HEADER_COLORS } from '@/lib/time/task-icons'
@@ -18,10 +19,32 @@ import {
 
 const TASK_CHIP_HEIGHT = 22
 
+const SOURCE_STYLES: Record<
+  ScheduleEvent['source'],
+  { border: string; Icon: typeof Repeat; label: string; accent: string }
+> = {
+  block: {
+    border: 'solid',
+    Icon: Repeat,
+    label: 'Bloque fijo',
+    accent: '#6366F1',
+  },
+  entry: {
+    border: 'dashed',
+    Icon: Clock,
+    label: 'Tiempo registrado',
+    accent: '#8B5CF6',
+  },
+  task: {
+    border: 'double',
+    Icon: CheckSquare,
+    label: 'Tarea',
+    accent: '#EC4899',
+  },
+}
+
 function eventBorderStyle(source: ScheduleEvent['source']) {
-  if (source === 'block') return 'solid'
-  if (source === 'task') return 'double'
-  return 'dashed'
+  return SOURCE_STYLES[source].border
 }
 
 export function WeeklyScheduleGrid({
@@ -50,7 +73,6 @@ export function WeeklyScheduleGrid({
       <div className="rounded-2xl overflow-hidden border border-[var(--cc-border)] bg-[var(--cc-surface)] shadow-sm">
         <div className="max-h-[58vh] overflow-y-auto scrollbar-none overscroll-contain">
           <div className="min-w-full">
-            {/* Day headers */}
             <div className="grid grid-cols-[2.75rem_repeat(7,minmax(0,1fr))] gap-1 px-1 pt-2 pb-1 sticky top-0 z-30 bg-[var(--cc-surface)]">
               <div />
               {days.map((day, i) => {
@@ -76,45 +98,45 @@ export function WeeklyScheduleGrid({
               })}
             </div>
 
-            {/* Task chips row (due today, no specific hour) */}
             <div className="grid grid-cols-[2.75rem_repeat(7,minmax(0,1fr))] gap-1 px-1 pb-1">
               <div />
               {days.map(day => {
                 const dayTasks = filtered.filter(
-                  e =>
-                    e.date === day.date &&
-                    e.source === 'task' &&
-                    !e.startTime
+                  e => e.date === day.date && e.source === 'task' && !e.startTime
                 )
                 return (
                   <div key={`tasks-${day.date}`} className="space-y-0.5 min-h-[4px]">
-                    {dayTasks.map(task => (
-                      <div
-                        key={task.id}
-                        className="flex items-center gap-0.5 rounded-md px-1 py-0.5 truncate"
-                        style={{
-                          backgroundColor: `${task.categoryColor}30`,
-                          borderLeft: `2px solid ${task.categoryColor}`,
-                        }}
-                        title={task.title}
-                      >
-                        <CategoryIcon
-                          icon={task.categoryIcon}
-                          className="w-2.5 h-2.5 shrink-0"
-                        />
-                        <span className="text-[7px] font-bold text-cc-primary truncate">
-                          {task.title}
-                        </span>
-                      </div>
-                    ))}
+                    {dayTasks.map(task => {
+                      const style = SOURCE_STYLES.task
+                      const SourceIcon = style.Icon
+                      return (
+                        <div
+                          key={task.id}
+                          className="flex items-center justify-center rounded-md px-0.5 py-1"
+                          style={{
+                            backgroundColor: `${task.categoryColor}35`,
+                            borderLeft: `3px ${style.border} ${task.categoryColor}`,
+                            color: task.categoryColor,
+                          }}
+                          title={task.title}
+                        >
+                          <CategoryIcon
+                            icon={task.categoryIcon}
+                            className="w-3.5 h-3.5 shrink-0"
+                          />
+                        </div>
+                      )
+                    })}
                   </div>
                 )
               })}
             </div>
 
-            {/* Time grid */}
             <div className="grid grid-cols-[2.75rem_repeat(7,minmax(0,1fr))] gap-1 px-1 pb-2">
-              <div className="relative sticky left-0 z-20 bg-[var(--cc-surface)]" style={{ height: gridHeight }}>
+              <div
+                className="relative sticky left-0 z-20 bg-[var(--cc-surface)]"
+                style={{ height: gridHeight }}
+              >
                 {hours.map((h, i) => (
                   <div
                     key={h}
@@ -167,36 +189,52 @@ export function WeeklyScheduleGrid({
                     )}
 
                     {dayEvents.map(event => {
-                      const top =
-                        event.startTime
-                          ? eventTopOffset(event.startTime)
-                          : TASK_CHIP_HEIGHT
+                      const style = SOURCE_STYLES[event.source]
+                      const SourceIcon = style.Icon
+                      const top = event.startTime
+                        ? eventTopOffset(event.startTime)
+                        : TASK_CHIP_HEIGHT
                       const height = eventHeight(
                         event.startTime,
                         event.endTime,
                         event.durationMinutes
                       )
                       const borderStyle = eventBorderStyle(event.source)
-                      const minH = event.source === 'task' ? 28 : 20
+                      const minH = event.source === 'task' ? 28 : 22
+                      const showTime = height >= 40 && event.startTime
 
                       return (
                         <div
                           key={event.id}
-                          className="absolute left-1 right-1 rounded-lg px-1 py-0.5 overflow-hidden z-10 shadow-sm"
+                          className="absolute left-1 right-1 rounded-lg overflow-hidden z-10 shadow-sm flex flex-col items-center justify-center gap-0.5 px-0.5"
                           style={{
                             top,
                             height: Math.max(height, minH),
-                            backgroundColor: `${event.categoryColor}40`,
+                            backgroundColor: `${event.categoryColor}45`,
                             borderLeft: `3px ${borderStyle} ${event.categoryColor}`,
                             boxShadow: `0 1px 4px ${event.categoryColor}22`,
                           }}
-                          title={`${event.title}${event.startTime ? ` · ${formatTimeRange(event.startTime, event.endTime)}` : ''}`}
+                          title={`${style.label}: ${event.title}${
+                            event.startTime
+                              ? ` · ${formatTimeRange(event.startTime, event.endTime)}`
+                              : ''
+                          }`}
                         >
-                          <p className="text-[8px] font-bold text-cc-primary truncate leading-tight">
-                            {event.title}
-                          </p>
-                          {height >= 28 && event.startTime && (
-                            <p className="text-[7px] text-cc-secondary truncate">
+                          <div
+                            className="flex items-center gap-0.5"
+                            style={{ color: event.categoryColor }}
+                          >
+                            <SourceIcon className="w-2.5 h-2.5 shrink-0 opacity-80" />
+                            <CategoryIcon
+                              icon={event.categoryIcon}
+                              className="w-3.5 h-3.5 shrink-0"
+                            />
+                          </div>
+                          {showTime && (
+                            <p
+                              className="text-[7px] font-bold tabular-nums leading-none"
+                              style={{ color: event.categoryColor }}
+                            >
                               {formatTimeRange(event.startTime, event.endTime)}
                             </p>
                           )}
@@ -217,22 +255,42 @@ export function WeeklyScheduleGrid({
         </div>
       </div>
 
-      <section className="cc-surface rounded-[16px] p-3 space-y-2">
-        <p className="text-[10px] font-bold text-cc-secondary">Leyenda</p>
-        <div className="flex flex-wrap gap-x-3 gap-y-1 text-[9px] text-cc-muted">
-          <span className="flex items-center gap-1">
-            <span className="w-3 h-3 rounded border-l-[3px] border-solid border-[#6366F1] bg-[#6366F1]/25" />
-            Bloque fijo
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="w-3 h-3 rounded border-l-[3px] border-dashed border-[#6366F1] bg-[#6366F1]/25" />
-            Tiempo registrado
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="w-3 h-3 rounded border-l-[3px] border-double border-[#EC4899] bg-[#EC4899]/25" />
-            Tarea
-          </span>
+      <section className="cc-surface rounded-[16px] p-3 space-y-3">
+        <p className="text-[11px] font-bold text-cc-primary">Cómo leer el horario</p>
+        <div className="space-y-2">
+          {(Object.keys(SOURCE_STYLES) as ScheduleEvent['source'][]).map(key => {
+            const style = SOURCE_STYLES[key]
+            const Icon = style.Icon
+            return (
+              <div key={key} className="flex items-start gap-2.5">
+                <div
+                  className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                  style={{
+                    backgroundColor: `${style.accent}20`,
+                    borderLeft: `3px ${style.border} ${style.accent}`,
+                  }}
+                >
+                  <Icon className="w-4 h-4" style={{ color: style.accent }} />
+                </div>
+                <div>
+                  <p className="text-[11px] font-bold text-cc-primary">{style.label}</p>
+                  <p className="text-[10px] text-cc-secondary leading-snug">
+                    {key === 'block' &&
+                      'Actividades recurrentes (trabajo, sueño, clases). Borde continuo.'}
+                    {key === 'entry' &&
+                      'Registros puntuales del día. Borde discontinuo.'}
+                    {key === 'task' &&
+                      'Tareas con hora o pendientes del día. Borde doble.'}
+                  </p>
+                </div>
+              </div>
+            )
+          })}
         </div>
+        <p className="text-[10px] text-cc-muted pt-1 border-t border-[var(--cc-border-subtle)]">
+          El icono de categoría indica el tipo de actividad (trabajo, ocio, hogar…). Toca una
+          franja para añadir tiempo.
+        </p>
       </section>
     </div>
   )

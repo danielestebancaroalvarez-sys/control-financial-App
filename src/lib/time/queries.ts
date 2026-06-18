@@ -74,7 +74,7 @@ export async function getTimeDashboard(
       supabase
         .from('productivity_goals')
         .select(
-          `id, title, vision, target_date, color, icon,
+          `id, title, vision, target_date, color, icon, image_path, created_by,
           goal_steps ( id, title, step_order, step_type, estimated_minutes, due_date, assigned_to, status )`
         )
         .eq('household_id', householdId)
@@ -176,14 +176,25 @@ export async function getProductivityGoals(
   const { data } = await supabase
     .from('productivity_goals')
     .select(
-      `id, title, vision, target_date, color, icon,
+      `id, title, vision, target_date, color, icon, image_path, created_by,
       goal_steps ( id, title, step_order, step_type, estimated_minutes, due_date, assigned_to, status )`
     )
     .eq('household_id', householdId)
     .eq('is_active', true)
     .order('created_at', { ascending: false })
 
-  return (data ?? []).map(row => mapProductivityGoal(row, memberRows))
+  return Promise.all(
+    (data ?? []).map(async row => {
+      let imageUrl: string | null = null
+      if (row.image_path) {
+        const { data: urlData } = supabase.storage
+          .from('goal-images')
+          .getPublicUrl(row.image_path)
+        imageUrl = urlData.publicUrl ?? null
+      }
+      return mapProductivityGoal(row, memberRows, imageUrl)
+    })
+  )
 }
 
 export type WeeklyScheduleData = {

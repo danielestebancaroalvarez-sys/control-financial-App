@@ -3,6 +3,7 @@
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { minutesFromTimeRange } from './format'
+import { uploadGoalImage } from './upload-goal-image'
 import type {
   CreateHouseholdTaskInput,
   CreateProductivityGoalInput,
@@ -273,6 +274,24 @@ export async function createProductivityGoal(
 
   revalidateTime()
   return { id: goal.id }
+}
+
+export async function uploadProductivityGoalImage(
+  householdId: string,
+  goalId: string,
+  formData: FormData
+): Promise<{ error?: string }> {
+  const file = formData.get('file')
+  if (!(file instanceof Blob) || file.size === 0) {
+    return { error: 'Selecciona una imagen.' }
+  }
+
+  const mimeType = file.type || 'image/jpeg'
+  const result = await uploadGoalImage(householdId, goalId, file, mimeType)
+  if (result.error) return { error: result.error }
+
+  revalidateTime()
+  return {}
 }
 
 export async function addGoalStep(

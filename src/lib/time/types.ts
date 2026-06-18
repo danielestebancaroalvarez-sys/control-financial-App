@@ -81,6 +81,9 @@ export type ProductivityGoal = {
   targetDate: string | null
   color: string | null
   icon: string | null
+  imageUrl: string | null
+  createdBy: string
+  creatorName: string | null
   steps: GoalStep[]
   doneSteps: number
   totalSteps: number
@@ -89,6 +92,19 @@ export type ProductivityGoal = {
   nextMilestoneTitle: string | null
   nextMilestoneDate: string | null
   daysToNextMilestone: number | null
+}
+
+export type TimeMemberMetrics = {
+  userId: string
+  name: string
+  avatarUrl: string | null
+  totalMinutes: number
+  productivityMinutes: number
+  productivityPercent: number
+  leisureMinutes: number
+  leisurePercent: number
+  effortMinutes: number
+  dailyCategories: { name: string; minutes: number; color: string }[]
 }
 
 export type TimeDashboardSummary = {
@@ -104,6 +120,11 @@ export type TimeDashboardSummary = {
     percent: number
     avatarUrl: string | null
   }[]
+  productivityMinutes: number
+  productivityPercent: number
+  leisureMinutes: number
+  leisurePercent: number
+  memberMetrics: TimeMemberMetrics[]
   sleepMinutes: number
   pendingTasks: number
   doneTasks: number
@@ -155,6 +176,7 @@ export type CreateProductivityGoalInput = {
   targetDate?: string | null
   color?: string | null
   icon?: string | null
+  imagePath?: string | null
   steps: {
     title: string
     stepType: GoalStepType

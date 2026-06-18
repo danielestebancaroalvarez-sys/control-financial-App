@@ -97,3 +97,11 @@ export function getTimeWeekLabel(offset = 0): string {
   if (offset === 1) return 'Semana anterior'
   return `${formatShortDate(start)} – ${formatShortDate(end)}`
 }
+
+/** Etiqueta corta para pills de semanas pasadas (sin -2, -3…). */
+export function getWeekSelectorLabel(offset = 0): string {
+  const { start } = getPeriodRangeAtOffset('weekly', offset)
+  if (offset === 0) return 'Actual'
+  if (offset === 1) return 'Anterior'
+  return formatShortDate(start)
+}
