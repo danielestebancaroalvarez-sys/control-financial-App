@@ -53,6 +53,7 @@ export type TransactionListItem = {
   category_color: string | null
   created_by: string
   author_name: string | null
+  author_avatar_url: string | null
   line_items: LineItem[] | null
   receipt_image_path: string | null
 }

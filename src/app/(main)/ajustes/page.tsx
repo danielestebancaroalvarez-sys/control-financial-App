@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { getMainAppContextWithPeriod } from '@/lib/app/context'
 import { getHouseholdMembers } from '@/lib/household/queries'
 import { getCategories } from '@/lib/finance/queries'
+import { getUserProfile } from '@/lib/profile/queries'
 import SignOutButton from '@/app/sign-out-button'
 import { CopyButton } from './copy-button'
 import { DashboardPeriodSetting } from './dashboard-period-setting'
@@ -10,15 +11,17 @@ import { CategoriesManager } from './categories-manager'
 import { PaymentReminderSetting } from './payment-reminder-setting'
 import { ResetDataButton } from './reset-data-button'
 import { HouseholdMembersSection } from './household-members-section'
+import { ProfileSettingsForm } from '@/components/profile/profile-settings-form'
 import { Users, Coins } from 'lucide-react'
 
 export default async function AjustesPage() {
   const ctx = await getMainAppContextWithPeriod()
   if (!ctx) redirect('/login')
 
-  const [members, categories] = await Promise.all([
+  const [members, categories, profile] = await Promise.all([
     getHouseholdMembers(ctx.household.id),
     getCategories(ctx.household.id),
+    getUserProfile(),
   ])
 
   return (
@@ -27,6 +30,16 @@ export default async function AjustesPage() {
         <h1 className="text-[22px] font-bold text-cc-primary">Cuenta y Ajustes</h1>
         <p className="text-[13px] text-cc-secondary">Gestiona tu hogar y preferencias</p>
       </div>
+
+      {profile && (
+        <section className="cc-surface rounded-[24px] p-5">
+          <ProfileSettingsForm
+            initialFullName={profile.fullName ?? ''}
+            initialAvatarUrl={profile.avatarUrl}
+            email={profile.email}
+          />
+        </section>
+      )}
 
       <DashboardPeriodSetting current={ctx.period} />
 

@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import { Suspense } from 'react'
 import { getAuthUser } from '@/lib/auth/session'
 import { getUserHousehold } from '@/lib/household/queries'
-import { getUserTheme } from '@/lib/profile/queries'
+import { getUserTheme, getUserProfile } from '@/lib/profile/queries'
 import { AppHeader } from '@/components/layout/app-header'
 import { BottomTabBar } from '@/components/layout/bottom-tab-bar'
 import { HouseholdSync } from '@/components/realtime/household-sync'
@@ -20,22 +20,16 @@ export default async function MainLayout({
   const user = await getAuthUser()
   if (!user) redirect('/login')
 
-  const [household, theme] = await Promise.all([
+  const [household, theme, profile] = await Promise.all([
     getUserHousehold(),
     getUserTheme(),
+    getUserProfile(),
   ])
   if (!household) redirect('/onboarding')
 
-  const displayName =
-    user.user_metadata?.full_name ??
-    user.user_metadata?.name ??
-    user.email?.split('@')[0] ??
-    'Usuario'
-
+  const displayName = profile?.fullName ?? 'Usuario'
   const firstName = getFirstName(displayName)
-  const avatarUrl =
-    (user.user_metadata?.avatar_url as string | undefined) ??
-    (user.user_metadata?.picture as string | undefined)
+  const avatarUrl = profile?.avatarUrl ?? null
 
   return (
     <div className="min-h-screen cc-app-bg">

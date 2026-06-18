@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Loader2, LogOut, UserMinus } from 'lucide-react'
 import { leaveHousehold, removeHouseholdMember } from '@/lib/household/actions'
+import { UserAvatar } from '@/components/profile/user-avatar'
 import type { HouseholdMember } from '@/lib/household/types'
 
 export function HouseholdMembersSection({
@@ -83,17 +84,11 @@ export function HouseholdMembersSection({
                 key={member.id}
                 className="flex items-center gap-3 p-3 rounded-2xl bg-[#F5F5F5]"
               >
-                {member.avatar_url ? (
-                  <img
-                    src={member.avatar_url}
-                    alt=""
-                    className="w-9 h-9 rounded-full object-cover shrink-0"
-                  />
-                ) : (
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#00BFA5] to-[#2DD4BF] flex items-center justify-center text-white text-[13px] font-bold shrink-0">
-                    {displayName.charAt(0).toUpperCase()}
-                  </div>
-                )}
+                <UserAvatar
+                  name={displayName}
+                  avatarUrl={member.avatar_url}
+                  size="md"
+                />
                 <div className="flex-1 min-w-0">
                   <p className="text-[14px] font-semibold text-cc-primary truncate">
                     {displayName}

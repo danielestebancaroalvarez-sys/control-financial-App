@@ -2,6 +2,7 @@ import { cache } from 'react'
 import { createClient } from '@/utils/supabase/server'
 import { getAuthUser } from '@/lib/auth/session'
 import { getUserHousehold, getHouseholdMembers } from '@/lib/household/queries'
+import { getUserProfile } from '@/lib/profile/queries'
 import type { SetupContext, SetupMode } from './types'
 
 export const hasCompletedSetup = cache(async (): Promise<boolean> => {
@@ -25,7 +26,7 @@ export async function getSetupContext(): Promise<SetupContext | null> {
 
   const supabase = await createClient()
 
-  const [members, txCountResult, membershipResult] = await Promise.all([
+  const [members, txCountResult, membershipResult, profile] = await Promise.all([
     getHouseholdMembers(household.id),
     supabase
       .from('transactions')
@@ -37,6 +38,7 @@ export async function getSetupContext(): Promise<SetupContext | null> {
       .eq('user_id', user.id)
       .eq('household_id', household.id)
       .maybeSingle(),
+    getUserProfile(),
   ])
 
   const isOwner = membershipResult.data?.role === 'owner'
@@ -52,5 +54,8 @@ export async function getSetupContext(): Promise<SetupContext | null> {
     isOwner,
     mode,
     memberCount: members.length,
+    profileFullName: profile?.fullName ?? user.email?.split('@')[0] ?? '',
+    profileAvatarUrl: profile?.avatarUrl ?? null,
+    email: profile?.email ?? user.email ?? null,
   }
 }

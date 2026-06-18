@@ -5,11 +5,56 @@ import { revalidatePath } from 'next/cache'
 import type { Period } from '@/lib/finance/types'
 import type { ThemePreference } from '@/components/theme/apply-theme'
 import { ensureUserProfile } from './sync'
+import { uploadUserAvatar } from './upload-avatar'
 
-const REVALIDATE_PATHS = ['/', '/buscar', '/ahorros', '/predicciones', '/nuevo', '/ajustes']
+const REVALIDATE_PATHS = ['/', '/buscar', '/ahorros', '/predicciones', '/nuevo', '/ajustes', '/configuracion-inicial']
 
 function revalidateApp() {
   for (const path of REVALIDATE_PATHS) revalidatePath(path)
+}
+
+export async function updateUserProfile(
+  formData: FormData
+): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) return { error: 'Debes iniciar sesión.' }
+
+  const fullName = String(formData.get('fullName') ?? '').trim()
+  if (fullName.length < 2) {
+    return { error: 'Escribe tu nombre (mínimo 2 caracteres).' }
+  }
+
+  await ensureUserProfile()
+
+  const updates: Record<string, string> = { full_name: fullName }
+  const avatarFile = formData.get('avatar')
+
+  if (avatarFile instanceof File && avatarFile.size > 0) {
+    const upload = await uploadUserAvatar(user.id, avatarFile, avatarFile.type || 'image/jpeg')
+    if (upload.error) return { error: upload.error }
+    if (upload.url) updates.avatar_url = upload.url
+  }
+
+  const { error } = await supabase
+    .from('profiles')
+    .update(updates)
+    .eq('id', user.id)
+
+  if (error) return { error: error.message }
+
+  await supabase.auth.updateUser({
+    data: {
+      full_name: fullName,
+      ...(updates.avatar_url ? { avatar_url: updates.avatar_url } : {}),
+    },
+  })
+
+  revalidateApp()
+  return {}
 }
 
 export async function updateDashboardPeriod(

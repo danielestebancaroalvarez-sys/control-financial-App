@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import { CoupleCashLogo } from '@/components/login/couple-cash-logo'
 import { CopyButton } from '@/app/(main)/ajustes/copy-button'
+import { ProfileSettingsForm } from '@/components/profile/profile-settings-form'
 import { completeInitialSetup, skipInitialSetup } from '@/lib/setup/actions'
 import type { SetupContext } from '@/lib/setup/types'
 import type { Period } from '@/lib/finance/types'
@@ -27,8 +28,8 @@ const FIXED_TEMPLATES = [
   { categoryName: 'Internet', label: 'Internet', icon: Zap },
 ] as const
 
-type FullStep = 'welcome' | 'income' | 'fixed' | 'savings' | 'invite' | 'period' | 'done'
-type MemberStep = 'welcome' | 'period' | 'done'
+type FullStep = 'welcome' | 'profile' | 'income' | 'fixed' | 'savings' | 'invite' | 'period' | 'done'
+type MemberStep = 'welcome' | 'profile' | 'period' | 'done'
 
 export function SetupWizard({ context }: { context: SetupContext }) {
   const fmt = (n: number) => formatMoney(n, context.currency)
@@ -52,11 +53,11 @@ export function SetupWizard({ context }: { context: SetupContext }) {
 
   const steps = useMemo(() => {
     if (context.mode === 'member') {
-      return ['welcome', 'period', 'done'] as MemberStep[]
+      return ['welcome', 'profile', 'period', 'done'] as MemberStep[]
     }
-    const full: FullStep[] = ['welcome', 'income', 'fixed', 'savings', 'period', 'done']
+    const full: FullStep[] = ['welcome', 'profile', 'income', 'fixed', 'savings', 'period', 'done']
     if (context.isOwner) {
-      full.splice(4, 0, 'invite')
+      full.splice(5, 0, 'invite')
     }
     return full
   }, [context.mode, context.isOwner])
@@ -169,6 +170,24 @@ export function SetupWizard({ context }: { context: SetupContext }) {
                   </li>
                 </ul>
               )}
+            </>
+          )}
+
+          {currentStep === 'profile' && (
+            <>
+              <h2 className="text-[20px] font-bold text-cc-primary mb-1">
+                Crea tu perfil
+              </h2>
+              <p className="text-[13px] text-cc-secondary mb-4">
+                Tu nombre y foto se mostrarán cuando registres gastos o ingresos en el hogar.
+              </p>
+              <ProfileSettingsForm
+                initialFullName={context.profileFullName}
+                initialAvatarUrl={context.profileAvatarUrl}
+                email={context.email}
+                onSaved={goNext}
+                variant="wizard"
+              />
             </>
           )}
 
@@ -410,7 +429,7 @@ export function SetupWizard({ context }: { context: SetupContext }) {
                   </>
                 )}
               </button>
-            ) : (
+            ) : currentStep === 'profile' ? null : (
               <button
                 type="button"
                 onClick={goNext}

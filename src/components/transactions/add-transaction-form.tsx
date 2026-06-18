@@ -14,6 +14,7 @@ import { ReceiptScanner } from './receipt-scanner'
 import { getTodayString } from '@/lib/finance/format'
 import { TX_TYPE_THEME, type TxType } from './tx-type-theme'
 import { CategoryIcon } from './category-icon'
+import { UserAvatar } from '@/components/profile/user-avatar'
 import type { Category, LineItem } from '@/lib/finance/types'
 import type { CurrencyCode } from '@/lib/household/types'
 
@@ -27,11 +28,13 @@ export function AddTransactionForm({
   onSuccess,
   defaultType = 'expense',
   hideTypeSelector = false,
+  authorAvatarUrl,
 }: {
   householdId: string
   baseCurrency: CurrencyCode
   categories: Category[]
   authorName: string
+  authorAvatarUrl?: string | null
   onSuccess?: () => void
   defaultType?: TxType
   hideTypeSelector?: boolean
@@ -455,9 +458,12 @@ export function AddTransactionForm({
         </div>
       )}
 
-      <p className="text-[11px] text-cc-secondary text-center">
-        Registrado por: {authorName}
-      </p>
+      <div className="flex items-center justify-center gap-2 text-[11px] text-cc-secondary">
+        <UserAvatar name={authorName} avatarUrl={authorAvatarUrl} size="xs" />
+        <span>
+          Registrado por: <span className="font-semibold text-cc-primary">{authorName}</span>
+        </span>
+      </div>
 
       {error && (
         <p className="text-[12px] text-red-600 text-center">{error}</p>

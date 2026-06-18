@@ -11,6 +11,9 @@ export type SetupContext = {
   isOwner: boolean
   mode: SetupMode
   memberCount: number
+  profileFullName: string
+  profileAvatarUrl: string | null
+  email: string | null
 }
 
 export type FixedExpenseInput = {

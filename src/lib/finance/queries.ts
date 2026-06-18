@@ -453,23 +453,33 @@ export async function searchTransactions(
     authorIds.length > 0
       ? await supabase
           .from('profiles')
-          .select('id, full_name')
+          .select('id, full_name, avatar_url')
           .in('id', authorIds)
       : { data: [] }
 
   const profileMap = new Map(
-    (profiles ?? []).map(p => [p.id, p.full_name])
+    (profiles ?? []).map(p => [
+      p.id,
+      { full_name: p.full_name, avatar_url: p.avatar_url },
+    ])
   )
 
   return data.map(row => {
     const cat = Array.isArray(row.categories) ? row.categories[0] : row.categories
-    let authorName = profileMap.get(row.created_by) ?? null
+    const profile = profileMap.get(row.created_by)
+    let authorName = profile?.full_name ?? null
+    let authorAvatarUrl = profile?.avatar_url ?? null
     if (!authorName && user && user.id === row.created_by) {
       authorName =
         (user.user_metadata?.full_name as string | undefined) ??
         (user.user_metadata?.name as string | undefined) ??
         user.email?.split('@')[0] ??
         'Usuario'
+      authorAvatarUrl =
+        authorAvatarUrl ??
+        (user.user_metadata?.avatar_url as string | undefined) ??
+        (user.user_metadata?.picture as string | undefined) ??
+        null
     }
     return {
       id: row.id,
@@ -485,6 +495,7 @@ export async function searchTransactions(
       category_color: cat ? getCategoryColor(cat.name, cat.color) : null,
       created_by: row.created_by,
       author_name: authorName,
+      author_avatar_url: authorAvatarUrl,
       line_items: row.line_items as TransactionListItem['line_items'],
       receipt_image_path: row.receipt_image_path ?? null,
     }

@@ -15,6 +15,7 @@ import { deleteTransaction } from '@/lib/finance/actions'
 import { EditTransactionSheet } from '@/components/transactions/edit-transaction-sheet'
 import { ReceiptThumbnail } from '@/components/transactions/receipt-thumbnail'
 import { CategoryIcon } from '@/components/transactions/category-icon'
+import { UserAvatar } from '@/components/profile/user-avatar'
 import { formatMoney, getPeriodLabels } from '@/lib/finance/format'
 import {
   getSearchCacheKey,
@@ -422,9 +423,21 @@ export function BuscarClient({
                 <p className="text-[14px] font-semibold text-cc-primary truncate">
                   {tx.description}
                 </p>
-                <p className="text-[11px] text-cc-secondary">
-                  {tx.category_name} · {tx.transaction_date}
-                  {tx.author_name ? ` · ${tx.author_name}` : ''}
+                <p className="text-[11px] text-cc-secondary flex items-center gap-1.5 flex-wrap">
+                  <span>
+                    {tx.category_name} · {tx.transaction_date}
+                  </span>
+                  {tx.author_name && (
+                    <span className="inline-flex items-center gap-1">
+                      ·
+                      <UserAvatar
+                        name={tx.author_name}
+                        avatarUrl={tx.author_avatar_url}
+                        size="xs"
+                      />
+                      {tx.author_name}
+                    </span>
+                  )}
                 </p>
               </div>
               {tx.receipt_image_path && (

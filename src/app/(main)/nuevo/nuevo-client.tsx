@@ -16,11 +16,13 @@ export function NuevoClient({
   baseCurrency,
   categories,
   authorName,
+  authorAvatarUrl,
 }: {
   householdId: string
   baseCurrency: CurrencyCode
   categories: Category[]
   authorName: string
+  authorAvatarUrl?: string | null
 }) {
   const [txType, setTxType] = useState<TxType>('expense')
   const [mode, setMode] = useState<EntryMode>('variable')
@@ -138,6 +140,7 @@ export function NuevoClient({
             baseCurrency={baseCurrency}
             categories={categories}
             authorName={authorName}
+            authorAvatarUrl={authorAvatarUrl}
             defaultType={txType}
             hideTypeSelector
           />
