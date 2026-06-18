@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Loader2, ScanLine } from 'lucide-react'
+import { Camera, ImageIcon, Loader2, ScanLine } from 'lucide-react'
 import { compressReceiptImage } from '@/lib/receipts/compress-image'
 import type { ParsedReceipt } from '@/lib/receipts/types'
 import type { ShoppingListItem } from '@/lib/finance/market-analytics'
@@ -20,7 +20,8 @@ export function ReceiptScanner({
   onSelectFile: (file: File, previewUrl: string) => void
   onApply: (receipt: ParsedReceipt) => void
 }) {
-  const inputRef = useRef<HTMLInputElement>(null)
+  const cameraRef = useRef<HTMLInputElement>(null)
+  const galleryRef = useRef<HTMLInputElement>(null)
   const [scanning, setScanning] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [parsed, setParsed] = useState<ParsedReceipt | null>(null)
@@ -84,34 +85,61 @@ export function ReceiptScanner({
           </span>
         </div>
         <p className="text-[11px] text-cc-secondary">
-          Extrae productos, total y fecha. Compara con tu lista de compra sugerida.
+          Extrae productos, total y fecha. Toma una foto o elige una de tu galería.
         </p>
-        <button
-          type="button"
-          disabled={scanning}
-          onClick={() => inputRef.current?.click()}
-          className="w-full py-2.5 rounded-xl bg-[#00BFA5] text-white text-[12px] font-bold disabled:opacity-60 flex items-center justify-center gap-2"
-        >
-          {scanning ? (
-            <>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            disabled={scanning}
+            onClick={() => cameraRef.current?.click()}
+            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[#00BFA5] text-white text-[12px] font-bold disabled:opacity-60"
+          >
+            {scanning ? (
               <Loader2 className="w-4 h-4 animate-spin" />
-              Analizando recibo...
-            </>
-          ) : (
-            <>
-              <ScanLine className="w-4 h-4" />
-              {previewUrl ? 'Volver a escanear' : 'Escanear recibo'}
-            </>
-          )}
-        </button>
+            ) : (
+              <Camera className="w-4 h-4" />
+            )}
+            {previewUrl ? 'Otra foto' : 'Tomar foto'}
+          </button>
+          <button
+            type="button"
+            disabled={scanning}
+            onClick={() => galleryRef.current?.click()}
+            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl cc-surface-solid border border-[var(--cc-border)] text-[12px] font-bold text-cc-primary disabled:opacity-60"
+          >
+            {scanning ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <ImageIcon className="w-4 h-4 text-[#00BFA5]" />
+            )}
+            Galería
+          </button>
+        </div>
+        {scanning && (
+          <p className="text-[11px] text-cc-secondary text-center flex items-center justify-center gap-1.5">
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            Analizando recibo...
+          </p>
+        )}
         {error && <p className="text-[11px] text-red-600">{error}</p>}
       </div>
 
       <input
-        ref={inputRef}
+        ref={cameraRef}
         type="file"
         accept="image/*"
         capture="environment"
+        className="hidden"
+        onChange={e => {
+          const file = e.target.files?.[0]
+          if (file) handleScan(file)
+          e.target.value = ''
+        }}
+      />
+      <input
+        ref={galleryRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
         className="hidden"
         onChange={e => {
           const file = e.target.files?.[0]
