@@ -3,7 +3,9 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { ChevronDown, ExternalLink } from 'lucide-react'
+import { formatMoney } from '@/lib/finance/format'
 import type { MemberSpendingStat } from '@/lib/finance/types'
+import type { CurrencyCode } from '@/lib/household/types'
 
 const FALLBACK_COLORS = ['#EC4899', '#F59E0B', '#00BFA5', '#6366F1', '#81D4FA', '#A78BFA']
 
@@ -13,15 +15,16 @@ function memberColor(index: number) {
 
 export function MemberSpendingDetail({
   members,
-  formatValue,
+  currency,
   periodStart,
   periodEnd,
 }: {
   members: MemberSpendingStat[]
-  formatValue: (n: number) => string
+  currency: CurrencyCode
   periodStart: string
   periodEnd: string
 }) {
+  const formatValue = (n: number) => formatMoney(n, currency)
   const [expandedId, setExpandedId] = useState<string | null>(
     members.length === 1 ? members[0].userId : null
   )

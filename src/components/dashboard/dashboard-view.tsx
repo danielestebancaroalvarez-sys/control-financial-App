@@ -6,7 +6,7 @@ import { ProactiveInsightBanner } from '@/components/dashboard/proactive-insight
 import { CollapsibleSection } from '@/components/ui/collapsible-section'
 import { MemberSpendingDetail } from '@/components/dashboard/member-spending-detail'
 import { CurrencyConverterWidget } from '@/components/dashboard/currency-converter-widget'
-import { BalanceReconcileCollapsible } from '@/components/dashboard/balance-reconcile-collapsible'
+import { BalanceSnapshotCard } from '@/components/dashboard/balance-snapshot-card'
 import { MarketMetricsPreview } from '@/components/dashboard/market-metrics-preview'
 import { formatMoney, getPeriodLabels } from '@/lib/finance/format'
 import type { DashboardSummary } from '@/lib/finance/types'
@@ -18,11 +18,10 @@ import {
   ArrowDownRight,
   ArrowUpRight,
   Users,
-  TrendingUp,
-  TrendingDown,
   PieChart,
   BarChart3,
   PiggyBank,
+  Clock,
 } from 'lucide-react'
 
 function buildBudgetSlices(summary: DashboardSummary) {
@@ -153,16 +152,13 @@ export function DashboardView({
         />
       </div>
 
-      <CurrencyConverterWidget initialRates={fxRates} />
-
-      <BalanceReconcileCollapsible
+      <BalanceSnapshotCard
         householdId={householdId}
         currentBalance={summary.realBalance}
         currency={currency}
         breakdown={summary.balanceBreakdown}
+        guiltFreeMoney={summary.guiltFreeMoney}
       />
-
-      <MarketMetricsPreview insights={marketInsights} currency={currency} />
 
       {budgetSlices.length > 0 && (
         <CollapsibleSection
@@ -209,7 +205,7 @@ export function DashboardView({
           title="Gastos del periodo"
           summary={expenseSummary}
           icon={<PieChart className="w-4 h-4 text-[#EC4899]" />}
-          defaultOpen={false}
+          defaultOpen
         >
           {summary.expenseGroups.length > 0 && (
             <DonutChart
@@ -224,7 +220,7 @@ export function DashboardView({
           )}
           {summary.allCategories.length > 0 && (
             <div className={summary.expenseGroups.length > 0 ? 'mt-4 pt-4 border-t border-[var(--cc-border-subtle)]' : 'pt-2'}>
-              <CategoryBarChart items={summary.allCategories} formatValue={fmt} />
+              <CategoryBarChart items={summary.allCategories} currency={currency} />
             </div>
           )}
         </CollapsibleSection>
@@ -235,7 +231,7 @@ export function DashboardView({
           title="Tendencia"
           summary={trendSummary}
           icon={<BarChart3 className="w-4 h-4 text-[#00BFA5]" />}
-          defaultOpen={false}
+          defaultOpen
         >
           <div className="flex gap-3 text-[9px] font-semibold text-cc-secondary pt-2 pb-2">
             <span className="flex items-center gap-1">
@@ -254,11 +250,11 @@ export function DashboardView({
           title="Gastos extra por persona"
           summary={memberSummary}
           icon={<Users className="w-4 h-4 text-[#00BFA5]" />}
-          defaultOpen={false}
+          defaultOpen
         >
           <MemberSpendingDetail
             members={summary.memberSpending}
-            formatValue={fmt}
+            currency={currency}
             periodStart={summary.periodStart}
             periodEnd={summary.periodEnd}
           />
@@ -270,29 +266,58 @@ export function DashboardView({
           title="Metas de ahorro"
           summary={savingsSummary}
           icon={<PiggyBank className="w-4 h-4 text-[#F59E0B]" />}
-          defaultOpen={false}
+          defaultOpen
         >
           <div className="space-y-3 pt-2">
-            {summary.savingsGoals.map(goal => (
-              <div key={goal.name}>
-                <div className="flex justify-between text-[12px] mb-1">
-                  <span className="text-cc-primary font-medium truncate">{goal.name}</span>
-                  <span className="text-cc-secondary shrink-0 ml-2">{goal.percent}%</span>
+            {summary.savingsGoals.map(goal => {
+              const isOverdue = goal.timeRemainingLabel.startsWith('Venció')
+              const isUrgent =
+                goal.timeRemainingLabel === 'Vence hoy' ||
+                goal.timeRemainingLabel === '1 día restante'
+
+              return (
+                <div key={goal.name}>
+                  <div className="flex justify-between items-start gap-2 mb-1">
+                    <span className="text-[12px] text-cc-primary font-medium truncate">
+                      {goal.name}
+                    </span>
+                    <span className="text-cc-secondary shrink-0 text-[12px] font-bold">
+                      {goal.percent}%
+                    </span>
+                  </div>
+                  <div className="h-2 rounded-full cc-track overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-[#F59E0B]"
+                      style={{ width: `${goal.percent}%` }}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between gap-2 mt-1">
+                    <p className="text-[10px] text-cc-secondary">
+                      {fmt(goal.current)} de {fmt(goal.target)}
+                    </p>
+                    <p
+                      className={`text-[10px] font-semibold flex items-center gap-0.5 shrink-0 ${
+                        isOverdue
+                          ? 'text-[#EC4899]'
+                          : isUrgent
+                            ? 'text-[#F59E0B]'
+                            : 'text-cc-muted'
+                      }`}
+                    >
+                      <Clock className="w-3 h-3" />
+                      {goal.timeRemainingLabel}
+                    </p>
+                  </div>
                 </div>
-                <div className="h-2 rounded-full cc-track overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-[#F59E0B]"
-                    style={{ width: `${goal.percent}%` }}
-                  />
-                </div>
-                <p className="text-[10px] text-cc-secondary mt-1">
-                  {fmt(goal.current)} de {fmt(goal.target)}
-                </p>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </CollapsibleSection>
       )}
+
+      <CurrencyConverterWidget initialRates={fxRates} />
+
+      <MarketMetricsPreview insights={marketInsights} currency={currency} />
 
       {summary.allCategories.length === 0 &&
         summary.savingsGoals.length === 0 &&

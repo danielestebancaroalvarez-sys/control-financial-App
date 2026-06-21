@@ -7,7 +7,7 @@ import { calculateGuiltFreeMoney } from './guilt-free'
 import { calculatePromisedCashflow } from './promised-cashflow'
 import { calculateActualPeriodCashflow } from './scheduled-expenses'
 import { sumVariableExpenses } from './variable-expenses'
-import { getPeriodRangeAtOffset, getPeriodBlockLabel, isClosedPeriod } from './format'
+import { getPeriodRangeAtOffset, getPeriodBlockLabel, isClosedPeriod, formatSavingsTimeRemaining } from './format'
 import { buildMarketInsights } from './market-analytics'
 import type { MarketInsights } from './market-analytics'
 import { getCategoryColor } from './categories'
@@ -353,15 +353,20 @@ export async function getDashboardSummary(
     safeOffset,
     6
   )
-  const savingsProgress = savingsGoals.map(g => ({
-    name: g.name,
-    current: Number(g.current_amount),
-    target: Number(g.target_amount),
-    percent: Math.min(
+  const savingsProgress = savingsGoals.map(g => {
+    const percent = Math.min(
       100,
       Math.round((Number(g.current_amount) / Number(g.target_amount)) * 100)
-    ),
-  }))
+    )
+    return {
+      name: g.name,
+      current: Number(g.current_amount),
+      target: Number(g.target_amount),
+      percent,
+      targetDate: g.target_date,
+      timeRemainingLabel: formatSavingsTimeRemaining(g.target_date, percent),
+    }
+  })
 
   const memberSpending = buildMemberSpendingStats(
     transactions,

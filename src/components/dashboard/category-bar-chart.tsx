@@ -1,12 +1,16 @@
+import type { CurrencyCode } from '@/lib/household/types'
+import { formatMoney } from '@/lib/finance/format'
+
 type Item = { name: string; amount: number; color: string | null }
 
 export function CategoryBarChart({
   items,
-  formatValue,
+  currency,
 }: {
   items: Item[]
-  formatValue: (n: number) => string
+  currency: CurrencyCode
 }) {
+  const formatValue = (n: number) => formatMoney(n, currency)
   const max = Math.max(...items.map(i => i.amount), 1)
 
   if (items.length === 0) {

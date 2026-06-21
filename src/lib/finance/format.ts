@@ -57,6 +57,27 @@ export function formatMoney(amount: number, currency: CurrencyCode): string {
   }).format(amount)
 }
 
+export function formatSavingsTimeRemaining(
+  targetDate: string | null,
+  percent: number
+): string {
+  if (percent >= 100) return 'Meta cumplida'
+  if (!targetDate) return 'Sin fecha límite'
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const target = new Date(`${targetDate}T12:00:00`)
+  const diff = Math.round((target.getTime() - today.getTime()) / 86_400_000)
+
+  if (diff < 0) {
+    const days = Math.abs(diff)
+    return days === 1 ? 'Venció ayer' : `Venció hace ${days} días`
+  }
+  if (diff === 0) return 'Vence hoy'
+  if (diff === 1) return '1 día restante'
+  return `${diff} días restantes`
+}
+
 export function getCurrentMonthRange(): { start: string; end: string } {
   const now = new Date()
   const start = new Date(now.getFullYear(), now.getMonth(), 1)

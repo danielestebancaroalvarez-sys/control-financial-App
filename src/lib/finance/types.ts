@@ -118,7 +118,14 @@ export type DashboardSummary = {
   expenseChangePercent: number | null
   topCategories: { name: string; amount: number; color: string | null }[]
   expenseGroups: { name: string; amount: number; color: string }[]
-  savingsGoals: { name: string; percent: number; current: number; target: number }[]
+  savingsGoals: {
+    name: string
+    percent: number
+    current: number
+    target: number
+    targetDate: string | null
+    timeRemainingLabel: string
+  }[]
   memberSpending: MemberSpendingStat[]
   period: Period
   periodOffset: number
