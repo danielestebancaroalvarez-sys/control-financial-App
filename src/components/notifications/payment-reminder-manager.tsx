@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef } from 'react'
-import { getPaymentReminderPayload, getInAppNotifications } from '@/lib/notifications/reminder-actions'
+import { getPaymentReminderPayload, getFinanceInAppNotifications } from '@/lib/notifications/reminder-actions'
 import { buildInAppNotifications } from '@/lib/notifications/build-notifications'
 import { syncInAppNotifications } from '@/lib/notifications/in-app-store'
 import { getTomorrowDateString } from '@/lib/finance/payment-reminders'
@@ -31,8 +31,8 @@ function buildWeeklyBody(
 }
 
 async function syncInboxFromServer() {
-  const items = await getInAppNotifications()
-  syncInAppNotifications(items)
+  const items = await getFinanceInAppNotifications()
+  syncInAppNotifications(items, 'finance')
 }
 
 export function PaymentReminderManager() {
@@ -46,7 +46,7 @@ export function PaymentReminderManager() {
       const payload = await getPaymentReminderPayload()
       if (!payload) return
 
-      syncInAppNotifications(buildInAppNotifications(payload))
+      syncInAppNotifications(buildInAppNotifications(payload), 'finance')
 
       if (!isPaymentRemindersEnabled()) return
       if (typeof window === 'undefined' || !('Notification' in window)) return

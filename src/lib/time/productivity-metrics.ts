@@ -73,3 +73,41 @@ export function percentOf(part: number, total: number): number {
   if (total <= 0) return 0
   return Math.round((part / total) * 100)
 }
+
+/** Puntuación 0–100 por persona en el periodo semanal. */
+export function calculateProductivityScore(input: {
+  productivityPercent: number
+  leisurePercent: number
+  effortMinutes: number
+  totalMinutes: number
+  sleepMinutes: number
+  doneTasks: number
+  goalProgressPercent: number
+}): number {
+  const effortScore = Math.min(100, (input.effortMinutes / (35 * 60)) * 100)
+  const sleepDaily = input.sleepMinutes / 7
+  const sleepScore =
+    sleepDaily >= 420 && sleepDaily <= 540 ? 100 : sleepDaily >= 300 ? 70 : sleepDaily > 0 ? 50 : 40
+  const taskBonus = Math.min(15, input.doneTasks * 5)
+  const leisurePenalty = Math.min(20, input.leisurePercent * 0.35)
+  const trackingBonus = input.totalMinutes >= 20 * 60 ? 5 : 0
+
+  const raw =
+    input.productivityPercent * 0.4 +
+    effortScore * 0.2 +
+    sleepScore * 0.1 +
+    input.goalProgressPercent * 0.15 +
+    taskBonus +
+    trackingBonus -
+    leisurePenalty
+
+  return Math.max(0, Math.min(100, Math.round(raw)))
+}
+
+export function productivityScoreLabel(score: number): string {
+  if (score >= 85) return 'Excelente'
+  if (score >= 70) return 'Muy bien'
+  if (score >= 55) return 'Bien'
+  if (score >= 40) return 'Regular'
+  return 'Bajo'
+}

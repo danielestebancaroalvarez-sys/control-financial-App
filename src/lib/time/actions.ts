@@ -9,15 +9,18 @@ import type {
   CreateProductivityGoalInput,
   CreateTimeBlockInput,
   CreateTimeEntryInput,
+  UpdateTimeBlockInput,
 } from './types'
 
 const TIME_PATHS = [
   '/tiempo',
+  '/tiempo/buscar',
   '/tiempo/nuevo',
   '/tiempo/horario',
   '/tiempo/fijos',
   '/tiempo/tareas',
   '/tiempo/metas',
+  '/tiempo/ajustes',
 ]
 
 function revalidateTime() {
@@ -77,6 +80,42 @@ export async function deactivateTimeBlock(
     .update({ is_active: false })
     .eq('id', blockId)
     .eq('household_id', householdId)
+
+  if (error) return { error: error.message }
+  revalidateTime()
+  return {}
+}
+
+export async function updateTimeBlock(
+  input: UpdateTimeBlockInput
+): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Debes iniciar sesión.' }
+  if (!input.title.trim()) return { error: 'El título es obligatorio.' }
+  if (!input.startTime || !input.endTime) {
+    return { error: 'Indica hora de inicio y fin.' }
+  }
+
+  const durationMinutes = minutesFromTimeRange(input.startTime, input.endTime)
+  if (durationMinutes <= 0) return { error: 'La hora de fin debe ser posterior a la de inicio.' }
+
+  const { error } = await supabase
+    .from('time_blocks')
+    .update({
+      category_id: input.categoryId,
+      assigned_to: input.assignedTo ?? null,
+      title: input.title.trim(),
+      frequency: input.frequency,
+      anchor_date: input.anchorDate,
+      duration_minutes: durationMinutes,
+      start_time: input.startTime,
+      end_time: input.endTime,
+    })
+    .eq('id', input.blockId)
+    .eq('household_id', input.householdId)
 
   if (error) return { error: error.message }
   revalidateTime()

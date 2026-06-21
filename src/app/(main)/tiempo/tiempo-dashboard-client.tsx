@@ -21,6 +21,7 @@ import {
   formatDuration,
   formatDurationHours,
 } from '@/lib/time/format'
+import { productivityScoreLabel } from '@/lib/time/productivity-metrics'
 import type { TimeDashboardSummary } from '@/lib/time/types'
 
 export function TiempoDashboardClient({
@@ -184,6 +185,60 @@ export function TiempoDashboardClient({
         </CollapsibleSection>
       )}
 
+      {summary.memberMetrics.length > 0 && (
+        <CollapsibleSection
+          title="Puntuación de productividad"
+          summary={summary.memberMetrics
+            .map(m => `${m.name.split(' ')[0]} ${m.productivityScore}`)
+            .join(' · ')}
+          icon={<TrendingUp className="w-4 h-4 text-[#6366F1]" />}
+          defaultOpen
+        >
+          <p className="text-[10px] text-cc-secondary mb-4">
+            Escala 0–100 según tiempo productivo, esfuerzo, sueño, tareas hechas y metas. Ocio
+            resta puntos.
+          </p>
+          <div className="space-y-3">
+            {summary.memberMetrics.map(member => (
+              <div
+                key={member.userId}
+                className="flex items-center gap-3 p-3 rounded-2xl cc-surface-muted"
+              >
+                <UserAvatar
+                  name={member.name}
+                  avatarUrl={member.avatarUrl}
+                  size="md"
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-[13px] font-bold text-cc-primary truncate">{member.name}</p>
+                  <p className="text-[10px] text-cc-secondary">
+                    {productivityScoreLabel(member.productivityScore)} ·{' '}
+                    {member.doneTasks} tareas · {formatDuration(member.productivityMinutes)}{' '}
+                    productivos
+                  </p>
+                </div>
+                <div className="text-right shrink-0">
+                  <p
+                    className="text-[26px] font-bold leading-none"
+                    style={{
+                      color:
+                        member.productivityScore >= 70
+                          ? '#059669'
+                          : member.productivityScore >= 50
+                            ? '#2563EB'
+                            : '#F59E0B',
+                    }}
+                  >
+                    {member.productivityScore}
+                  </p>
+                  <p className="text-[9px] text-cc-muted font-semibold">/ 100</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CollapsibleSection>
+      )}
+
       {summary.memberMetrics.length > 1 && (
         <CollapsibleSection
           title="Comparativa del hogar"
@@ -193,20 +248,28 @@ export function TiempoDashboardClient({
           <div className="space-y-4">
             {summary.memberMetrics.map(member => (
               <div key={member.userId} className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <UserAvatar
-                    name={member.name}
-                    avatarUrl={member.avatarUrl}
-                    size="xs"
-                  />
-                  <span className="text-[12px] font-bold text-cc-primary">{member.name}</span>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <UserAvatar
+                      name={member.name}
+                      avatarUrl={member.avatarUrl}
+                      size="xs"
+                    />
+                    <span className="text-[12px] font-bold text-cc-primary">{member.name}</span>
+                  </div>
+                  <span
+                    className="text-[13px] font-bold tabular-nums"
+                    style={{ color: '#2563EB' }}
+                  >
+                    {member.productivityScore} pts
+                  </span>
                 </div>
                 <div className="space-y-1.5">
                   <MetricBar
                     label="Productividad"
                     value={member.productivityPercent}
                     detail={formatDuration(member.productivityMinutes)}
-                    color="#6366F1"
+                    color="#2563EB"
                   />
                   <MetricBar
                     label="Esfuerzo"
@@ -217,14 +280,14 @@ export function TiempoDashboardClient({
                       )
                     )}
                     detail={formatDuration(member.effortMinutes)}
-                    color="#7C3AED"
+                    color="#DC2626"
                     icon={<Zap className="w-3 h-3" />}
                   />
                   <MetricBar
                     label="Ocio"
                     value={member.leisurePercent}
                     detail={formatDuration(member.leisureMinutes)}
-                    color="#C4B5FD"
+                    color="#F59E0B"
                   />
                 </div>
               </div>
@@ -257,8 +320,8 @@ export function TiempoDashboardClient({
                 </div>
                 <div className="h-1.5 rounded-full cc-track overflow-hidden">
                   <div
-                    className="h-full rounded-full bg-[#8B5CF6]"
-                    style={{ width: `${member.percent}%` }}
+                    className="h-full rounded-full"
+                    style={{ width: `${member.percent}%`, backgroundColor: '#2563EB' }}
                   />
                 </div>
                 <p className="text-[10px] text-cc-muted mt-0.5">{member.percent}% del periodo</p>

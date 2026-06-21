@@ -2,13 +2,18 @@
 
 import { getMainAppContext } from '@/lib/app/context'
 import { createClient } from '@/utils/supabase/server'
-import { formatMoney, getNextPeriodRange } from '@/lib/finance/format'
+import { formatMoney, getNextPeriodRange, getPeriodRangeAtOffset } from '@/lib/finance/format'
 import {
   formatReminderDate,
   listPaymentDueDates,
   type PaymentDueReminder,
 } from '@/lib/finance/payment-reminders'
 import { buildInAppNotifications, type InAppNotification } from './build-notifications'
+import {
+  buildTimeInAppNotifications,
+  formatActivityDueLabel,
+  type TimeActivityReminderPayload,
+} from './build-time-notifications'
 
 export type PaymentReminderPayload = {
   nextWeekStart: string
@@ -102,8 +107,85 @@ export async function getPaymentReminderPayload(): Promise<PaymentReminderPayloa
   }
 }
 
-export async function getInAppNotifications(): Promise<InAppNotification[]> {
+export async function getFinanceInAppNotifications(): Promise<InAppNotification[]> {
   const payload = await getPaymentReminderPayload()
   if (!payload) return []
   return buildInAppNotifications(payload)
+}
+
+/** @deprecated Use getFinanceInAppNotifications */
+export async function getInAppNotifications(): Promise<InAppNotification[]> {
+  return getFinanceInAppNotifications()
+}
+
+export async function getTimeActivityReminderPayload(): Promise<TimeActivityReminderPayload | null> {
+  const ctx = await getMainAppContext()
+  if (!ctx) return null
+
+  const supabase = await createClient()
+  const { start, end } = getPeriodRangeAtOffset('weekly', 0)
+
+  const [tasksRes, goalsRes] = await Promise.all([
+    supabase
+      .from('household_tasks')
+      .select('id, title, due_date')
+      .eq('household_id', ctx.household.id)
+      .eq('status', 'pending')
+      .not('due_date', 'is', null)
+      .gte('due_date', start)
+      .lte('due_date', end)
+      .order('due_date'),
+    supabase
+      .from('goal_steps')
+      .select('id, title, due_date, goal_id, productivity_goals ( title )')
+      .eq('household_id', ctx.household.id)
+      .eq('status', 'pending')
+      .not('due_date', 'is', null)
+      .gte('due_date', start)
+      .lte('due_date', end)
+      .order('due_date'),
+  ])
+
+  const activities: TimeActivityReminderPayload['activities'] = []
+
+  for (const task of tasksRes.data ?? []) {
+    if (!task.due_date) continue
+    activities.push({
+      id: task.id,
+      kind: 'task',
+      title: task.title,
+      dueDate: task.due_date,
+      dueDateLabel: formatActivityDueLabel(task.due_date),
+      href: '/tiempo/tareas',
+    })
+  }
+
+  for (const step of goalsRes.data ?? []) {
+    if (!step.due_date) continue
+    const goalRaw = step.productivity_goals as { title: string } | { title: string }[] | null
+    const goalTitle = Array.isArray(goalRaw) ? goalRaw[0]?.title : goalRaw?.title
+    activities.push({
+      id: step.id,
+      kind: 'goal',
+      title: step.title,
+      dueDate: step.due_date,
+      dueDateLabel: formatActivityDueLabel(step.due_date),
+      href: '/tiempo/metas',
+      goalTitle: goalTitle ?? undefined,
+    })
+  }
+
+  activities.sort((a, b) => a.dueDate.localeCompare(b.dueDate))
+
+  return {
+    weekStart: start,
+    weekEnd: end,
+    activities,
+  }
+}
+
+export async function getTimeInAppNotifications(): Promise<InAppNotification[]> {
+  const payload = await getTimeActivityReminderPayload()
+  if (!payload) return []
+  return buildTimeInAppNotifications(payload)
 }

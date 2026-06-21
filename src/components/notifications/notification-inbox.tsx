@@ -3,9 +3,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
-import { Bell, CalendarClock, Users, X } from 'lucide-react'
-import { getInAppNotifications } from '@/lib/notifications/reminder-actions'
-import type { InAppNotification } from '@/lib/notifications/build-notifications'
+import { Bell, CalendarClock, CheckSquare, Target, Users, X } from 'lucide-react'
+import {
+  getFinanceInAppNotifications,
+  getTimeInAppNotifications,
+} from '@/lib/notifications/reminder-actions'
+import type { InAppNotification, NotificationModule } from '@/lib/notifications/build-notifications'
 import {
   getUnreadCount,
   getStoredNotifications,
@@ -14,11 +17,30 @@ import {
   syncInAppNotifications,
 } from '@/lib/notifications/in-app-store'
 
-function NotificationIcon({ type }: { type: InAppNotification['type'] }) {
+function NotificationIcon({
+  type,
+  module,
+}: {
+  type: InAppNotification['type']
+  module: NotificationModule
+}) {
   if (type === 'partner-expense') {
     return (
       <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-[#E8EAF6] text-[#5C6BC0] dark:bg-[#2a2d42] dark:text-[#9fa8da]">
         <Users className="w-4 h-4" />
+      </div>
+    )
+  }
+
+  if (module === 'time') {
+    const isGoal = type === 'goal-milestone'
+    return (
+      <div
+        className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+          isGoal ? 'bg-[#EDE9FE] text-[#6366F1]' : 'bg-[#DBEAFE] text-[#2563EB]'
+        }`}
+      >
+        {isGoal ? <Target className="w-4 h-4" /> : <CheckSquare className="w-4 h-4" />}
       </div>
     )
   }
@@ -42,6 +64,7 @@ function NotificationPanel({
   notifications,
   loading,
   unread,
+  module,
   onClose,
   onRead,
   onReadAll,
@@ -49,23 +72,34 @@ function NotificationPanel({
   notifications: InAppNotification[]
   loading: boolean
   unread: number
+  module: NotificationModule
   onClose: () => void
   onRead: (id: string) => void
   onReadAll: () => void
 }) {
+  const isTime = module === 'time'
+  const accent = isTime ? '#6366F1' : '#00BFA5'
+  const emptyHref = isTime ? '/tiempo/nuevo' : '/nuevo'
+  const emptyCta = isTime ? 'Crear tarea o actividad' : 'Crear gasto recurrente'
+  const footerHref = isTime ? '/tiempo/tareas' : '/predicciones'
+  const footerLabel = isTime ? 'Ver tareas →' : 'Ver radar de pagos →'
+
   return (
     <div className="w-full max-w-md rounded-[20px] cc-surface-solid border border-[#EEEEEE] shadow-[0_12px_40px_rgba(0,0,0,0.15)] overflow-hidden">
       <div className="flex items-center justify-between px-4 py-3 border-b border-[#F0F0F0]">
         <div>
           <p className="text-[14px] font-bold text-cc-primary">Notificaciones</p>
-          <p className="text-[10px] text-cc-secondary">Pagos y actividad de tu pareja</p>
+          <p className="text-[10px] text-cc-secondary">
+            {isTime ? 'Tareas, hitos y actividades' : 'Pagos y actividad de tu pareja'}
+          </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {unread > 0 && (
             <button
               type="button"
               onClick={onReadAll}
-              className="text-[10px] font-bold text-[#00BFA5]"
+              className="text-[10px] font-bold"
+              style={{ color: accent }}
             >
               Marcar leídas
             </button>
@@ -88,14 +122,17 @@ function NotificationPanel({
           <div className="px-4 py-8 text-center">
             <Bell className="w-8 h-8 text-cc-muted mx-auto mb-2" />
             <p className="text-[13px] text-cc-secondary">
-              No hay pagos programados para la próxima semana.
+              {isTime
+                ? 'No hay tareas ni hitos pendientes esta semana.'
+                : 'No hay pagos programados para la próxima semana.'}
             </p>
             <Link
-              href="/nuevo"
+              href={emptyHref}
               onClick={onClose}
-              className="inline-block mt-3 text-[12px] font-bold text-[#00BFA5]"
+              className="inline-block mt-3 text-[12px] font-bold"
+              style={{ color: accent }}
             >
-              Crear gasto recurrente
+              {emptyCta}
             </Link>
           </div>
         ) : (
@@ -110,7 +147,7 @@ function NotificationPanel({
                   }}
                   className="flex items-start gap-3 px-4 py-3 hover:bg-[#FAFAFA] transition-colors"
                 >
-                  <NotificationIcon type={item.type} />
+                  <NotificationIcon type={item.type} module={item.module} />
                   <div className="flex-1 min-w-0">
                     <p className="text-[13px] font-semibold text-cc-primary leading-snug">
                       {item.title}
@@ -129,11 +166,12 @@ function NotificationPanel({
       {notifications.length > 0 && (
         <div className="px-4 py-3 border-t border-[#F0F0F0] bg-[#FAFAFA]">
           <Link
-            href="/predicciones"
+            href={footerHref}
             onClick={onClose}
-            className="text-[12px] font-bold text-[#00BFA5]"
+            className="text-[12px] font-bold"
+            style={{ color: accent }}
           >
-            Ver radar de pagos →
+            {footerLabel}
           </Link>
         </div>
       )}
@@ -141,7 +179,7 @@ function NotificationPanel({
   )
 }
 
-export function NotificationInbox() {
+export function NotificationInbox({ module }: { module: NotificationModule }) {
   const [open, setOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [notifications, setNotifications] = useState<InAppNotification[]>([])
@@ -149,32 +187,40 @@ export function NotificationInbox() {
   const [loading, setLoading] = useState(false)
   const panelRef = useRef<HTMLDivElement>(null)
 
+  const accent = module === 'time' ? '#6366F1' : '#00BFA5'
+  const badgeColor = module === 'time' ? '#6366F1' : '#EC4899'
+
   const refresh = useCallback(async () => {
     setLoading(true)
     try {
-      const incoming = await getInAppNotifications()
-      syncInAppNotifications(incoming)
+      const incoming =
+        module === 'time'
+          ? await getTimeInAppNotifications()
+          : await getFinanceInAppNotifications()
+      syncInAppNotifications(incoming, module)
       setNotifications(incoming)
-      setUnread(getUnreadCount())
+      setUnread(getUnreadCount(module))
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [module])
 
   useEffect(() => {
     setMounted(true)
     refresh()
     const interval = window.setInterval(refresh, 5 * 60 * 1000)
-    const onUpdated = () => {
-      setNotifications(getStoredNotifications())
-      setUnread(getUnreadCount())
+    const onUpdated = (e: Event) => {
+      const detail = (e as CustomEvent<{ module?: NotificationModule }>).detail
+      if (detail?.module && detail.module !== module) return
+      setNotifications(getStoredNotifications(module))
+      setUnread(getUnreadCount(module))
     }
     window.addEventListener('couplecash-notifications-updated', onUpdated)
     return () => {
       window.clearInterval(interval)
       window.removeEventListener('couplecash-notifications-updated', onUpdated)
     }
-  }, [refresh])
+  }, [refresh, module])
 
   useEffect(() => {
     if (!open) return
@@ -203,12 +249,12 @@ export function NotificationInbox() {
   }
 
   function handleRead(id: string) {
-    markNotificationRead(id)
-    setUnread(getUnreadCount())
+    markNotificationRead(id, module)
+    setUnread(getUnreadCount(module))
   }
 
   function handleReadAll() {
-    markAllNotificationsRead()
+    markAllNotificationsRead(module)
     setUnread(0)
   }
 
@@ -225,6 +271,7 @@ export function NotificationInbox() {
           notifications={notifications}
           loading={loading}
           unread={unread}
+          module={module}
           onClose={() => setOpen(false)}
           onRead={handleRead}
           onReadAll={handleReadAll}
@@ -238,13 +285,17 @@ export function NotificationInbox() {
       <button
         type="button"
         onClick={handleOpen}
-        className="relative w-10 h-10 rounded-full bg-white/80 border border-white/70 shadow-sm flex items-center justify-center text-cc-secondary hover:text-[#00BFA5] transition-colors shrink-0"
+        className="relative w-10 h-10 rounded-full bg-white/80 border border-white/70 shadow-sm flex items-center justify-center text-cc-secondary transition-colors shrink-0"
+        style={{ ['--hover-accent' as string]: accent }}
         aria-label="Notificaciones"
         aria-expanded={open}
       >
         <Bell className="w-5 h-5" />
         {unread > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-[#EC4899] text-white text-[10px] font-bold flex items-center justify-center">
+          <span
+            className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full text-white text-[10px] font-bold flex items-center justify-center"
+            style={{ backgroundColor: badgeColor }}
+          >
             {unread > 9 ? '9+' : unread}
           </span>
         )}

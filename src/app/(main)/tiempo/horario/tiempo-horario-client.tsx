@@ -2,37 +2,30 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { CalendarClock, List } from 'lucide-react'
+import { CalendarClock, Repeat } from 'lucide-react'
 import { UserAvatar } from '@/components/profile/user-avatar'
 import { WeekSelector } from '@/components/time/week-selector'
 import { WeeklyScheduleGrid } from '@/components/time/weekly-schedule-grid'
 import { formatChartPeriodCaption } from '@/lib/time/format'
-import type { TimeBlock } from '@/lib/time/types'
 import type { ScheduleEvent } from '@/lib/time/schedule'
 import type { HouseholdMember } from '@/lib/household/types'
-import { TiempoFijosClient } from '../fijos/tiempo-fijos-client'
 
 export function TiempoHorarioClient({
   periodStart,
   periodEnd,
   events,
-  blocks,
   members,
-  householdId,
   periodOffset,
   currentUserId,
 }: {
   periodStart: string
   periodEnd: string
   events: ScheduleEvent[]
-  blocks: TimeBlock[]
   members: HouseholdMember[]
-  householdId: string
   periodOffset: number
   currentUserId: string
 }) {
   const [activeUserId, setActiveUserId] = useState(currentUserId)
-  const [showBlocks, setShowBlocks] = useState(false)
 
   const periodCaption = formatChartPeriodCaption(
     periodOffset === 0
@@ -46,14 +39,23 @@ export function TiempoHorarioClient({
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-[20px] font-bold text-cc-primary flex items-center gap-2">
-          <CalendarClock className="w-5 h-5 text-[#6366F1]" />
-          Horario
-        </h1>
-        <p className="text-[12px] text-cc-secondary mt-0.5">
-          Tu semana de un vistazo. Cambia de persona para ver el horario de cada miembro.
-        </p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-[20px] font-bold text-cc-primary flex items-center gap-2">
+            <CalendarClock className="w-5 h-5 text-[#6366F1]" />
+            Horario
+          </h1>
+          <p className="text-[12px] text-cc-secondary mt-0.5">
+            Tu semana de un vistazo. Cambia de persona para ver el horario de cada miembro.
+          </p>
+        </div>
+        <Link
+          href="/tiempo/buscar?tab=fijos"
+          className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl cc-surface-muted text-[11px] font-bold text-[#6366F1]"
+        >
+          <Repeat className="w-3.5 h-3.5" />
+          Fijos
+        </Link>
       </div>
 
       <p className="text-[10px] text-cc-muted">{periodCaption}</p>
@@ -95,26 +97,12 @@ export function TiempoHorarioClient({
         userId={activeUserId}
       />
 
-      <div className="flex gap-2">
-        <Link
-          href="/tiempo/nuevo"
-          className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white text-[13px] font-bold"
-        >
-          Añadir actividad
-        </Link>
-        <button
-          type="button"
-          onClick={() => setShowBlocks(v => !v)}
-          className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl cc-surface-muted text-[13px] font-bold text-cc-secondary"
-        >
-          <List className="w-4 h-4" />
-          Bloques
-        </button>
-      </div>
-
-      {showBlocks && (
-        <TiempoFijosClient blocks={blocks} householdId={householdId} embedded />
-      )}
+      <Link
+        href="/tiempo/nuevo"
+        className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white text-[13px] font-bold"
+      >
+        Añadir actividad
+      </Link>
     </div>
   )
 }

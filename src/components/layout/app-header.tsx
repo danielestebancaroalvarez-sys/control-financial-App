@@ -27,16 +27,14 @@ export function AppHeader({
     >
       <div className="flex items-center justify-between gap-3">
         <AppModulePicker />
-        {!isTime && (
-          <div className="flex items-center gap-2 shrink-0">
-            <NotificationInbox />
-            <AccountAvatarLink
-              firstName={firstName}
-              email={email}
-              avatarUrl={avatarUrl}
-            />
-          </div>
-        )}
+        <div className="flex items-center gap-2 shrink-0">
+          <NotificationInbox module={isTime ? 'time' : 'finance'} />
+          <AccountAvatarLink
+            firstName={firstName}
+            email={email}
+            avatarUrl={avatarUrl}
+          />
+        </div>
       </div>
     </header>
   )

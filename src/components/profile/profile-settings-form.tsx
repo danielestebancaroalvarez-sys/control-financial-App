@@ -7,6 +7,7 @@ import { UserAvatar } from '@/components/profile/user-avatar'
 import { updateUserProfile } from '@/lib/profile/actions'
 import { compressReceiptImage } from '@/lib/receipts/compress-image'
 import { isProfileComplete } from '@/lib/profile/types'
+import { MODULE_ACCENT, type AppAccent } from '@/lib/app/module-accent'
 
 export function ProfileSettingsForm({
   initialFullName,
@@ -14,12 +15,14 @@ export function ProfileSettingsForm({
   email,
   onSaved,
   variant = 'settings',
+  accent = 'finance',
 }: {
   initialFullName: string
   initialAvatarUrl: string | null
   email: string | null
   onSaved?: () => void
   variant?: 'settings' | 'wizard'
+  accent?: AppAccent
 }) {
   const router = useRouter()
   const fileRef = useRef<HTMLInputElement>(null)
@@ -71,6 +74,7 @@ export function ProfileSettingsForm({
   }
 
   const isWizard = variant === 'wizard'
+  const theme = MODULE_ACCENT[accent]
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -78,7 +82,7 @@ export function ProfileSettingsForm({
         <div className="flex items-center justify-between gap-2">
           <div>
             <h2 className="text-[15px] font-bold text-cc-primary flex items-center gap-2">
-              <User className="w-4 h-4 text-[#00BFA5]" />
+              <User className={`w-4 h-4 ${theme.icon}`} />
               Tu perfil
             </h2>
             <p className="text-[12px] text-cc-secondary mt-0.5">
@@ -86,7 +90,7 @@ export function ProfileSettingsForm({
             </p>
           </div>
           {complete && (
-            <span className="text-[10px] font-bold px-2 py-1 rounded-lg bg-[#E8F5E9] text-[#2E7D32] shrink-0">
+            <span className={`text-[10px] font-bold px-2 py-1 rounded-lg shrink-0 ${theme.badgeBg}`}>
               Completo
             </span>
           )}
@@ -105,7 +109,7 @@ export function ProfileSettingsForm({
             avatarUrl={previewUrl}
             size="lg"
           />
-          <span className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-[#00BFA5] text-white flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+          <span className={`absolute -bottom-1 -right-1 w-7 h-7 rounded-full text-white flex items-center justify-center shadow-md group-hover:scale-105 transition-transform ${theme.solid}`}>
             <Camera className="w-3.5 h-3.5" />
           </span>
         </button>
@@ -118,7 +122,7 @@ export function ProfileSettingsForm({
             value={fullName}
             onChange={e => setFullName(e.target.value)}
             placeholder="Ej: Daniel García"
-            className="mt-1 w-full px-4 py-3 rounded-xl cc-input text-[14px] outline-none"
+            className={`mt-1 w-full px-4 py-3 rounded-xl cc-input text-[14px] outline-none ring-2 ring-transparent ${theme.ring}`}
             required
             minLength={2}
           />
@@ -145,9 +149,7 @@ export function ProfileSettingsForm({
         type="submit"
         disabled={loading || fullName.trim().length < 2}
         className={`w-full py-3.5 rounded-2xl text-white text-[14px] font-bold disabled:opacity-60 flex items-center justify-center gap-2 ${
-          isWizard
-            ? 'bg-[#00BFA5]'
-            : 'bg-gradient-to-r from-[#00BFA5] to-[#2DD4BF]'
+          isWizard ? theme.solid : theme.gradient
         }`}
       >
         {loading ? (

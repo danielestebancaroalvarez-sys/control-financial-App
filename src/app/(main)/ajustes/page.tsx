@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import { getMainAppContextWithPeriod } from '@/lib/app/context'
 import { getHouseholdMembers } from '@/lib/household/queries'
 import { getCategories } from '@/lib/finance/queries'
@@ -87,6 +88,12 @@ export default async function AjustesPage() {
         <p className="text-[13px] text-cc-secondary mb-4">{ctx.user.email}</p>
         <SignOutButton />
       </section>
+
+      <p className="text-center text-[11px] text-cc-muted pb-2">
+        <Link href="/tiempo/ajustes" className="text-[#6366F1] font-semibold">
+          Ver ajustes de Tiempo →
+        </Link>
+      </p>
     </div>
   )
 }

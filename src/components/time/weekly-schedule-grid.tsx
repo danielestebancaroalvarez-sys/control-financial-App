@@ -21,25 +21,28 @@ const TASK_CHIP_HEIGHT = 22
 
 const SOURCE_STYLES: Record<
   ScheduleEvent['source'],
-  { border: string; Icon: typeof Repeat; label: string; accent: string }
+  { border: string; Icon: typeof Repeat; label: string; accent: string; ring: string }
 > = {
   block: {
     border: 'solid',
     Icon: Repeat,
     label: 'Bloque fijo',
-    accent: '#6366F1',
+    accent: '#1D4ED8',
+    ring: '#93C5FD',
   },
   entry: {
     border: 'dashed',
     Icon: Clock,
     label: 'Tiempo registrado',
-    accent: '#8B5CF6',
+    accent: '#047857',
+    ring: '#6EE7B7',
   },
   task: {
     border: 'double',
     Icon: CheckSquare,
     label: 'Tarea',
-    accent: '#EC4899',
+    accent: '#B91C1C',
+    ring: '#FCA5A5',
   },
 }
 
@@ -112,11 +115,12 @@ export function WeeklyScheduleGrid({
                       return (
                         <div
                           key={task.id}
-                          className="flex items-center justify-center rounded-md px-0.5 py-1"
+                          className="flex items-center justify-center rounded-md px-0.5 py-1.5 shadow-sm"
                           style={{
-                            backgroundColor: `${task.categoryColor}35`,
-                            borderLeft: `3px ${style.border} ${task.categoryColor}`,
-                            color: task.categoryColor,
+                            backgroundColor: style.accent,
+                            borderLeft: `4px ${style.border} rgba(255,255,255,0.45)`,
+                            boxShadow: `inset 0 0 0 1px ${style.ring}`,
+                            color: '#fff',
                           }}
                           title={task.title}
                         >
@@ -206,13 +210,13 @@ export function WeeklyScheduleGrid({
                       return (
                         <div
                           key={event.id}
-                          className="absolute left-1 right-1 rounded-lg overflow-hidden z-10 shadow-sm flex flex-col items-center justify-center gap-0.5 px-0.5"
+                          className="absolute left-0.5 right-0.5 rounded-md overflow-hidden z-10 shadow-md flex flex-col items-center justify-center gap-0.5 px-0.5"
                           style={{
                             top,
                             height: Math.max(height, minH),
-                            backgroundColor: `${event.categoryColor}45`,
-                            borderLeft: `3px ${borderStyle} ${event.categoryColor}`,
-                            boxShadow: `0 1px 4px ${event.categoryColor}22`,
+                            backgroundColor: style.accent,
+                            borderLeft: `4px ${borderStyle} rgba(255,255,255,0.45)`,
+                            boxShadow: `0 2px 6px rgba(0,0,0,0.18), inset 0 0 0 1px ${style.ring}`,
                           }}
                           title={`${style.label}: ${event.title}${
                             event.startTime
@@ -221,10 +225,13 @@ export function WeeklyScheduleGrid({
                           }`}
                         >
                           <div
-                            className="flex items-center gap-0.5"
-                            style={{ color: event.categoryColor }}
+                            className="flex items-center gap-0.5 rounded-full px-1 py-0.5"
+                            style={{
+                              backgroundColor: 'rgba(255,255,255,0.92)',
+                              color: style.accent,
+                            }}
                           >
-                            <SourceIcon className="w-2.5 h-2.5 shrink-0 opacity-80" />
+                            <SourceIcon className="w-2.5 h-2.5 shrink-0" />
                             <CategoryIcon
                               icon={event.categoryIcon}
                               className="w-3.5 h-3.5 shrink-0"
@@ -232,8 +239,11 @@ export function WeeklyScheduleGrid({
                           </div>
                           {showTime && (
                             <p
-                              className="text-[7px] font-bold tabular-nums leading-none"
-                              style={{ color: event.categoryColor }}
+                              className="text-[7px] font-bold tabular-nums leading-none px-1 rounded"
+                              style={{
+                                backgroundColor: 'rgba(255,255,255,0.9)',
+                                color: style.accent,
+                              }}
                             >
                               {formatTimeRange(event.startTime, event.endTime)}
                             </p>
@@ -264,13 +274,13 @@ export function WeeklyScheduleGrid({
             return (
               <div key={key} className="flex items-start gap-2.5">
                 <div
-                  className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                  className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 shadow-sm"
                   style={{
-                    backgroundColor: `${style.accent}20`,
-                    borderLeft: `3px ${style.border} ${style.accent}`,
+                    backgroundColor: style.accent,
+                    borderLeft: `4px ${style.border} rgba(255,255,255,0.5)`,
                   }}
                 >
-                  <Icon className="w-4 h-4" style={{ color: style.accent }} />
+                  <Icon className="w-4 h-4 text-white" />
                 </div>
                 <div>
                   <p className="text-[11px] font-bold text-cc-primary">{style.label}</p>
@@ -288,8 +298,8 @@ export function WeeklyScheduleGrid({
           })}
         </div>
         <p className="text-[10px] text-cc-muted pt-1 border-t border-[var(--cc-border-subtle)]">
-          El icono de categoría indica el tipo de actividad (trabajo, ocio, hogar…). Toca una
-          franja para añadir tiempo.
+          El color indica el tipo: azul bloque fijo, verde registro, rojo tarea. El icono interior
+          es la categoría (trabajo, ocio…). Toca una franja para añadir tiempo.
         </p>
       </section>
     </div>

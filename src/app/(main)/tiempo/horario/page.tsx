@@ -22,9 +22,7 @@ export default async function TiempoHorarioPage({
       periodStart={schedule.periodStart}
       periodEnd={schedule.periodEnd}
       events={schedule.events}
-      blocks={schedule.blocks}
       members={schedule.members}
-      householdId={ctx.household.id}
       periodOffset={periodOffset}
       currentUserId={user!.id}
     />

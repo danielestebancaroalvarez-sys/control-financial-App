@@ -12,6 +12,7 @@ import { scheduledMinutesInRange } from './recurring-blocks'
 import { getPeriodRangeAtOffset, daysUntilDate } from './format'
 import {
   buildDaily24hSlices,
+  calculateProductivityScore,
   EFFORT_CATEGORIES,
   LEISURE_CATEGORIES,
   PRODUCTIVITY_CATEGORIES,
@@ -21,6 +22,7 @@ import {
   sumCategoryMinutes,
   taskEffortMinutes,
 } from './productivity-metrics'
+import { getTimeChartColor } from './chart-colors'
 
 type MemberRow = {
   user_id: string
@@ -226,8 +228,8 @@ function addMemberCategory(
   memberCategoryTotals: Map<string, Map<string, CategoryMinutes>>,
   userId: string | null,
   name: string,
-  color: string,
-  minutes: number
+  minutes: number,
+  colorIndex: number
 ) {
   if (!userId || minutes <= 0) return
   if (!memberCategoryTotals.has(userId)) {
@@ -238,7 +240,7 @@ function addMemberCategory(
   map.set(name, {
     name,
     minutes: (prev?.minutes ?? 0) + minutes,
-    color,
+    color: getTimeChartColor(name, colorIndex),
   })
 }
 
@@ -263,6 +265,8 @@ export function buildTimeDashboardSummary(
   const memberTotals = new Map<string, number>()
   const memberCategoryTotals = new Map<string, Map<string, CategoryMinutes>>()
   const memberEffortFromTasks = new Map<string, number>()
+  const memberDoneTasks = new Map<string, number>()
+  const memberSleepMinutes = new Map<string, number>()
   let totalMinutes = 0
   let sleepMinutes = 0
 
@@ -275,7 +279,7 @@ export function buildTimeDashboardSummary(
     categoryTotals.set(name, {
       name,
       minutes: (prev?.minutes ?? 0) + entry.duration_minutes,
-      color,
+      color: getTimeChartColor(name, categoryTotals.size),
     })
     memberTotals.set(
       entry.user_id,
@@ -285,11 +289,17 @@ export function buildTimeDashboardSummary(
       memberCategoryTotals,
       entry.user_id,
       name,
-      color,
-      entry.duration_minutes
+      entry.duration_minutes,
+      categoryTotals.size
     )
     totalMinutes += entry.duration_minutes
-    if (name === 'Sueño') sleepMinutes += entry.duration_minutes
+    if (name === 'Sueño') {
+      sleepMinutes += entry.duration_minutes
+      memberSleepMinutes.set(
+        entry.user_id,
+        (memberSleepMinutes.get(entry.user_id) ?? 0) + entry.duration_minutes
+      )
+    }
   }
 
   for (const block of blocks) {
@@ -308,7 +318,7 @@ export function buildTimeDashboardSummary(
     categoryTotals.set(name, {
       name,
       minutes: (prev?.minutes ?? 0) + minutes,
-      color,
+      color: getTimeChartColor(name, categoryTotals.size),
     })
     if (block.assigned_to) {
       memberTotals.set(
@@ -319,12 +329,20 @@ export function buildTimeDashboardSummary(
         memberCategoryTotals,
         block.assigned_to,
         name,
-        color,
-        minutes
+        minutes,
+        categoryTotals.size
       )
     }
     totalMinutes += minutes
-    if (name === 'Sueño') sleepMinutes += minutes
+    if (name === 'Sueño' && block.assigned_to) {
+      sleepMinutes += minutes
+      memberSleepMinutes.set(
+        block.assigned_to,
+        (memberSleepMinutes.get(block.assigned_to) ?? 0) + minutes
+      )
+    } else if (name === 'Sueño') {
+      sleepMinutes += minutes
+    }
   }
 
   for (const task of tasks) {
@@ -334,6 +352,17 @@ export function buildTimeDashboardSummary(
     const userId = task.assigned_to ?? task.created_by
     const effort = taskEffortMinutes(task.estimated_minutes, task.difficulty ?? 2)
     memberEffortFromTasks.set(userId, (memberEffortFromTasks.get(userId) ?? 0) + effort)
+    memberDoneTasks.set(userId, (memberDoneTasks.get(userId) ?? 0) + 1)
+  }
+
+  const goalProgressByUser = new Map<string, number[]>()
+  for (const goal of goals) {
+    const mapped = mapProductivityGoal(goal, members)
+    if (goal.created_by) {
+      const list = goalProgressByUser.get(goal.created_by) ?? []
+      list.push(mapped.percent)
+      goalProgressByUser.set(goal.created_by, list)
+    }
   }
 
   const byCategory = mapToSortedCategories(categoryTotals)
@@ -367,6 +396,15 @@ export function buildTimeDashboardSummary(
       const leisureMins = sumCategoryMinutes(memberCats, LEISURE_CATEGORIES)
       const effortFromTime = sumCategoryMinutes(memberCats, EFFORT_CATEGORIES)
       const effortFromTasks = memberEffortFromTasks.get(m.user_id) ?? 0
+      const memberSleep = memberSleepMinutes.get(m.user_id) ?? 0
+      const doneTasksCount = memberDoneTasks.get(m.user_id) ?? 0
+      const goalPercents = goalProgressByUser.get(m.user_id) ?? []
+      const goalProgressPercent =
+        goalPercents.length > 0
+          ? Math.round(goalPercents.reduce((a, b) => a + b, 0) / goalPercents.length)
+          : 0
+      const productivityPercent = percentOf(productivityMins, total)
+      const leisurePercent = percentOf(leisureMins, total)
 
       return {
         userId: m.user_id,
@@ -374,15 +412,27 @@ export function buildTimeDashboardSummary(
         avatarUrl: m.avatar_url,
         totalMinutes: total,
         productivityMinutes: productivityMins,
-        productivityPercent: percentOf(productivityMins, total),
+        productivityPercent,
         leisureMinutes: leisureMins,
-        leisurePercent: percentOf(leisureMins, total),
+        leisurePercent,
         effortMinutes: effortFromTime + effortFromTasks,
+        doneTasks: doneTasksCount,
+        sleepMinutes: memberSleep,
+        goalProgressPercent,
+        productivityScore: calculateProductivityScore({
+          productivityPercent,
+          leisurePercent,
+          effortMinutes: effortFromTime + effortFromTasks,
+          totalMinutes: total,
+          sleepMinutes: memberSleep,
+          doneTasks: doneTasksCount,
+          goalProgressPercent,
+        }),
         dailyCategories: buildDaily24hSlices(weekCategories),
       }
     })
     .filter(m => m.totalMinutes > 0 || m.effortMinutes > 0)
-    .sort((a, b) => b.productivityMinutes - a.productivityMinutes)
+    .sort((a, b) => b.productivityScore - a.productivityScore)
 
   const pendingTasks = tasks.filter(t => t.status === 'pending').length
   const doneTasks = tasks.filter(

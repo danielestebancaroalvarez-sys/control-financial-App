@@ -104,6 +104,10 @@ export type TimeMemberMetrics = {
   leisureMinutes: number
   leisurePercent: number
   effortMinutes: number
+  productivityScore: number
+  doneTasks: number
+  sleepMinutes: number
+  goalProgressPercent: number
   dailyCategories: { name: string; minutes: number; color: string }[]
 }
 
@@ -139,6 +143,18 @@ export type CreateTimeBlockInput = {
   frequency: TimeFrequency
   anchorDate: string
   durationMinutes: number
+  startTime: string
+  endTime: string
+}
+
+export type UpdateTimeBlockInput = {
+  householdId: string
+  blockId: string
+  categoryId: string
+  title: string
+  assignedTo?: string | null
+  frequency: TimeFrequency
+  anchorDate: string
   startTime: string
   endTime: string
 }

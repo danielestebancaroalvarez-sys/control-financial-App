@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { UserAvatar } from '@/components/profile/user-avatar'
+import { getAppModule } from '@/lib/app/module'
 
 export function AccountAvatarLink({
   firstName,
@@ -14,14 +15,28 @@ export function AccountAvatarLink({
   avatarUrl?: string | null
 }) {
   const pathname = usePathname()
-  const active = pathname.startsWith('/ajustes')
+  const isTime = getAppModule(pathname) === 'time'
+  const settingsHref = isTime ? '/tiempo/ajustes' : '/ajustes'
+  const active =
+    pathname.startsWith('/ajustes') || pathname.startsWith('/tiempo/ajustes')
+  const accent = isTime ? '#6366F1' : '#00BFA5'
 
   return (
     <Link
-      href="/ajustes"
+      href={settingsHref}
       className={`flex items-center gap-2 rounded-full pl-3 pr-1 py-1 transition-all ${
-        active ? 'bg-[#00BFA5]/10 ring-2 ring-[#00BFA5]/30' : 'hover:bg-white/60 dark:hover:bg-[var(--cc-surface-muted)]'
+        active
+          ? `ring-2`
+          : 'hover:bg-white/60 dark:hover:bg-[var(--cc-surface-muted)]'
       }`}
+      style={
+        active
+          ? {
+              backgroundColor: `${accent}18`,
+              boxShadow: `0 0 0 2px ${accent}40`,
+            }
+          : undefined
+      }
       aria-label="Cuenta y ajustes"
       title={email ?? 'Cuenta y ajustes'}
     >

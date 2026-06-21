@@ -1,12 +1,20 @@
 import type { PaymentReminderPayload } from './reminder-actions'
 
+export type NotificationModule = 'finance' | 'time'
+
 export type InAppNotification = {
   id: string
+  module: NotificationModule
   type:
     | 'weekly-summary'
     | 'payment-upcoming'
     | 'payment-tomorrow'
     | 'partner-expense'
+    | 'weekly-activities'
+    | 'task-today'
+    | 'task-tomorrow'
+    | 'task-upcoming'
+    | 'goal-milestone'
   title: string
   body: string
   href: string
@@ -31,6 +39,7 @@ export function buildInAppNotifications(
 
     items.push({
       id: `weekly-${payload.nextWeekStart}`,
+      module: 'finance',
       type: 'weekly-summary',
       title: 'Pagos de la próxima semana',
       body:
@@ -49,6 +58,7 @@ export function buildInAppNotifications(
     const href = payment.href ?? '/predicciones'
     items.push({
       id: `payment-${payment.id}`,
+      module: 'finance',
       type: isTomorrow ? 'payment-tomorrow' : 'payment-upcoming',
       title: isTomorrow ? `Pago mañana: ${payment.name}` : `Próximo pago: ${payment.name}`,
       body: `${payment.amountLabel} · ${payment.dueDateLabel}${

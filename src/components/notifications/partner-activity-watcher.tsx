@@ -93,7 +93,7 @@ export function PartnerActivityWatcher({
           currency,
         })
 
-        appendInAppNotifications([notification])
+        appendInAppNotifications([notification], 'finance')
 
         if (
           isPaymentRemindersEnabled() &&

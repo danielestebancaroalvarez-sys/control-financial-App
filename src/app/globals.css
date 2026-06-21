@@ -317,4 +317,12 @@
   .scrollbar-none::-webkit-scrollbar {
     display: none;
   }
+
+  main.select-none input,
+  main.select-none textarea,
+  main.select-none select,
+  main.select-none [contenteditable='true'] {
+    user-select: text;
+    -webkit-user-select: text;
+  }
 }

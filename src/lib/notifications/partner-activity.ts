@@ -16,6 +16,7 @@ export function buildPartnerExpenseNotification(input: {
 
   return {
     id: `partner-tx-${input.transactionId}`,
+    module: 'finance',
     type: 'partner-expense',
     title: `${input.authorName} registró un gasto`,
     body: `${input.description.trim() || 'Gasto'} · ${amountLabel}`,
