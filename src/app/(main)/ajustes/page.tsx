@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getMainAppContextWithPeriod } from '@/lib/app/context'
 import { getHouseholdMembers } from '@/lib/household/queries'
-import { getCategories, getRealBalance } from '@/lib/finance/queries'
+import { getCategories } from '@/lib/finance/queries'
 import { getUserProfile } from '@/lib/profile/queries'
 import SignOutButton from '@/app/sign-out-button'
 import { CopyButton } from './copy-button'
@@ -11,7 +11,6 @@ import { ThemeSetting } from './theme-setting'
 import { CategoriesManager } from './categories-manager'
 import { PaymentReminderSetting } from './payment-reminder-setting'
 import { ResetDataButton } from './reset-data-button'
-import { BalanceReconcileSection } from './balance-reconcile-section'
 import { HouseholdMembersSection } from './household-members-section'
 import { ProfileSettingsForm } from '@/components/profile/profile-settings-form'
 import { Users, Coins } from 'lucide-react'
@@ -20,11 +19,10 @@ export default async function AjustesPage() {
   const ctx = await getMainAppContextWithPeriod()
   if (!ctx) redirect('/login')
 
-  const [members, categories, profile, realBalance] = await Promise.all([
+  const [members, categories, profile] = await Promise.all([
     getHouseholdMembers(ctx.household.id),
     getCategories(ctx.household.id),
     getUserProfile(),
-    getRealBalance(ctx.household.id),
   ])
 
   return (
@@ -49,12 +47,6 @@ export default async function AjustesPage() {
       <ThemeSetting current={ctx.theme} />
 
       <PaymentReminderSetting />
-
-      <BalanceReconcileSection
-        householdId={ctx.household.id}
-        currentBalance={realBalance}
-        currency={ctx.household.base_currency}
-      />
 
       <CategoriesManager householdId={ctx.household.id} categories={categories} />
 

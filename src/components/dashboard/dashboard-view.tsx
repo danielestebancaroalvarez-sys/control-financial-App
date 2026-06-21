@@ -5,8 +5,13 @@ import { PeriodBlockSelector } from '@/components/dashboard/period-block-selecto
 import { ProactiveInsightBanner } from '@/components/dashboard/proactive-insight-banner'
 import { CollapsibleSection } from '@/components/ui/collapsible-section'
 import { MemberSpendingDetail } from '@/components/dashboard/member-spending-detail'
+import { CurrencyConverterWidget } from '@/components/dashboard/currency-converter-widget'
+import { BalanceReconcileCollapsible } from '@/components/dashboard/balance-reconcile-collapsible'
+import { MarketMetricsPreview } from '@/components/dashboard/market-metrics-preview'
 import { formatMoney, getPeriodLabels } from '@/lib/finance/format'
 import type { DashboardSummary } from '@/lib/finance/types'
+import type { CopAudRates } from '@/lib/finance/exchange-rates'
+import type { MarketInsights } from '@/lib/finance/market-analytics'
 import type { CurrencyCode } from '@/lib/household/types'
 import type { ProactiveInsight } from '@/lib/insights/proactive-insight'
 import {
@@ -68,15 +73,21 @@ function expensePieTotal(summary: DashboardSummary): number {
 export function DashboardView({
   firstName,
   householdName,
+  householdId,
   currency,
   summary,
   proactiveInsight,
+  fxRates,
+  marketInsights,
 }: {
   firstName: string
   householdName: string
+  householdId: string
   currency: CurrencyCode
   summary: DashboardSummary
   proactiveInsight?: ProactiveInsight | null
+  fxRates: CopAudRates | null
+  marketInsights: MarketInsights
 }) {
   const fmt = (n: number) => formatMoney(n, currency)
   const labels = getPeriodLabels(summary.period)
@@ -141,6 +152,17 @@ export function DashboardView({
           activeOffset={summary.periodOffset}
         />
       </div>
+
+      <CurrencyConverterWidget initialRates={fxRates} />
+
+      <BalanceReconcileCollapsible
+        householdId={householdId}
+        currentBalance={summary.realBalance}
+        currency={currency}
+        breakdown={summary.balanceBreakdown}
+      />
+
+      <MarketMetricsPreview insights={marketInsights} currency={currency} />
 
       {budgetSlices.length > 0 && (
         <CollapsibleSection

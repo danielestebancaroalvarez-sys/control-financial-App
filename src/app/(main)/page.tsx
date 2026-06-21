@@ -1,7 +1,8 @@
 import { redirect } from 'next/navigation'
 import { after } from 'next/server'
 import { getMainAppContextWithPeriod } from '@/lib/app/context'
-import { getDashboardSummary, getPredictionsSummary } from '@/lib/finance/queries'
+import { getDashboardSummary, getMarketInsights, getPredictionsSummary } from '@/lib/finance/queries'
+import { getCopAudRates } from '@/lib/finance/exchange-rates'
 import { buildProactiveInsight } from '@/lib/insights/proactive-insight'
 import { processDueRecurringSchedules } from '@/lib/finance/recurring'
 import { processDueSavingsContributions } from '@/lib/finance/savings-recurring'
@@ -35,11 +36,14 @@ export default async function DashboardPage({
     Math.min(11, parseInt(params.block ?? '0', 10) || 0)
   )
 
-  const [summary, predictions, financeSetupComplete] = await Promise.all([
-    getDashboardSummary(ctx.household.id, ctx.period, periodOffset),
-    getPredictionsSummary(ctx.household.id, ctx.period),
-    hasCompletedFinanceSetup(),
-  ])
+  const [summary, predictions, financeSetupComplete, marketInsights, fxRates] =
+    await Promise.all([
+      getDashboardSummary(ctx.household.id, ctx.period, periodOffset),
+      getPredictionsSummary(ctx.household.id, ctx.period),
+      hasCompletedFinanceSetup(),
+      getMarketInsights(ctx.household.id, ctx.period),
+      getCopAudRates(),
+    ])
 
   const proactiveInsight = buildProactiveInsight(
     summary,
@@ -66,9 +70,12 @@ export default async function DashboardPage({
       <DashboardView
         firstName={getFirstName(displayName)}
         householdName={ctx.household.name}
+        householdId={ctx.household.id}
         currency={ctx.household.base_currency}
         summary={summary}
         proactiveInsight={proactiveInsight}
+        fxRates={fxRates}
+        marketInsights={marketInsights}
       />
     </div>
   )
