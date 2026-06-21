@@ -23,21 +23,15 @@ import {
 } from '@/lib/time/format'
 import { productivityScoreLabel } from '@/lib/time/productivity-metrics'
 import type { TimeDashboardSummary } from '@/lib/time/types'
-import type { SleepTrackerData } from '@/lib/time/sleep-queries'
-import { SleepTracker } from '@/components/time/sleep-tracker'
 
 export function TiempoDashboardClient({
   summary,
   periodOffset,
   householdName,
-  householdId,
-  sleepData,
 }: {
   summary: TimeDashboardSummary
   periodOffset: number
   householdName: string
-  householdId: string
-  sleepData: SleepTrackerData
 }) {
   const periodCaption = formatChartPeriodCaption(
     summary.periodLabel,
@@ -68,8 +62,6 @@ export function TiempoDashboardClient({
         </div>
         <WeekSelector activeOffset={periodOffset} basePath="/tiempo" />
       </div>
-
-      <SleepTracker householdId={householdId} data={sleepData} />
 
       {/* KPIs compactos */}
       <div className="grid grid-cols-2 gap-2">

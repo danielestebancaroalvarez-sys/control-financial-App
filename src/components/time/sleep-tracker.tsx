@@ -27,9 +27,11 @@ function formatClock(iso: string) {
 export function SleepTracker({
   householdId,
   data,
+  variant = 'standalone',
 }: {
   householdId: string
   data: SleepTrackerData
+  variant?: 'standalone' | 'embedded'
 }) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
@@ -46,7 +48,10 @@ export function SleepTracker({
   const [manualStart, setManualStart] = useState(toLocalInputValue(defaultStart))
   const [manualEnd, setManualEnd] = useState(toLocalInputValue(defaultEnd))
 
-  function runAction(action: () => Promise<{ error?: string }>) {
+  function runAction(
+    action: () => Promise<{ error?: string }>,
+    options?: { navigateTo?: string }
+  ) {
     setError(null)
     startTransition(async () => {
       const result = await action()
@@ -54,29 +59,49 @@ export function SleepTracker({
         setError(result.error)
         return
       }
+      if (options?.navigateTo) {
+        router.push(options.navigateTo)
+      }
       router.refresh()
     })
   }
 
+  const isEmbedded = variant === 'embedded'
+
   return (
-    <section className="cc-surface rounded-[24px] p-4 border border-[#4F46E5]/20">
-      <div className="flex items-start justify-between gap-2 mb-3">
-        <div>
-          <h2 className="text-[14px] font-bold text-cc-primary flex items-center gap-2">
-            <Moon className="w-4 h-4 text-[#4F46E5]" />
-            Registro de sueño
-          </h2>
-          <p className="text-[11px] text-cc-secondary mt-0.5">
-            Botón rápido o registro manual de inicio y fin
-          </p>
+    <section
+      className={
+        isEmbedded
+          ? 'cc-surface rounded-[24px] p-4 space-y-3'
+          : 'cc-surface rounded-[24px] p-4 border border-[#4F46E5]/20'
+      }
+    >
+      {!isEmbedded && (
+        <div className="flex items-start justify-between gap-2 mb-3">
+          <div>
+            <h2 className="text-[14px] font-bold text-cc-primary flex items-center gap-2">
+              <Moon className="w-4 h-4 text-[#4F46E5]" />
+              Registro de sueño
+            </h2>
+            <p className="text-[11px] text-cc-secondary mt-0.5">
+              Botón rápido o registro manual de inicio y fin
+            </p>
+          </div>
+          <Link
+            href="/tiempo/buscar?tab=fijos"
+            className="text-[10px] font-semibold text-[#6366F1] shrink-0"
+          >
+            Bloque fijo →
+          </Link>
         </div>
-        <Link
-          href="/tiempo/buscar?tab=fijos"
-          className="text-[10px] font-semibold text-[#6366F1] shrink-0"
-        >
-          Bloque fijo →
-        </Link>
-      </div>
+      )}
+
+      {isEmbedded && (
+        <p className="text-[11px] text-cc-secondary">
+          Si registras sueño real, reemplaza el bloque fijo de esa noche en el horario y las
+          estadísticas.
+        </p>
+      )}
 
       {data.activeSession ? (
         <div className="rounded-2xl bg-[#4F46E5]/10 p-3 mb-3">
@@ -148,12 +173,14 @@ export function SleepTracker({
           className="mt-3 space-y-2"
           onSubmit={e => {
             e.preventDefault()
-            runAction(() =>
-              logSleepManual(
-                householdId,
-                new Date(manualStart).toISOString(),
-                new Date(manualEnd).toISOString()
-              )
+            runAction(
+              () =>
+                logSleepManual(
+                  householdId,
+                  new Date(manualStart).toISOString(),
+                  new Date(manualEnd).toISOString()
+                ),
+              isEmbedded ? { navigateTo: '/tiempo' } : undefined
             )
           }}
         >
@@ -183,6 +210,15 @@ export function SleepTracker({
             {pending ? 'Guardando...' : 'Guardar sueño'}
           </button>
         </form>
+      )}
+
+      {isEmbedded && (
+        <Link
+          href="/tiempo/buscar?tab=fijos"
+          className="text-[11px] font-semibold text-[#6366F1] inline-flex items-center gap-1"
+        >
+          Configurar bloque fijo de sueño →
+        </Link>
       )}
 
       {error && <p className="text-[11px] text-red-600 mt-2">{error}</p>}

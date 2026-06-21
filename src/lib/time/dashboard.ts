@@ -8,7 +8,10 @@ import type {
   TimeMemberMetrics,
 } from './types'
 import type { TimeFrequency } from './types'
-import { scheduledMinutesInRange } from './recurring-blocks'
+import {
+  blockMinutesInRange,
+  buildSleepEntryOverrideKeys,
+} from './sleep-overrides'
 import { getPeriodRangeAtOffset, daysUntilDate } from './format'
 import {
   buildDaily24hSlices,
@@ -270,6 +273,17 @@ export function buildTimeDashboardSummary(
   let totalMinutes = 0
   let sleepMinutes = 0
 
+  const sleepOverrides = buildSleepEntryOverrideKeys(
+    entries.map(entry => {
+      const cat = pickCat(entry.time_categories)
+      return {
+        userId: entry.user_id,
+        entryDate: entry.entry_date,
+        categoryName: cat?.name ?? 'Otros',
+      }
+    })
+  )
+
   for (const entry of entries) {
     if (entry.entry_date < start || entry.entry_date > end) continue
     const cat = pickCat(entry.time_categories)
@@ -303,16 +317,21 @@ export function buildTimeDashboardSummary(
   }
 
   for (const block of blocks) {
-    const minutes = scheduledMinutesInRange(
+    const cat = pickCat(block.time_categories)
+    const name = cat?.name ?? 'Otros'
+    const minutes = blockMinutesInRange(
       block.anchor_date,
       block.frequency as TimeFrequency,
       block.duration_minutes,
       start,
-      end
+      end,
+      {
+        categoryName: name,
+        assignedTo: block.assigned_to,
+        sleepOverrides,
+      }
     )
     if (minutes <= 0) continue
-    const cat = pickCat(block.time_categories)
-    const name = cat?.name ?? 'Otros'
     const color = cat?.color ?? '#94A3B8'
     const prev = categoryTotals.get(name)
     categoryTotals.set(name, {

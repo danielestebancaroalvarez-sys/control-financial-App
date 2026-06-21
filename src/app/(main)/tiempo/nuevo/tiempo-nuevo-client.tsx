@@ -2,8 +2,9 @@
 
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { CalendarClock, Check, Clock, ListTodo, Loader2, Repeat } from 'lucide-react'
+import { CalendarClock, Check, Clock, ListTodo, Loader2, Moon, Repeat } from 'lucide-react'
 import { CategoryIcon } from '@/components/transactions/category-icon'
+import { SleepTracker } from '@/components/time/sleep-tracker'
 import { FormField, FormSection } from '@/components/time/form-field'
 import { TaskAppearancePicker } from '@/components/time/task-appearance-picker'
 import {
@@ -28,8 +29,9 @@ import {
 import type { CategoryIconId } from '@/lib/finance/category-icons'
 import { TASK_COLOR_PRESETS } from '@/lib/time/task-icons'
 import type { HouseholdMember } from '@/lib/household/types'
+import type { SleepTrackerData } from '@/lib/time/sleep-queries'
 
-type EntryKind = 'time' | 'task'
+type EntryKind = 'time' | 'task' | 'sleep'
 type EntryNature = 'fixed' | 'variable'
 
 const inputClass = `w-full px-4 py-3 rounded-xl cc-input text-[14px] outline-none ring-2 ring-transparent ${TIME_THEME.focus}`
@@ -41,6 +43,7 @@ export function TiempoNuevoClient({
   currentUserId,
   initialDate,
   initialUserId,
+  sleepData,
 }: {
   householdId: string
   categories: TimeCategory[]
@@ -48,6 +51,7 @@ export function TiempoNuevoClient({
   currentUserId: string
   initialDate?: string
   initialUserId?: string
+  sleepData: SleepTrackerData
 }) {
   const router = useRouter()
   const [kind, setKind] = useState<EntryKind>('time')
@@ -81,18 +85,22 @@ export function TiempoNuevoClient({
   }, [kind, startTime, endTime, taskDuration])
 
   const pageTitle =
-    kind === 'task'
-      ? 'Nueva tarea'
-      : nature === 'fixed'
-        ? 'Nuevo bloque fijo'
-        : 'Registrar tiempo'
+    kind === 'sleep'
+      ? 'Registrar sueño'
+      : kind === 'task'
+        ? 'Nueva tarea'
+        : nature === 'fixed'
+          ? 'Nuevo bloque fijo'
+          : 'Registrar tiempo'
 
   const pageHint =
-    kind === 'task'
-      ? 'Crea una tarea del hogar y asígnala a alguien de la pareja.'
-      : nature === 'fixed'
-        ? 'Programa una actividad que se repite en tu horario semanal.'
-        : 'Registra el tiempo que ya dedicaste a una actividad.'
+    kind === 'sleep'
+      ? 'El sueño real sustituye el bloque fijo programado ese día en el horario y las estadísticas.'
+      : kind === 'task'
+        ? 'Crea una tarea del hogar y asígnala a alguien de la pareja.'
+        : nature === 'fixed'
+          ? 'Programa una actividad que se repite en tu horario semanal.'
+          : 'Registra el tiempo que ya dedicaste a una actividad.'
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -187,28 +195,45 @@ export function TiempoNuevoClient({
         <p className="text-[12px] text-cc-secondary mt-0.5">{pageHint}</p>
       </div>
 
-      <FormSection title="¿Qué vas a registrar?" description="Elige entre tiempo o una tarea del hogar.">
-        <div className="grid grid-cols-2 gap-3">
+      <FormSection title="¿Qué vas a registrar?" description="Elige entre tiempo, sueño o una tarea del hogar.">
+        <div className="grid grid-cols-3 gap-2">
           <button
             type="button"
             onClick={() => setKind('time')}
-            className={`rounded-2xl border-2 p-4 text-left ${kind === 'time' ? TIME_THEME.cardActive : 'cc-surface-muted border-[var(--cc-border)]'}`}
+            className={`rounded-2xl border-2 p-3 text-left ${kind === 'time' ? TIME_THEME.cardActive : TIME_THEME.cardIdle}`}
           >
             <Clock className="w-5 h-5 text-[#6366F1] mb-2" />
-            <p className="text-[13px] font-bold text-cc-primary">Tiempo</p>
-            <p className="text-[10px] text-cc-secondary">Trabajo, sueño, hogar…</p>
+            <p className="text-[12px] font-bold text-cc-primary">Tiempo</p>
+            <p className="text-[9px] text-cc-secondary leading-tight">Trabajo, hogar…</p>
+          </button>
+          <button
+            type="button"
+            onClick={() => setKind('sleep')}
+            className={`rounded-2xl border-2 p-3 text-left ${kind === 'sleep' ? TIME_THEME.cardActive : TIME_THEME.cardIdle}`}
+          >
+            <Moon className="w-5 h-5 text-[#4F46E5] mb-2" />
+            <p className="text-[12px] font-bold text-cc-primary">Sueño</p>
+            <p className="text-[9px] text-cc-secondary leading-tight">Dormir / despertar</p>
           </button>
           <button
             type="button"
             onClick={() => setKind('task')}
-            className={`rounded-2xl border-2 p-4 text-left ${kind === 'task' ? TIME_THEME.cardActive : 'cc-surface-muted border-[var(--cc-border)]'}`}
+            className={`rounded-2xl border-2 p-3 text-left ${kind === 'task' ? TIME_THEME.cardActive : TIME_THEME.cardIdle}`}
           >
             <ListTodo className="w-5 h-5 text-[#6366F1] mb-2" />
-            <p className="text-[13px] font-bold text-cc-primary">Tarea</p>
-            <p className="text-[10px] text-cc-secondary">Reparar, limpiar, comprar…</p>
+            <p className="text-[12px] font-bold text-cc-primary">Tarea</p>
+            <p className="text-[9px] text-cc-secondary leading-tight">Reparar, limpiar…</p>
           </button>
         </div>
       </FormSection>
+
+      {kind === 'sleep' && (
+        <SleepTracker
+          householdId={householdId}
+          data={sleepData}
+          variant="embedded"
+        />
+      )}
 
       {kind === 'time' && (
         <FormSection
@@ -219,7 +244,7 @@ export function TiempoNuevoClient({
             <button
               type="button"
               onClick={() => setNature('variable')}
-              className={`flex items-center gap-3 rounded-2xl border-2 p-3 text-left ${nature === 'variable' ? TIME_THEME.cardActive : 'cc-surface-muted border-[var(--cc-border)]'}`}
+              className={`flex items-center gap-3 rounded-2xl border-2 p-3 text-left ${nature === 'variable' ? TIME_THEME.cardActive : TIME_THEME.cardIdle}`}
             >
               <CalendarClock className="w-5 h-5 text-[#6366F1] shrink-0" />
               <div>
@@ -230,7 +255,7 @@ export function TiempoNuevoClient({
             <button
               type="button"
               onClick={() => setNature('fixed')}
-              className={`flex items-center gap-3 rounded-2xl border-2 p-3 text-left ${nature === 'fixed' ? TIME_THEME.cardActive : 'cc-surface-muted border-[var(--cc-border)]'}`}
+              className={`flex items-center gap-3 rounded-2xl border-2 p-3 text-left ${nature === 'fixed' ? TIME_THEME.cardActive : TIME_THEME.cardIdle}`}
             >
               <Repeat className="w-5 h-5 text-[#6366F1] shrink-0" />
               <div>
@@ -242,6 +267,7 @@ export function TiempoNuevoClient({
         </FormSection>
       )}
 
+      {kind !== 'sleep' && (
       <form onSubmit={handleSubmit} className="cc-surface rounded-[24px] p-4 space-y-4">
         {kind === 'time' && (
           <FormSection title="Categoría" description="Clasifica el tiempo para ver estadísticas por área.">
@@ -515,6 +541,7 @@ export function TiempoNuevoClient({
           )}
         </button>
       </form>
+      )}
     </div>
   )
 }

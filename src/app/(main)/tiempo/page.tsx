@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation'
 import { getMainAppContext } from '@/lib/app/context'
 import { getTimeDashboard } from '@/lib/time/queries'
-import { getSleepTrackerData } from '@/lib/time/sleep-queries'
 import { hasCompletedTimeSetup } from '@/lib/setup/queries'
 import { TiempoDashboardClient } from './tiempo-dashboard-client'
 import { SetupNudgeBanner } from '@/components/setup/setup-nudge-banner'
@@ -22,9 +21,8 @@ export default async function TiempoPage({
     Math.min(11, parseInt(params.block ?? '0', 10) || 0)
   )
 
-  const [summary, sleepData, timeSetupComplete] = await Promise.all([
+  const [summary, timeSetupComplete] = await Promise.all([
     getTimeDashboard(ctx.household.id, periodOffset),
-    getSleepTrackerData(ctx.household.id, ctx.user.id),
     hasCompletedTimeSetup(),
   ])
 
@@ -42,8 +40,6 @@ export default async function TiempoPage({
         summary={summary}
         periodOffset={periodOffset}
         householdName={ctx.household.name}
-        householdId={ctx.household.id}
-        sleepData={sleepData}
       />
     </div>
   )

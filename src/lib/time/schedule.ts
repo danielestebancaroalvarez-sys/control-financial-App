@@ -1,4 +1,5 @@
 import { addTimeFrequency, subtractTimeFrequency } from './frequency'
+import { buildSleepEntryOverrideKeys, shouldSkipSleepBlockOnDate } from './sleep-overrides'
 import type { HouseholdTask, TimeBlock, TimeEntry, TimeFrequency } from './types'
 
 export type ScheduleEventSource = 'block' | 'entry' | 'task'
@@ -136,6 +137,13 @@ export function buildWeeklyScheduleEvents(
   rangeEnd: string
 ): ScheduleEvent[] {
   const events: ScheduleEvent[] = []
+  const sleepOverrides = buildSleepEntryOverrideKeys(
+    entries.map(entry => ({
+      userId: entry.userId,
+      entryDate: entry.entryDate,
+      categoryName: entry.categoryName,
+    }))
+  )
 
   for (const block of blocks) {
     const dates = expandBlockOccurrencesInRange(
@@ -145,6 +153,16 @@ export function buildWeeklyScheduleEvents(
       rangeEnd
     )
     for (const date of dates) {
+      if (
+        shouldSkipSleepBlockOnDate(
+          block.categoryName,
+          block.assignedTo,
+          date,
+          sleepOverrides
+        )
+      ) {
+        continue
+      }
       events.push({
         id: `block-${block.id}-${date}`,
         source: 'block',
