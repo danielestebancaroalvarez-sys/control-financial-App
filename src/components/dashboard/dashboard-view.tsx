@@ -247,7 +247,7 @@ export function DashboardView({
 
       {summary.memberSpending.length > 0 && memberSummary && (
         <CollapsibleSection
-          title="Gastos extra por persona"
+          title="Gastos por persona"
           summary={memberSummary}
           icon={<Users className="w-4 h-4 text-[#00BFA5]" />}
           defaultOpen

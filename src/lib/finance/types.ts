@@ -80,23 +80,16 @@ export type MemberSpendingStat = {
   userId: string
   name: string
   amount: number
+  extraAmount: number
   percent: number
   avatarUrl: string | null
   extraAboveShare: number
   byCategory: {
     categoryName: string
     amount: number
+    extraAmount: number
     percent: number
     color: string | null
-  }[]
-  transactions: {
-    id: string
-    description: string
-    amount: number
-    categoryName: string
-    categoryId: string | null
-    categoryColor: string | null
-    date: string
   }[]
 }
 
@@ -266,6 +259,7 @@ export type CreateTransactionInput = {
   amount: number
   currency?: CurrencyCode
   transactionDate: string
+  createdBy?: string
   isRecurring?: boolean
   frequency?: 'weekly' | 'monthly'
   lineItems?: LineItem[]

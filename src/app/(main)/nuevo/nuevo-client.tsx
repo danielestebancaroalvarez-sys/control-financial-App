@@ -7,7 +7,7 @@ import { AddTransactionForm } from '@/components/transactions/add-transaction-fo
 import { FixedScheduleForm } from '@/components/transactions/fixed-schedule-form'
 import { TX_TYPE_THEME, type TxType } from '@/components/transactions/tx-type-theme'
 import type { Category } from '@/lib/finance/types'
-import type { CurrencyCode } from '@/lib/household/types'
+import type { CurrencyCode, HouseholdMember } from '@/lib/household/types'
 
 type EntryMode = 'variable' | 'fixed'
 
@@ -15,12 +15,16 @@ export function NuevoClient({
   householdId,
   baseCurrency,
   categories,
+  members,
+  currentUserId,
   authorName,
   authorAvatarUrl,
 }: {
   householdId: string
   baseCurrency: CurrencyCode
   categories: Category[]
+  members: HouseholdMember[]
+  currentUserId: string
   authorName: string
   authorAvatarUrl?: string | null
 }) {
@@ -139,6 +143,8 @@ export function NuevoClient({
             householdId={householdId}
             baseCurrency={baseCurrency}
             categories={categories}
+            members={members}
+            currentUserId={currentUserId}
             authorName={authorName}
             authorAvatarUrl={authorAvatarUrl}
             defaultType={txType}

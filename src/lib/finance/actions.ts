@@ -9,6 +9,7 @@ import {
 } from './savings-categories'
 import { syncUserProfileFromMetadata } from '@/lib/profile/sync'
 import { getRealBalance, getHouseholdBaseCurrency } from './queries'
+import { getHouseholdMembers } from '@/lib/household/queries'
 import { fetchExchangeRate, prepareTransactionAmounts } from './currency'
 import {
   applySavingsGoalDelta,
@@ -40,7 +41,7 @@ export async function reconcileBalance(
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (!user) return { error: 'Debes iniciar sesión.' }
+  if (!user) return { error: 'Debes iniciar sesi?n.' }
 
   const appBalance = await getRealBalance(householdId)
   const adjustment = Math.round((bankBalance - appBalance) * 100) / 100
@@ -59,13 +60,13 @@ export async function reconcileBalance(
       app_balance: appBalance,
       bank_balance: bankBalance,
       adjustment_amount: adjustment,
-      notes: 'Ajuste bancario automático',
+      notes: 'Ajuste bancario autom?tico',
     })
     .select('id')
     .single()
 
   if (reconError || !reconciliation) {
-    return { error: reconError?.message ?? 'No se pudo crear la reconciliación.' }
+    return { error: reconError?.message ?? 'No se pudo crear la reconciliaci?n.' }
   }
 
   const { data: adjustmentTx, error: txError } = await supabase
@@ -88,7 +89,7 @@ export async function reconcileBalance(
     .single()
 
   if (txError || !adjustmentTx) {
-    return { error: txError?.message ?? 'No se pudo crear la transacción de ajuste.' }
+    return { error: txError?.message ?? 'No se pudo crear la transacci?n de ajuste.' }
   }
 
   await supabase
@@ -108,7 +109,7 @@ export async function createRecurringSchedule(
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (!user) return { error: 'Debes iniciar sesión.' }
+  if (!user) return { error: 'Debes iniciar sesi?n.' }
 
   await syncUserProfileFromMetadata()
 
@@ -116,7 +117,7 @@ export async function createRecurringSchedule(
   const currency = input.currency ?? baseCurrency
 
   if (input.amount <= 0) return { error: 'El monto debe ser mayor a cero.' }
-  if (!input.description.trim()) return { error: 'La descripción es obligatoria.' }
+  if (!input.description.trim()) return { error: 'La descripci?n es obligatoria.' }
 
   const { data: schedule, error } = await supabase
     .from('recurring_schedules')
@@ -152,7 +153,7 @@ export async function deactivateRecurringSchedule(
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (!user) return { error: 'Debes iniciar sesión.' }
+  if (!user) return { error: 'Debes iniciar sesi?n.' }
 
   const { error } = await supabase
     .from('recurring_schedules')
@@ -175,10 +176,10 @@ export async function updateRecurringSchedule(
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (!user) return { error: 'Debes iniciar sesión.' }
+  if (!user) return { error: 'Debes iniciar sesi?n.' }
 
   if (input.amount <= 0) return { error: 'El monto debe ser mayor a cero.' }
-  if (!input.description.trim()) return { error: 'La descripción es obligatoria.' }
+  if (!input.description.trim()) return { error: 'La descripci?n es obligatoria.' }
 
   const baseCurrency = await getHouseholdBaseCurrency(input.householdId)
   const currency = input.currency ?? baseCurrency
@@ -213,7 +214,7 @@ export async function createTransaction(
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (!user) return { error: 'Debes iniciar sesión.' }
+  if (!user) return { error: 'Debes iniciar sesi?n.' }
 
   await syncUserProfileFromMetadata()
 
@@ -221,7 +222,7 @@ export async function createTransaction(
   if (input.transactionDate > today) {
     return {
       error:
-        'No puedes registrar movimientos con fecha futura. Usa la sección de ingresos y gastos fijos para programar repetición.',
+        'No puedes registrar movimientos con fecha futura. Usa la secci?n de ingresos y gastos fijos para programar repetici?n.',
     }
   }
 
@@ -239,16 +240,24 @@ export async function createTransaction(
   try {
     exchangeRate = await fetchExchangeRate(supabase, currency, baseCurrency)
   } catch {
-    return { error: `No hay tasa de cambio para ${currency} → ${baseCurrency}` }
+    return { error: `No hay tasa de cambio para ${currency} a ${baseCurrency}` }
   }
 
   const amounts = prepareTransactionAmounts(amount, currency, baseCurrency, exchangeRate)
+
+  const attributedTo = input.createdBy ?? user.id
+  if (attributedTo !== user.id) {
+    const members = await getHouseholdMembers(input.householdId)
+    if (!members.some(m => m.user_id === attributedTo)) {
+      return { error: 'El miembro seleccionado no pertenece al hogar.' }
+    }
+  }
 
   const { data: tx, error: txError } = await supabase
     .from('transactions')
     .insert({
       household_id: input.householdId,
-      created_by: user.id,
+      created_by: attributedTo,
       category_id: input.categoryId,
       type: input.type,
       description: input.description,
@@ -263,7 +272,7 @@ export async function createTransaction(
     .single()
 
   if (txError || !tx) {
-    return { error: txError?.message ?? 'No se pudo guardar la transacción.' }
+    return { error: txError?.message ?? 'No se pudo guardar la transacci?n.' }
   }
 
   if (input.savingsGoalId) {
@@ -287,7 +296,7 @@ export async function updateTransaction(
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (!user) return { error: 'Debes iniciar sesión.' }
+  if (!user) return { error: 'Debes iniciar sesi?n.' }
 
   const today = getTodayString()
   if (input.transactionDate > today) {
@@ -302,7 +311,7 @@ export async function updateTransaction(
     .single()
 
   if (fetchError || !existing) {
-    return { error: 'No se encontró el movimiento.' }
+    return { error: 'No se encontr? el movimiento.' }
   }
 
   if (existing.type === 'adjustment' || existing.is_auto_adjustment) {
@@ -323,7 +332,7 @@ export async function updateTransaction(
   try {
     exchangeRate = await fetchExchangeRate(supabase, currency, baseCurrency)
   } catch {
-    return { error: `No hay tasa de cambio para ${currency} → ${baseCurrency}` }
+    return { error: `No hay tasa de cambio para ${currency} a ${baseCurrency}` }
   }
 
   const amounts = prepareTransactionAmounts(amount, currency, baseCurrency, exchangeRate)
@@ -356,7 +365,7 @@ export async function deleteTransaction(
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (!user) return { error: 'Debes iniciar sesión.' }
+  if (!user) return { error: 'Debes iniciar sesi?n.' }
 
   const { data: existing, error: fetchError } = await supabase
     .from('transactions')
@@ -366,7 +375,7 @@ export async function deleteTransaction(
     .single()
 
   if (fetchError || !existing) {
-    return { error: 'No se encontró el movimiento.' }
+    return { error: 'No se encontr? el movimiento.' }
   }
 
   if (existing.type === 'adjustment' || existing.is_auto_adjustment) {
@@ -402,7 +411,7 @@ export async function recordSavingsContribution(
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (!user) return { error: 'Debes iniciar sesión.' }
+  if (!user) return { error: 'Debes iniciar sesi?n.' }
 
   if (input.amount <= 0) return { error: 'El monto debe ser mayor a cero.' }
 
@@ -417,7 +426,7 @@ export async function recordSavingsContribution(
   if (!goal) return { error: 'Meta de ahorro no encontrada.' }
 
   const categoryId = await getSavingsContributionCategoryId(supabase, input.householdId)
-  if (!categoryId) return { error: 'No hay categoría de gasto disponible.' }
+  if (!categoryId) return { error: 'No hay categor?a de gasto disponible.' }
 
   const transactionDate = input.transactionDate ?? getTodayString()
   const description =
@@ -442,7 +451,7 @@ export async function createSavingsGoal(
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (!user) return { error: 'Debes iniciar sesión.' }
+  if (!user) return { error: 'Debes iniciar sesi?n.' }
 
   if (input.targetAmount <= 0) return { error: 'La meta debe ser mayor a cero.' }
 
@@ -493,7 +502,7 @@ export async function updateSavingsGoal(
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (!user) return { error: 'Debes iniciar sesión.' }
+  if (!user) return { error: 'Debes iniciar sesi?n.' }
   if (input.targetAmount <= 0) return { error: 'La meta debe ser mayor a cero.' }
 
   const savingsCat = isValidSavingsCategoryId(input.category)
@@ -541,7 +550,7 @@ export async function deleteSavingsGoal(
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (!user) return { error: 'Debes iniciar sesión.' }
+  if (!user) return { error: 'Debes iniciar sesi?n.' }
 
   const { error } = await supabase
     .from('savings_goals')
@@ -569,7 +578,7 @@ export async function createCategory(input: {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (!user) return { error: 'Debes iniciar sesión.' }
+  if (!user) return { error: 'Debes iniciar sesi?n.' }
 
   const name = input.name.trim()
   if (!name) return { error: 'El nombre es obligatorio.' }
@@ -592,7 +601,7 @@ export async function createCategory(input: {
     .single()
 
   if (error || !data) {
-    return { error: error?.message ?? 'No se pudo crear la categoría.' }
+    return { error: error?.message ?? 'No se pudo crear la categor?a.' }
   }
 
   revalidateAll()
@@ -608,7 +617,7 @@ export async function deleteCategory(
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (!user) return { error: 'Debes iniciar sesión.' }
+  if (!user) return { error: 'Debes iniciar sesi?n.' }
 
   const { error } = await supabase
     .from('categories')

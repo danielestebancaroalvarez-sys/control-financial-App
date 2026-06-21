@@ -16,7 +16,7 @@ import { TX_TYPE_THEME, type TxType } from './tx-type-theme'
 import { CategoryIcon } from './category-icon'
 import { UserAvatar } from '@/components/profile/user-avatar'
 import type { Category, LineItem } from '@/lib/finance/types'
-import type { CurrencyCode } from '@/lib/household/types'
+import type { CurrencyCode, HouseholdMember } from '@/lib/household/types'
 
 const TODAY = getTodayString()
 
@@ -24,6 +24,8 @@ export function AddTransactionForm({
   householdId,
   baseCurrency,
   categories,
+  members,
+  currentUserId,
   authorName,
   onSuccess,
   defaultType = 'expense',
@@ -33,6 +35,8 @@ export function AddTransactionForm({
   householdId: string
   baseCurrency: CurrencyCode
   categories: Category[]
+  members: HouseholdMember[]
+  currentUserId: string
   authorName: string
   authorAvatarUrl?: string | null
   onSuccess?: () => void
@@ -60,6 +64,7 @@ export function AddTransactionForm({
   const [receiptFile, setReceiptFile] = useState<File | null>(null)
   const [receiptPreviewUrl, setReceiptPreviewUrl] = useState<string | null>(null)
   const [receiptUploadWarning, setReceiptUploadWarning] = useState<string | null>(null)
+  const [attributedTo, setAttributedTo] = useState(currentUserId)
 
   const filteredCategories = useMemo(
     () => categories.filter(c => c.type === txType && c.name !== 'Ahorro'),
@@ -197,6 +202,7 @@ export function AddTransactionForm({
       amount: parsedAmount,
       currency: baseCurrency,
       transactionDate: date,
+      createdBy: attributedTo,
       lineItems:
         lineItemsEnabled && isMercado
           ? lineItems.filter(i => i.name.trim() && i.price > 0)
@@ -458,11 +464,47 @@ export function AddTransactionForm({
         </div>
       )}
 
-      <div className="flex items-center justify-center gap-2 text-[11px] text-cc-secondary">
-        <UserAvatar name={authorName} avatarUrl={authorAvatarUrl} size="xs" />
-        <span>
-          Registrado por: <span className="font-semibold text-cc-primary">{authorName}</span>
-        </span>
+      <div className="space-y-2">
+        <p className="text-[11px] font-semibold text-cc-secondary">
+          ¿De quién es este movimiento?
+        </p>
+        {members.length > 1 ? (
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none -mx-1 px-1">
+            {members.map(member => {
+              const active = attributedTo === member.user_id
+              const label = member.full_name?.trim() || 'Miembro'
+              return (
+                <button
+                  key={member.user_id}
+                  type="button"
+                  onClick={() => setAttributedTo(member.user_id)}
+                  className={`shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl transition-all ${
+                    active
+                      ? `bg-gradient-to-r ${theme.gradient} text-white shadow-sm`
+                      : 'cc-surface-muted text-cc-secondary'
+                  }`}
+                >
+                  <UserAvatar
+                    name={label}
+                    avatarUrl={member.avatar_url}
+                    size="xs"
+                  />
+                  <span className="text-[12px] font-semibold">{label}</span>
+                </button>
+              )
+            })}
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 text-[12px] text-cc-secondary">
+            <UserAvatar name={authorName} avatarUrl={authorAvatarUrl} size="xs" />
+            <span className="font-semibold text-cc-primary">{authorName}</span>
+          </div>
+        )}
+        {attributedTo !== currentUserId && (
+          <p className="text-[10px] text-cc-muted">
+            Registrado por ti ({authorName})
+          </p>
+        )}
       </div>
 
       {error && (
