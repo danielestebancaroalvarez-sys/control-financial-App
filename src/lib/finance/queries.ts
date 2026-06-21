@@ -43,7 +43,7 @@ export const getHouseholdTransactions = cache(
     const supabase = await createClient()
     const { data } = await supabase
       .from('transactions')
-      .select('type, amount_base, transaction_date, category_id, created_by, savings_goal_id, recurring_schedule_id')
+      .select('id, description, type, amount_base, transaction_date, category_id, created_by, savings_goal_id, recurring_schedule_id')
       .eq('household_id', householdId)
 
     return (data ?? []) as TransactionRow[]

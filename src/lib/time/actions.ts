@@ -21,6 +21,7 @@ const TIME_PATHS = [
   '/tiempo/tareas',
   '/tiempo/metas',
   '/tiempo/ajustes',
+  '/tiempo/configuracion-inicial',
 ]
 
 function revalidateTime() {
@@ -450,6 +451,26 @@ export async function deleteProductivityGoal(
     .eq('household_id', householdId)
 
   if (error) return { error: error.message }
+  revalidateTime()
+  return {}
+}
+
+export async function resetTimeData(
+  householdId: string
+): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) return { error: 'Debes iniciar sesión.' }
+
+  const { error } = await supabase.rpc('reset_time_data', {
+    p_household_id: householdId,
+  })
+
+  if (error) return { error: error.message }
+
   revalidateTime()
   return {}
 }

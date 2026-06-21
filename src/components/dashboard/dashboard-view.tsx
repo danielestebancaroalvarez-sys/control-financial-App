@@ -4,24 +4,21 @@ import { CategoryBarChart } from '@/components/dashboard/category-bar-chart'
 import { PeriodBlockSelector } from '@/components/dashboard/period-block-selector'
 import { ProactiveInsightBanner } from '@/components/dashboard/proactive-insight-banner'
 import { CollapsibleSection } from '@/components/ui/collapsible-section'
-import { BalanceEditButton } from '@/app/(main)/balance-edit-button'
+import { MemberSpendingDetail } from '@/components/dashboard/member-spending-detail'
 import { formatMoney, getPeriodLabels } from '@/lib/finance/format'
 import type { DashboardSummary } from '@/lib/finance/types'
 import type { CurrencyCode } from '@/lib/household/types'
 import type { ProactiveInsight } from '@/lib/insights/proactive-insight'
 import {
-  Sparkles,
   ArrowDownRight,
   ArrowUpRight,
   Users,
-  AlertTriangle,
   TrendingUp,
   TrendingDown,
   PieChart,
   BarChart3,
   PiggyBank,
 } from 'lucide-react'
-import Link from 'next/link'
 
 function buildBudgetSlices(summary: DashboardSummary) {
   const slices: { value: number; color: string; label: string }[] = []
@@ -68,101 +65,15 @@ function expensePieTotal(summary: DashboardSummary): number {
   return summary.expenseGroups.reduce((sum, group) => sum + group.amount, 0)
 }
 
-function GuiltFreeBreakdown({
-  summary,
-  currency,
-  labels,
-}: {
-  summary: DashboardSummary
-  currency: CurrencyCode
-  labels: ReturnType<typeof getPeriodLabels>
-}) {
-  const fmt = (n: number) => formatMoney(n, currency)
-
-  return (
-    <div className="mt-3 pt-3 border-t border-[var(--cc-border-subtle)] space-y-2">
-      <p className="text-[11px] text-cc-secondary">
-        {summary.isClosedPeriod
-          ? 'Ingresos reales − gastos fijos − ahorro depositado − gasto variable'
-          : `Ingresos prometidos ${labels.ofPeriod} − gastos fijos prometidos − ahorros − gasto variable`}
-      </p>
-      <div className="flex flex-wrap gap-x-2 gap-y-1 text-[10px] text-cc-muted">
-        {summary.scheduledFixedIncome > 0 && (
-          <span>Ingresos fijos: {fmt(summary.scheduledFixedIncome)}</span>
-        )}
-        <span>Gastos fijos: {fmt(summary.scheduledFixedExpenses)}</span>
-        <Link href="/fijos" className="text-[#00BFA5] font-semibold">
-          Ver fijos
-        </Link>
-        <span>Variable: {fmt(summary.variableSpent)}</span>
-        {!summary.isClosedPeriod && (
-          <span>Ahorros planificados: {fmt(summary.periodSavings)}</span>
-        )}
-        {summary.periodRealSavings > 0 && (
-          <span>Ahorro depositado: {fmt(summary.periodRealSavings)}</span>
-        )}
-      </div>
-      {summary.expenseChangePercent !== null && (
-        <p
-          className={`text-[11px] font-semibold flex items-center gap-1 ${
-            summary.expenseChangePercent > 0 ? 'text-[#EC4899]' : 'text-[#00BFA5]'
-          }`}
-        >
-          {summary.expenseChangePercent > 0 ? (
-            <TrendingUp className="w-3.5 h-3.5" />
-          ) : (
-            <TrendingDown className="w-3.5 h-3.5" />
-          )}
-          Gastos {summary.expenseChangePercent > 0 ? '+' : ''}
-          {summary.expenseChangePercent}% vs periodo anterior
-        </p>
-      )}
-      {summary.budgetDeficit > 0 && (
-        <p className="text-[11px] text-[#EC4899] font-semibold">
-          Déficit: {fmt(summary.budgetDeficit)} por encima del ingreso
-        </p>
-      )}
-      {summary.guiltFreeMoney < 0 && (
-        <div className="p-3 rounded-xl cc-accent-danger border">
-          <div className="flex items-start gap-2">
-            <AlertTriangle className="w-4 h-4 text-[#E53935] shrink-0 mt-0.5" />
-            <div className="flex-1 min-w-0">
-              <p className="text-[11px] font-bold text-[#C62828]">
-                Vas por encima del presupuesto
-              </p>
-              <div className="flex gap-2 mt-2">
-                <Link
-                  href="/predicciones"
-                  className="text-[10px] font-bold text-[#00BFA5] px-2 py-1 rounded-lg cc-surface-muted"
-                >
-                  Radar
-                </Link>
-                <Link
-                  href="/mercado"
-                  className="text-[10px] font-bold text-[#00BFA5] px-2 py-1 rounded-lg cc-surface-muted"
-                >
-                  Mercado
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
 export function DashboardView({
   firstName,
   householdName,
-  householdId,
   currency,
   summary,
   proactiveInsight,
 }: {
   firstName: string
   householdName: string
-  householdId: string
   currency: CurrencyCode
   summary: DashboardSummary
   proactiveInsight?: ProactiveInsight | null
@@ -229,55 +140,6 @@ export function DashboardView({
           period={summary.period}
           activeOffset={summary.periodOffset}
         />
-      </div>
-
-      <div className="relative rounded-[24px] bg-gradient-to-br from-[#00BFA5] to-[#2DD4BF] p-5 text-white shadow-lg">
-        <div className="absolute top-4 right-4">
-          <BalanceEditButton
-            householdId={householdId}
-            currentBalance={summary.realBalance}
-            currency={currency}
-          />
-        </div>
-        <p className="text-[12px] font-medium opacity-90 mb-1">Saldo real</p>
-        <p className="text-[32px] font-bold tracking-tight pr-10">
-          {fmt(summary.realBalance)}
-        </p>
-        <p className="text-[10px] opacity-80 mt-2 pr-10">
-          Ingresos {fmt(summary.balanceBreakdown.income)} − Gastos{' '}
-          {fmt(summary.balanceBreakdown.expense)}
-          {summary.balanceBreakdown.adjustment !== 0 && (
-            <>
-              {' '}
-              {summary.balanceBreakdown.adjustment > 0 ? '+' : '−'}{' '}
-              {fmt(Math.abs(summary.balanceBreakdown.adjustment))} ajustes
-            </>
-          )}
-        </p>
-      </div>
-
-      <div className="cc-surface rounded-[24px] p-4 cc-accent-warn border">
-        <div className="flex items-center gap-2 mb-1">
-          <Sparkles className="w-4 h-4 text-[#F59E0B]" />
-          <span className="text-[13px] font-bold text-cc-primary">Dinero libre</span>
-        </div>
-        <p
-          className={`text-[28px] font-bold ${
-            summary.guiltFreeMoney < 0 ? 'text-[#EC4899]' : 'text-[#F59E0B]'
-          }`}
-        >
-          {fmt(summary.guiltFreeMoney)}
-        </p>
-        <p className="text-[11px] text-cc-secondary mt-1">
-          Lo que queda tras fijos, ahorros y gasto variable · {labels.current}
-        </p>
-        <details className="mt-3 group">
-          <summary className="text-[11px] font-semibold text-[#00BFA5] cursor-pointer list-none flex items-center gap-1">
-            <span className="group-open:rotate-90 transition-transform inline-block">›</span>
-            Ver desglose
-          </summary>
-          <GuiltFreeBreakdown summary={summary} currency={currency} labels={labels} />
-        </details>
       </div>
 
       {budgetSlices.length > 0 && (
@@ -372,52 +234,12 @@ export function DashboardView({
           icon={<Users className="w-4 h-4 text-[#00BFA5]" />}
           defaultOpen={false}
         >
-          <div className="space-y-3 pt-2">
-            {summary.memberSpending.map(member => (
-              <div key={member.userId}>
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-2 min-w-0">
-                    {member.avatarUrl ? (
-                      <img
-                        src={member.avatarUrl}
-                        alt=""
-                        className="w-6 h-6 rounded-full object-cover shrink-0"
-                      />
-                    ) : (
-                      <span className="w-6 h-6 rounded-full bg-[#00BFA5]/20 text-[#00BFA5] text-[10px] font-bold flex items-center justify-center shrink-0">
-                        {member.name.charAt(0).toUpperCase()}
-                      </span>
-                    )}
-                    <span className="text-[12px] font-medium text-cc-primary truncate">
-                      {member.name}
-                    </span>
-                  </div>
-                  <span className="text-[12px] font-bold text-cc-primary shrink-0 ml-2">
-                    {fmt(member.amount)}
-                  </span>
-                </div>
-                <div className="h-1.5 rounded-full cc-track overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-[#EC4899]"
-                    style={{ width: `${member.percent}%` }}
-                  />
-                </div>
-                {member.extraAboveShare !== 0 && (
-                  <p className="text-[10px] text-cc-muted mt-0.5">
-                    {member.extraAboveShare > 0 ? (
-                      <span className="text-[#EC4899] font-semibold">
-                        +{fmt(member.extraAboveShare)} sobre la media
-                      </span>
-                    ) : (
-                      <span className="text-[#00BFA5] font-semibold">
-                        {fmt(Math.abs(member.extraAboveShare))} bajo la media
-                      </span>
-                    )}
-                  </p>
-                )}
-              </div>
-            ))}
-          </div>
+          <MemberSpendingDetail
+            members={summary.memberSpending}
+            formatValue={fmt}
+            periodStart={summary.periodStart}
+            periodEnd={summary.periodEnd}
+          />
         </CollapsibleSection>
       )}
 

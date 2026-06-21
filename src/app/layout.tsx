@@ -10,8 +10,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "CoupleCash — Finanzas en pareja, fácil y feliz",
-  description: "Gestiona tus finanzas en pareja de forma simple y feliz con CoupleCash.",
+  title: "Couple Hub — Finanzas y tiempo en pareja",
+  description:
+    "Organiza finanzas, horarios, tareas y metas con tu pareja en Couple Hub.",
   manifest: "/manifest.webmanifest",
   icons: {
     icon: [
@@ -24,7 +25,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "CoupleCash",
+    title: "Couple Hub",
   },
 };
 

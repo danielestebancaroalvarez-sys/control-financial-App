@@ -12,6 +12,7 @@ import { HouseholdMembersSection } from '@/app/(main)/ajustes/household-members-
 import { ProfileSettingsForm } from '@/components/profile/profile-settings-form'
 import { CategoryIcon } from '@/components/transactions/category-icon'
 import { ActivityReminderSetting } from './activity-reminder-setting'
+import { ResetTimeDataButton } from './reset-time-data-button'
 
 export default async function TiempoAjustesPage() {
   const ctx = await getMainAppContext()
@@ -114,6 +115,8 @@ export default async function TiempoAjustesPage() {
         members={members}
         currentUserId={ctx.user.id}
       />
+
+      <ResetTimeDataButton householdId={ctx.household.id} />
 
       <section className="cc-surface rounded-[24px] p-5">
         <h2 className="text-[15px] font-bold text-cc-primary mb-3">Sesión</h2>

@@ -12,7 +12,10 @@ export async function proxy(request: NextRequest) {
   const isAuthRoute =
     pathname.startsWith('/login') || pathname.startsWith('/auth')
   const isOnboardingRoute = pathname.startsWith('/onboarding')
-  const isSetupRoute = pathname.startsWith('/configuracion-inicial')
+  const isFinanceSetupRoute = pathname.startsWith('/configuracion-inicial')
+  const isTimeSetupRoute = pathname.startsWith('/tiempo/configuracion-inicial')
+  const isTimeModule =
+    pathname === '/tiempo' || pathname.startsWith('/tiempo/')
 
   if (!user && !isAuthRoute) {
     const url = request.nextUrl.clone()
@@ -30,13 +33,14 @@ export async function proxy(request: NextRequest) {
         .maybeSingle(),
       supabase
         .from('profiles')
-        .select('setup_completed_at')
+        .select('setup_completed_at, time_setup_completed_at')
         .eq('id', user.id)
         .maybeSingle(),
     ])
 
     const hasHousehold = !!membership
-    const setupCompleted = !!profile?.setup_completed_at
+    const financeSetupCompleted = !!profile?.setup_completed_at
+    const timeSetupCompleted = !!profile?.time_setup_completed_at
 
     if (!hasHousehold && !isOnboardingRoute && !isAuthRoute) {
       const url = request.nextUrl.clone()
@@ -46,24 +50,41 @@ export async function proxy(request: NextRequest) {
 
     if (hasHousehold && isOnboardingRoute) {
       const url = request.nextUrl.clone()
-      url.pathname = setupCompleted ? '/' : '/configuracion-inicial'
+      url.pathname = financeSetupCompleted ? '/' : '/configuracion-inicial'
       return NextResponse.redirect(url)
     }
 
-    if (
-      hasHousehold &&
-      !setupCompleted &&
-      !isSetupRoute &&
-      !isAuthRoute
-    ) {
-      const url = request.nextUrl.clone()
-      url.pathname = '/configuracion-inicial'
-      return NextResponse.redirect(url)
+    if (hasHousehold && !isAuthRoute && !isOnboardingRoute) {
+      if (
+        isTimeModule &&
+        !isTimeSetupRoute &&
+        !timeSetupCompleted
+      ) {
+        const url = request.nextUrl.clone()
+        url.pathname = '/tiempo/configuracion-inicial'
+        return NextResponse.redirect(url)
+      }
+
+      if (
+        !isTimeModule &&
+        !isFinanceSetupRoute &&
+        !financeSetupCompleted
+      ) {
+        const url = request.nextUrl.clone()
+        url.pathname = '/configuracion-inicial'
+        return NextResponse.redirect(url)
+      }
     }
 
-    if (hasHousehold && setupCompleted && isSetupRoute) {
+    if (hasHousehold && financeSetupCompleted && isFinanceSetupRoute) {
       const url = request.nextUrl.clone()
       url.pathname = '/'
+      return NextResponse.redirect(url)
+    }
+
+    if (hasHousehold && timeSetupCompleted && isTimeSetupRoute) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/tiempo'
       return NextResponse.redirect(url)
     }
 
@@ -71,7 +92,7 @@ export async function proxy(request: NextRequest) {
       const url = request.nextUrl.clone()
       if (!hasHousehold) {
         url.pathname = '/onboarding'
-      } else if (!setupCompleted) {
+      } else if (!financeSetupCompleted) {
         url.pathname = '/configuracion-inicial'
       } else {
         url.pathname = '/'

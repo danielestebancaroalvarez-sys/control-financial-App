@@ -2,6 +2,10 @@ import {
   canUseNotifications,
   requestNotificationPermission,
 } from './reminder-preferences'
+import {
+  buildNotificationPayload,
+  timeNotificationTitle,
+} from './notification-branding'
 
 export type ActivityReminderMode = 'weekly-summary' | 'day-before'
 
@@ -68,21 +72,22 @@ export async function showActivityNotification(options: {
 }) {
   if (!canUseNotifications() || Notification.permission !== 'granted') return
 
-  const payload = {
+  const payload = buildNotificationPayload({
     body: options.body,
     tag: options.tag,
-    icon: '/icon.svg',
-    badge: '/icon.svg',
-    data: { url: options.url ?? '/tiempo/tareas' },
-  }
+    url: options.url ?? '/tiempo/tareas',
+    module: 'time',
+  })
+
+  const title = timeNotificationTitle(options.title)
 
   if ('serviceWorker' in navigator) {
     const registration = await navigator.serviceWorker.ready.catch(() => null)
     if (registration) {
-      await registration.showNotification(options.title, payload)
+      await registration.showNotification(title, payload)
       return
     }
   }
 
-  new Notification(options.title, payload)
+  new Notification(title, payload)
 }

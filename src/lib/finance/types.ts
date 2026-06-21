@@ -5,6 +5,8 @@ export type TransactionType = 'income' | 'expense' | 'adjustment'
 export type Period = 'weekly' | 'monthly'
 
 export type TransactionRow = {
+  id?: string
+  description?: string | null
   type: TransactionType
   amount_base: number
   transaction_date: string
@@ -81,6 +83,21 @@ export type MemberSpendingStat = {
   percent: number
   avatarUrl: string | null
   extraAboveShare: number
+  byCategory: {
+    categoryName: string
+    amount: number
+    percent: number
+    color: string | null
+  }[]
+  transactions: {
+    id: string
+    description: string
+    amount: number
+    categoryName: string
+    categoryId: string | null
+    categoryColor: string | null
+    date: string
+  }[]
 }
 
 export type DashboardSummary = {

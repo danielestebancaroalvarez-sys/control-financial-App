@@ -1,14 +1,14 @@
 {
   "id": "/",
-  "name": "CoupleCash",
-  "short_name": "CoupleCash",
-  "description": "Finanzas en pareja, fácil y feliz",
+  "name": "Couple Hub",
+  "short_name": "Couple Hub",
+  "description": "Finanzas, tiempo y vida en pareja — todo en un solo lugar",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#B2EBF2",
-  "theme_color": "#00BFA5",
+  "theme_color": "#5B4FD6",
   "lang": "es",
   "categories": ["finance", "productivity"],
   "icons": [

@@ -13,6 +13,7 @@ import {
   showPaymentNotification,
   type PaymentReminderMode,
 } from '@/lib/notifications/reminder-preferences'
+import { NOTIFICATION_PERMISSION_HINT } from '@/lib/notifications/notification-branding'
 
 export function PaymentReminderSetting() {
   const [enabled, setEnabled] = useState(false)
@@ -120,6 +121,7 @@ export function PaymentReminderSetting() {
           Te avisamos de los gastos recurrentes de la próxima semana. También verás
           las alertas en la campana del encabezado.
         </p>
+        <p className="text-[10px] text-cc-muted mt-2">{NOTIFICATION_PERMISSION_HINT}</p>
       </div>
 
       {!enabled ? (

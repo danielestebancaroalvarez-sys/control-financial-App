@@ -1,3 +1,8 @@
+import {
+  buildNotificationPayload,
+  financeNotificationTitle,
+} from './notification-branding'
+
 export type PaymentReminderMode = 'weekly-summary' | 'day-before'
 
 const KEYS = {
@@ -74,21 +79,22 @@ export async function showPaymentNotification(options: {
 }) {
   if (!canUseNotifications() || Notification.permission !== 'granted') return
 
-  const payload = {
+  const payload = buildNotificationPayload({
     body: options.body,
     tag: options.tag,
-    icon: '/icon.svg',
-    badge: '/icon.svg',
-    data: { url: options.url ?? '/predicciones' },
-  }
+    url: options.url,
+    module: 'finance',
+  })
+
+  const title = financeNotificationTitle(options.title)
 
   if ('serviceWorker' in navigator) {
     const registration = await navigator.serviceWorker.ready.catch(() => null)
     if (registration) {
-      await registration.showNotification(options.title, payload)
+      await registration.showNotification(title, payload)
       return
     }
   }
 
-  new Notification(options.title, payload)
+  new Notification(title, payload)
 }

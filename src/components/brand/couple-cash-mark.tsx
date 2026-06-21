@@ -36,17 +36,27 @@ export function CoupleCashMark({
 
   return (
     <svg className={className} viewBox="0 0 80 80" fill="none" aria-hidden="true">
+      <defs>
+        <linearGradient id="hubMarkBg" x1="8" y1="8" x2="72" y2="72" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#00BFA5" />
+          <stop offset="100%" stopColor="#7C3AED" />
+        </linearGradient>
+      </defs>
+      <rect width="80" height="80" rx="18" fill="url(#hubMarkBg)" />
+      <circle cx="28" cy="40" r="14" fill="white" fillOpacity="0.95" />
+      <circle cx="52" cy="40" r="14" fill="white" fillOpacity="0.95" />
+      <rect x="36" y="36" width="8" height="8" rx="4" fill="#A78BFA" />
       <path
-        d="M40 8 L52 24 L46 24 L46 34 L34 34 L34 24 L28 24 Z"
-        fill="#4CAF50"
-        transform="rotate(15 40 22)"
+        d="M28 36 C28 33 25 31 25 34 C25 31 22 33 22 36 C22 41 28 44 28 44 C28 44 34 41 34 36 C34 33 31 31 31 34 C31 31 28 33 28 36Z"
+        fill="#E91E63"
       />
-      <circle cx="30" cy="52" r="18" fill="#FFD54F" stroke="#E6A800" strokeWidth="1.5" />
-      <circle cx="50" cy="52" r="18" fill="#FFD54F" stroke="#E6A800" strokeWidth="1.5" />
       <path
-        d="M40 48 C40 44 36 42 36 46 C36 42 32 44 32 48 C32 54 40 58 40 58 C40 58 48 54 48 48 C48 44 44 42 44 46 C44 42 40 44 40 48Z"
+        d="M52 36 C52 33 49 31 49 34 C49 31 46 33 46 36 C46 41 52 44 52 44 C52 44 58 41 58 36 C58 33 55 31 55 34 C55 31 52 33 52 36Z"
         fill="#E91E63"
       />
     </svg>
   )
 }
+
+/** Alias de marca para Couple Hub */
+export const CoupleHubMark = CoupleCashMark
