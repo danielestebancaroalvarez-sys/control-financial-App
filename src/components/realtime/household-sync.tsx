@@ -105,6 +105,36 @@ export function HouseholdSync({ householdId }: { householdId: string }) {
         {
           event: '*',
           schema: 'public',
+          table: 'trips',
+          filter: `household_id=eq.${householdId}`,
+        },
+        refresh
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'trip_budget_items',
+          filter: `household_id=eq.${householdId}`,
+        },
+        refresh
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'trip_prep_steps',
+          filter: `household_id=eq.${householdId}`,
+        },
+        refresh
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
           table: 'household_members',
           filter: `household_id=eq.${householdId}`,
         },

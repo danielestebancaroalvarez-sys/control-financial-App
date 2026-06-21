@@ -1,6 +1,6 @@
 import type { PaymentReminderPayload } from './reminder-actions'
 
-export type NotificationModule = 'finance' | 'time'
+export type NotificationModule = 'finance' | 'time' | 'travel'
 
 export type InAppNotification = {
   id: string

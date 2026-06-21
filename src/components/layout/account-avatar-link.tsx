@@ -5,6 +5,18 @@ import { usePathname } from 'next/navigation'
 import { UserAvatar } from '@/components/profile/user-avatar'
 import { getAppModule } from '@/lib/app/module'
 
+const SETTINGS_PATH: Record<ReturnType<typeof getAppModule>, string> = {
+  finance: '/ajustes',
+  time: '/tiempo/ajustes',
+  travel: '/viajes/ajustes',
+}
+
+const ACCENT: Record<ReturnType<typeof getAppModule>, string> = {
+  finance: '#00BFA5',
+  time: '#6366F1',
+  travel: '#0EA5E9',
+}
+
 export function AccountAvatarLink({
   firstName,
   email,
@@ -15,11 +27,13 @@ export function AccountAvatarLink({
   avatarUrl?: string | null
 }) {
   const pathname = usePathname()
-  const isTime = getAppModule(pathname) === 'time'
-  const settingsHref = isTime ? '/tiempo/ajustes' : '/ajustes'
+  const module = getAppModule(pathname)
+  const settingsHref = SETTINGS_PATH[module]
   const active =
-    pathname.startsWith('/ajustes') || pathname.startsWith('/tiempo/ajustes')
-  const accent = isTime ? '#6366F1' : '#00BFA5'
+    pathname.startsWith('/ajustes') ||
+    pathname.startsWith('/tiempo/ajustes') ||
+    pathname.startsWith('/viajes/ajustes')
+  const accent = ACCENT[module]
 
   return (
     <Link
@@ -38,9 +52,10 @@ export function AccountAvatarLink({
           : undefined
       }
       aria-label="Cuenta y ajustes"
-      title={email ?? 'Cuenta y ajustes'}
     >
-      <span className="text-[13px] font-semibold text-cc-primary">{firstName}</span>
+      <span className="text-[12px] font-semibold text-cc-primary hidden sm:inline max-w-[5rem] truncate">
+        {firstName}
+      </span>
       <UserAvatar name={firstName} avatarUrl={avatarUrl} size="sm" />
     </Link>
   )

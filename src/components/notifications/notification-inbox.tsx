@@ -78,11 +78,24 @@ function NotificationPanel({
   onReadAll: () => void
 }) {
   const isTime = module === 'time'
-  const accent = isTime ? '#6366F1' : '#00BFA5'
-  const emptyHref = isTime ? '/tiempo/nuevo' : '/nuevo'
-  const emptyCta = isTime ? 'Crear tarea o actividad' : 'Crear gasto recurrente'
-  const footerHref = isTime ? '/tiempo/tareas' : '/predicciones'
-  const footerLabel = isTime ? 'Ver tareas →' : 'Ver radar de pagos →'
+  const isTravel = module === 'travel'
+  const accent = isTravel ? '#0EA5E9' : isTime ? '#6366F1' : '#00BFA5'
+  const emptyHref = isTravel ? '/viajes/nuevo' : isTime ? '/tiempo/nuevo' : '/nuevo'
+  const emptyCta = isTravel
+    ? 'Planificar un viaje'
+    : isTime
+      ? 'Crear tarea o actividad'
+      : 'Crear gasto recurrente'
+  const footerHref = isTravel
+    ? '/viajes/preparacion'
+    : isTime
+      ? '/tiempo/tareas'
+      : '/predicciones'
+  const footerLabel = isTravel
+    ? 'Ver preparación →'
+    : isTime
+      ? 'Ver tareas →'
+      : 'Ver radar de pagos →'
 
   return (
     <div className="w-full max-w-md rounded-[20px] cc-surface-solid border border-[#EEEEEE] shadow-[0_12px_40px_rgba(0,0,0,0.15)] overflow-hidden">
@@ -90,7 +103,11 @@ function NotificationPanel({
         <div>
           <p className="text-[14px] font-bold text-cc-primary">Notificaciones</p>
           <p className="text-[10px] text-cc-secondary">
-            {isTime ? 'Tareas, hitos y actividades' : 'Pagos y actividad de tu pareja'}
+            {isTravel
+              ? 'Pasos de viaje y recordatorios'
+              : isTime
+                ? 'Tareas, hitos y actividades'
+                : 'Pagos y actividad de tu pareja'}
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
@@ -187,8 +204,10 @@ export function NotificationInbox({ module }: { module: NotificationModule }) {
   const [loading, setLoading] = useState(false)
   const panelRef = useRef<HTMLDivElement>(null)
 
-  const accent = module === 'time' ? '#6366F1' : '#00BFA5'
-  const badgeColor = module === 'time' ? '#6366F1' : '#EC4899'
+  const accent =
+    module === 'travel' ? '#0EA5E9' : module === 'time' ? '#6366F1' : '#00BFA5'
+  const badgeColor =
+    module === 'travel' ? '#0EA5E9' : module === 'time' ? '#6366F1' : '#EC4899'
 
   const refresh = useCallback(async () => {
     setLoading(true)
@@ -196,7 +215,9 @@ export function NotificationInbox({ module }: { module: NotificationModule }) {
       const incoming =
         module === 'time'
           ? await getTimeInAppNotifications()
-          : await getFinanceInAppNotifications()
+          : module === 'travel'
+            ? []
+            : await getFinanceInAppNotifications()
       syncInAppNotifications(incoming, module)
       setNotifications(incoming)
       setUnread(getUnreadCount(module))

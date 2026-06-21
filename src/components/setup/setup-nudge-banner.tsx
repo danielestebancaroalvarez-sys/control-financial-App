@@ -7,6 +7,7 @@ import { X, Settings2 } from 'lucide-react'
 const DISMISS_KEYS = {
   finance: 'couplehub_dismiss_finance_setup_nudge',
   time: 'couplehub_dismiss_time_setup_nudge',
+  travel: 'couplehub_dismiss_travel_setup_nudge',
 } as const
 
 export function SetupNudgeBanner({
@@ -15,7 +16,7 @@ export function SetupNudgeBanner({
   title,
   description,
 }: {
-  module: 'finance' | 'time'
+  module: 'finance' | 'time' | 'travel'
   href: string
   title: string
   description: string
@@ -27,7 +28,8 @@ export function SetupNudgeBanner({
 
   if (dismissed) return null
 
-  const accent = module === 'time' ? '#6366F1' : '#00BFA5'
+  const accent =
+    module === 'travel' ? '#0EA5E9' : module === 'time' ? '#6366F1' : '#00BFA5'
 
   return (
     <div

@@ -79,6 +79,37 @@ export async function getSetupContext(): Promise<SetupContext | null> {
   }
 }
 
+export const hasCompletedTravelSetup = cache(async (): Promise<boolean> => {
+  const user = await getAuthUser()
+  if (!user) return true
+
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('travel_setup_completed_at')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  if (error) return true
+  return !!data?.travel_setup_completed_at
+})
+
+export async function getTravelSetupContext(): Promise<{
+  householdId: string
+  householdName: string
+  currency: string
+} | null> {
+  const user = await getAuthUser()
+  const household = await getUserHousehold()
+  if (!user || !household) return null
+
+  return {
+    householdId: household.id,
+    householdName: household.name,
+    currency: household.base_currency,
+  }
+}
+
 export async function getTimeSetupContext(): Promise<TimeSetupContext | null> {
   const user = await getAuthUser()
   const household = await getUserHousehold()

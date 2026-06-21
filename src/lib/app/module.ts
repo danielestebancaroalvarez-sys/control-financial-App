@@ -1,9 +1,13 @@
-export type AppModule = 'finance' | 'time'
+export type AppModule = 'finance' | 'time' | 'travel'
 
 export function getAppModule(pathname: string): AppModule {
-  return pathname.startsWith('/tiempo') ? 'time' : 'finance'
+  if (pathname.startsWith('/viajes')) return 'travel'
+  if (pathname.startsWith('/tiempo')) return 'time'
+  return 'finance'
 }
 
 export function moduleHomePath(module: AppModule): string {
-  return module === 'time' ? '/tiempo' : '/'
+  if (module === 'travel') return '/viajes'
+  if (module === 'time') return '/tiempo'
+  return '/'
 }

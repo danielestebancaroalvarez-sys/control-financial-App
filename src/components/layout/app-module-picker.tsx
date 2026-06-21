@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
-import { ChevronDown, Clock, Wallet } from 'lucide-react'
+import { ChevronDown, Clock, Plane, Wallet } from 'lucide-react'
 import { CoupleCashLogo } from '@/components/login/couple-cash-logo'
 import { getAppModule, moduleHomePath, type AppModule } from '@/lib/app/module'
 
@@ -26,6 +26,13 @@ const MODULES: {
     description: 'Horario, tareas y metas',
     icon: Clock,
     accent: '#6366F1',
+  },
+  {
+    id: 'travel',
+    label: 'Viajes',
+    description: 'Planificación y presupuesto',
+    icon: Plane,
+    accent: '#0EA5E9',
   },
 ]
 

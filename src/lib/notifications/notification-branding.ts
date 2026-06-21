@@ -1,4 +1,4 @@
-export type NotificationModule = 'finance' | 'time'
+export type NotificationModule = 'finance' | 'time' | 'travel'
 
 export const NOTIFICATION_BRAND = {
   appName: 'Couple Hub',
@@ -27,7 +27,7 @@ export function buildNotificationPayload(options: {
     badge: NOTIFICATION_BRAND.badge,
     vibrate: [200, 100, 200] as number[],
     data: {
-      url: options.url ?? (options.module === 'time' ? '/tiempo' : '/predicciones'),
+      url: options.url ?? (options.module === 'time' ? '/tiempo' : options.module === 'travel' ? '/viajes' : '/predicciones'),
       module: options.module,
     },
   }

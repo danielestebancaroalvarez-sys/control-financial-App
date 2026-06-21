@@ -9,6 +9,10 @@ const STORAGE_KEYS: Record<NotificationModule, { items: string; read: string }> 
     items: 'couplecash_in_app_notifications_time',
     read: 'couplecash_read_notification_ids_time',
   },
+  travel: {
+    items: 'couplecash_in_app_notifications_travel',
+    read: 'couplecash_read_notification_ids_travel',
+  },
 }
 
 function readJson<T>(key: string, fallback: T): T {
