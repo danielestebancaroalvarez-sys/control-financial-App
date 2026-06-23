@@ -7,7 +7,7 @@ import { calculateGuiltFreeMoney } from './guilt-free'
 import { calculatePromisedCashflow } from './promised-cashflow'
 import { calculateActualPeriodCashflow } from './scheduled-expenses'
 import { sumVariableExpenses } from './variable-expenses'
-import { getPeriodRangeAtOffset, getPeriodBlockLabel, isClosedPeriod, formatSavingsTimeRemaining } from './format'
+import { getPeriodRangeAtOffset, getPeriodBlockLabel, isClosedPeriod, formatSavingsTimeRemaining, getPeriodOffsetForDate } from './format'
 import { buildMarketInsights } from './market-analytics'
 import type { MarketInsights } from './market-analytics'
 import { getCategoryColor } from './categories'
@@ -635,4 +635,46 @@ export async function getHouseholdBaseCurrency(
     .eq('id', householdId)
     .single()
   return (data?.base_currency ?? 'AUD') as CurrencyCode
+}
+
+export async function getMaxPeriodOffsetWithData(
+  householdId: string,
+  period: Period
+): Promise<number> {
+  const supabase = await createClient()
+
+  const [{ data: txMin }, { data: recurring }] = await Promise.all([
+    supabase
+      .from('transactions')
+      .select('transaction_date')
+      .eq('household_id', householdId)
+      .order('transaction_date', { ascending: true })
+      .limit(1)
+      .maybeSingle(),
+    supabase
+      .from('recurring_schedules')
+      .select('start_date')
+      .eq('household_id', householdId)
+      .eq('is_active', true),
+  ])
+
+  let maxOffset = 0
+
+  if (txMin?.transaction_date) {
+    maxOffset = Math.max(
+      maxOffset,
+      getPeriodOffsetForDate(period, txMin.transaction_date)
+    )
+  }
+
+  for (const row of recurring ?? []) {
+    if (row.start_date) {
+      maxOffset = Math.max(
+        maxOffset,
+        getPeriodOffsetForDate(period, row.start_date)
+      )
+    }
+  }
+
+  return Math.min(11, maxOffset)
 }

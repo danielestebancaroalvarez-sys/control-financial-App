@@ -9,7 +9,9 @@ import {
   Clock,
   Loader2,
   Moon,
+  Plus,
   Sparkles,
+  Trash2,
 } from 'lucide-react'
 import { CoupleHubMark } from '@/components/brand/couple-cash-mark'
 import { ProfileSettingsForm } from '@/components/profile/profile-settings-form'
@@ -19,8 +21,35 @@ import {
 } from '@/lib/notifications/activity-reminder-preferences'
 import { completeTimeSetup, skipTimeSetup } from '@/lib/setup/time-actions'
 import type { TimeSetupContext } from '@/lib/setup/time-types'
+import { SUGGESTED_ACTIVITY_TEMPLATES } from '@/lib/time/task-template-defaults'
+import {
+  TASK_DIFFICULTY_LABELS,
+  type TaskDifficulty,
+} from '@/lib/time/types'
 
-type Step = 'welcome' | 'profile' | 'sleep' | 'reminders' | 'done'
+type Step = 'welcome' | 'profile' | 'sleep' | 'activities' | 'reminders' | 'done'
+
+type ActivityRow = {
+  key: string
+  title: string
+  estimatedMinutes: number
+  difficulty: TaskDifficulty
+  icon: string
+  color: string
+  enabled: boolean
+}
+
+function buildInitialActivities(): ActivityRow[] {
+  return SUGGESTED_ACTIVITY_TEMPLATES.map((t, i) => ({
+    key: `suggested-${i}`,
+    title: t.title,
+    estimatedMinutes: t.estimatedMinutes,
+    difficulty: t.difficulty,
+    icon: t.icon,
+    color: t.color,
+    enabled: i < 3,
+  }))
+}
 
 export function TimeSetupWizard({ context }: { context: TimeSetupContext }) {
   const [loading, setLoading] = useState(false)
@@ -32,11 +61,12 @@ export function TimeSetupWizard({ context }: { context: TimeSetupContext }) {
   const [sleepStart, setSleepStart] = useState('22:30')
   const [sleepEnd, setSleepEnd] = useState('07:00')
   const [enableReminders, setEnableReminders] = useState(true)
+  const [activities, setActivities] = useState<ActivityRow[]>(buildInitialActivities)
 
   const steps = useMemo(() => {
     const list: Step[] = ['welcome']
     if (context.needsProfile) list.push('profile')
-    list.push('sleep', 'reminders', 'done')
+    list.push('sleep', 'activities', 'reminders', 'done')
     return list
   }, [context.needsProfile])
 
@@ -63,6 +93,21 @@ export function TimeSetupWizard({ context }: { context: TimeSetupContext }) {
     }
   }
 
+  function addCustomActivity() {
+    setActivities(prev => [
+      ...prev,
+      {
+        key: `custom-${Date.now()}`,
+        title: '',
+        estimatedMinutes: 30,
+        difficulty: 2,
+        icon: 'package',
+        color: '#6366F1',
+        enabled: true,
+      },
+    ])
+  }
+
   async function handleFinish() {
     setLoading(true)
     setError(null)
@@ -74,12 +119,23 @@ export function TimeSetupWizard({ context }: { context: TimeSetupContext }) {
       }
     }
 
+    const activityTemplates = activities
+      .filter(a => a.enabled && a.title.trim())
+      .map(a => ({
+        title: a.title.trim(),
+        estimatedMinutes: a.estimatedMinutes,
+        difficulty: a.difficulty,
+        icon: a.icon,
+        color: a.color,
+      }))
+
     const result = await completeTimeSetup({
       householdId: context.householdId,
       createSleepBlock: sleepMode === 'block',
       sleepStartTime: sleepMode === 'block' ? sleepStart : undefined,
       sleepEndTime: sleepMode === 'block' ? sleepEnd : undefined,
       enableReminders,
+      activityTemplates,
     })
 
     if (result?.error) {
@@ -100,14 +156,16 @@ export function TimeSetupWizard({ context }: { context: TimeSetupContext }) {
       <div className="flex-1 max-w-lg mx-auto w-full px-5 py-8 flex flex-col">
         <div className="flex items-center justify-between mb-6">
           <CoupleHubMark className="w-10 h-10" />
-          <button
-            type="button"
-            onClick={handleSkip}
-            disabled={skipping || loading}
-            className="text-[12px] font-semibold text-cc-secondary disabled:opacity-50"
-          >
-            {skipping ? 'Saltando...' : 'Saltar'}
-          </button>
+          {currentStep === 'welcome' && (
+            <button
+              type="button"
+              onClick={handleSkip}
+              disabled={skipping || loading}
+              className="text-[12px] font-semibold text-cc-secondary disabled:opacity-50"
+            >
+              {skipping ? 'Saltando...' : 'Configurar después'}
+            </button>
+          )}
         </div>
 
         {currentStep === 'welcome' && (
@@ -116,7 +174,7 @@ export function TimeSetupWizard({ context }: { context: TimeSetupContext }) {
               Configura Tiempo
             </h1>
             <p className="text-[14px] text-cc-secondary mb-6">
-              Registra sueño, bloques fijos, tareas y metas con {context.householdName}.
+              Sueño, actividades del hogar y recordatorios para {context.householdName}.
             </p>
             <ul className="space-y-3 text-[13px] text-cc-primary">
               <li className="flex gap-2">
@@ -124,12 +182,12 @@ export function TimeSetupWizard({ context }: { context: TimeSetupContext }) {
                 Contador de sueño con botón o bloque nocturno
               </li>
               <li className="flex gap-2">
-                <Clock className="w-4 h-4 text-[#6366F1] shrink-0 mt-0.5" />
-                Horario semanal y productividad
+                <Sparkles className="w-4 h-4 text-[#6366F1] shrink-0 mt-0.5" />
+                Biblioteca de actividades (lavar baño, planchar…)
               </li>
               <li className="flex gap-2">
                 <Bell className="w-4 h-4 text-[#6366F1] shrink-0 mt-0.5" />
-                Recordatorios de actividades
+                Recordatorios de tareas e hitos
               </li>
             </ul>
           </div>
@@ -146,6 +204,8 @@ export function TimeSetupWizard({ context }: { context: TimeSetupContext }) {
               initialAvatarUrl={context.profileAvatarUrl}
               email={context.email}
               accent="time"
+              onSaved={goNext}
+              variant="wizard"
             />
           </div>
         )}
@@ -209,6 +269,119 @@ export function TimeSetupWizard({ context }: { context: TimeSetupContext }) {
           </div>
         )}
 
+        {currentStep === 'activities' && (
+          <div className="flex-1 space-y-3">
+            <h2 className="text-[22px] font-bold text-cc-primary">Actividades del hogar</h2>
+            <p className="text-[13px] text-cc-secondary">
+              Créalas una vez con duración y dificultad. Luego solo las asignas a tareas.
+            </p>
+            <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
+              {activities.map(row => (
+                <div
+                  key={row.key}
+                  className={`rounded-2xl p-3 border ${
+                    row.enabled
+                      ? 'border-[#6366F1]/30 cc-surface-muted'
+                      : 'border-transparent opacity-70'
+                  }`}
+                >
+                  <label className="flex items-center gap-2 mb-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={row.enabled}
+                      onChange={e =>
+                        setActivities(prev =>
+                          prev.map(a =>
+                            a.key === row.key ? { ...a, enabled: e.target.checked } : a
+                          )
+                        )
+                      }
+                      className="rounded accent-[#6366F1]"
+                    />
+                    <input
+                      type="text"
+                      value={row.title}
+                      onChange={e =>
+                        setActivities(prev =>
+                          prev.map(a =>
+                            a.key === row.key ? { ...a, title: e.target.value } : a
+                          )
+                        )
+                      }
+                      placeholder="Nombre de la actividad"
+                      className="flex-1 px-2 py-1.5 rounded-lg cc-input text-[13px] outline-none"
+                    />
+                    {row.key.startsWith('custom-') && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setActivities(prev => prev.filter(a => a.key !== row.key))
+                        }
+                        className="p-1 text-cc-muted hover:text-red-500"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </label>
+                  {row.enabled && (
+                    <div className="grid grid-cols-2 gap-2 pl-6">
+                      <input
+                        type="number"
+                        min={5}
+                        value={row.estimatedMinutes}
+                        onChange={e =>
+                          setActivities(prev =>
+                            prev.map(a =>
+                              a.key === row.key
+                                ? {
+                                    ...a,
+                                    estimatedMinutes: Number(e.target.value) || 5,
+                                  }
+                                : a
+                            )
+                          )
+                        }
+                        placeholder="Minutos"
+                        className="px-2 py-1.5 rounded-lg cc-input text-[12px] outline-none"
+                      />
+                      <select
+                        value={row.difficulty}
+                        onChange={e =>
+                          setActivities(prev =>
+                            prev.map(a =>
+                              a.key === row.key
+                                ? {
+                                    ...a,
+                                    difficulty: Number(e.target.value) as TaskDifficulty,
+                                  }
+                                : a
+                            )
+                          )
+                        }
+                        className="px-2 py-1.5 rounded-lg cc-input text-[12px] outline-none"
+                      >
+                        {([1, 2, 3] as const).map(d => (
+                          <option key={d} value={d}>
+                            {TASK_DIFFICULTY_LABELS[d]}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={addCustomActivity}
+              className="flex items-center gap-2 text-[12px] font-bold text-[#6366F1]"
+            >
+              <Plus className="w-4 h-4" />
+              Añadir actividad personalizada
+            </button>
+          </div>
+        )}
+
         {currentStep === 'reminders' && (
           <div className="flex-1 space-y-4">
             <h2 className="text-[22px] font-bold text-cc-primary">Recordatorios</h2>
@@ -249,7 +422,7 @@ export function TimeSetupWizard({ context }: { context: TimeSetupContext }) {
             </div>
             <h2 className="text-[22px] font-bold text-cc-primary mb-2">¡Listo!</h2>
             <p className="text-[14px] text-cc-secondary">
-              Tu módulo Tiempo está configurado. Empieza registrando sueño o una actividad.
+              Tu módulo Tiempo está configurado. Empieza registrando sueño o asignando una tarea.
             </p>
           </div>
         )}
@@ -283,7 +456,7 @@ export function TimeSetupWizard({ context }: { context: TimeSetupContext }) {
                 </>
               )}
             </button>
-          ) : (
+          ) : currentStep === 'profile' ? null : (
             <button
               type="button"
               onClick={goNext}

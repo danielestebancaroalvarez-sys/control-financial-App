@@ -85,6 +85,16 @@ export function HouseholdSync({ householdId }: { householdId: string }) {
         {
           event: '*',
           schema: 'public',
+          table: 'household_task_templates',
+          filter: `household_id=eq.${householdId}`,
+        },
+        refresh
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
           table: 'productivity_goals',
           filter: `household_id=eq.${householdId}`,
         },

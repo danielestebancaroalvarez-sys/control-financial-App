@@ -5,11 +5,13 @@ import type { Period } from '@/lib/finance/types'
 export function PeriodBlockSelector({
   period,
   activeOffset,
+  maxOffset = 0,
 }: {
   period: Period
   activeOffset: number
+  maxOffset?: number
 }) {
-  const blocks = listPeriodBlocks(period, 8)
+  const blocks = listPeriodBlocks(period, maxOffset)
 
   return (
     <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-none">

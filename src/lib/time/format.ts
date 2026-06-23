@@ -1,11 +1,18 @@
 import {
   formatChartPeriodCaption,
   formatShortDate,
+  getPeriodOffsetForDate,
   getPeriodRangeAtOffset,
   getTodayString,
 } from '@/lib/finance/format'
 
-export { formatChartPeriodCaption, formatShortDate, getPeriodRangeAtOffset, getTodayString }
+export {
+  formatChartPeriodCaption,
+  formatShortDate,
+  getPeriodOffsetForDate,
+  getPeriodRangeAtOffset,
+  getTodayString,
+}
 
 export function formatDuration(minutes: number): string {
   if (minutes <= 0) return '0m'

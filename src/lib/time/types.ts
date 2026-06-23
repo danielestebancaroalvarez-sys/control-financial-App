@@ -59,6 +59,19 @@ export type HouseholdTask = {
   scheduledEnd: string | null
   status: 'pending' | 'done' | 'cancelled'
   completedAt: string | null
+  templateId: string | null
+}
+
+export type TaskTemplate = {
+  id: string
+  title: string
+  description: string | null
+  estimatedMinutes: number
+  difficulty: TaskDifficulty
+  color: string
+  icon: string
+  createdBy: string
+  creatorName: string | null
 }
 
 export type GoalStep = {
@@ -183,6 +196,28 @@ export type CreateHouseholdTaskInput = {
   icon?: string
   scheduledStart?: string | null
   scheduledEnd?: string | null
+  templateId?: string | null
+}
+
+export type CreateTaskTemplateInput = {
+  householdId: string
+  title: string
+  description?: string
+  estimatedMinutes: number
+  difficulty?: TaskDifficulty
+  color?: string
+  icon?: string
+}
+
+export type UpdateTaskTemplateInput = {
+  householdId: string
+  templateId: string
+  title: string
+  description?: string
+  estimatedMinutes: number
+  difficulty?: TaskDifficulty
+  color?: string
+  icon?: string
 }
 
 export type CreateProductivityGoalInput = {

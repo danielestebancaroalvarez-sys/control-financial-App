@@ -27,10 +27,12 @@ import type { TimeDashboardSummary } from '@/lib/time/types'
 export function TiempoDashboardClient({
   summary,
   periodOffset,
+  maxWeekOffset = 0,
   householdName,
 }: {
   summary: TimeDashboardSummary
   periodOffset: number
+  maxWeekOffset?: number
   householdName: string
 }) {
   const periodCaption = formatChartPeriodCaption(
@@ -60,7 +62,11 @@ export function TiempoDashboardClient({
           <p className="text-[12px] font-bold text-cc-primary">Periodo semanal</p>
           <p className="text-[10px] text-cc-secondary">{periodCaption}</p>
         </div>
-        <WeekSelector activeOffset={periodOffset} basePath="/tiempo" />
+        <WeekSelector
+          activeOffset={periodOffset}
+          basePath="/tiempo"
+          maxOffset={maxWeekOffset}
+        />
       </div>
 
       {/* KPIs compactos */}

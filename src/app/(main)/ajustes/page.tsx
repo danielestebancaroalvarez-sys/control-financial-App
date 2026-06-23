@@ -44,6 +44,19 @@ export default async function AjustesPage() {
 
       <DashboardPeriodSetting current={ctx.period} />
 
+      <section className="cc-surface rounded-[24px] p-5">
+        <h2 className="text-[15px] font-bold text-cc-primary mb-2">Configuración inicial</h2>
+        <p className="text-[12px] text-cc-secondary mb-3">
+          Revisa ingresos, gastos fijos y suscripciones del hogar.
+        </p>
+        <Link
+          href="/configuracion-inicial?review=1"
+          className="text-[13px] font-bold text-[#00BFA5]"
+        >
+          Abrir asistente de Finanzas →
+        </Link>
+      </section>
+
       <ThemeSetting current={ctx.theme} />
 
       <PaymentReminderSetting />

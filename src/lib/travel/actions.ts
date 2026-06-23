@@ -3,6 +3,7 @@
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { createSavingsGoal } from '@/lib/finance/actions'
+import { estimateContributionFromTargetDate } from '@/lib/finance/savings-plan'
 import { calculateItemTotal, calculateTripTotal } from './budget'
 import { buildDefaultPrepSteps } from './prep-templates'
 import { syncTripSavingsTarget } from './savings-bridge'
@@ -71,15 +72,38 @@ export async function createTrip(
       0
     ) ?? 0
 
+  const targetAmount = Math.max(1, initialTotal)
+  let contributionAmount = input.contributionAmount
+  let targetDate: string | undefined = input.contributionAmount
+    ? undefined
+    : input.startDate
+
+  if (!contributionAmount && targetDate) {
+    contributionAmount =
+      estimateContributionFromTargetDate(
+        {
+          target_amount: targetAmount,
+          current_amount: 0,
+          contribution_amount: null,
+          contribution_frequency: input.contributionFrequency ?? 'monthly',
+          savings_mode: 'static',
+          annual_interest_rate: null,
+          target_date: targetDate,
+        },
+        targetDate,
+        input.contributionFrequency ?? 'monthly'
+      ) ?? undefined
+  }
+
   const savingsResult = await createSavingsGoal({
     householdId: input.householdId,
     name: `Viaje: ${input.name.trim()}`,
     category: 'vacation',
     icon: 'plane',
     color: '#2DD4BF',
-    targetAmount: Math.max(1, initialTotal),
-    targetDate: input.startDate,
-    contributionAmount: input.contributionAmount,
+    targetAmount,
+    targetDate,
+    contributionAmount,
     contributionFrequency: input.contributionFrequency,
     autoContribute: input.autoContribute,
   })

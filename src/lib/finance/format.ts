@@ -196,7 +196,16 @@ export function getPeriodBlockLabel(
   return d.toLocaleDateString('es', { month: 'short', year: '2-digit' })
 }
 
-export function listPeriodBlocks(period: Period, count = 8) {
+export function getPeriodOffsetForDate(period: Period, dateStr: string): number {
+  for (let offset = 0; offset < 12; offset++) {
+    const { start, end } = getPeriodRangeAtOffset(period, offset)
+    if (dateStr >= start && dateStr <= end) return offset
+  }
+  return 11
+}
+
+export function listPeriodBlocks(period: Period, maxOffset = 0) {
+  const count = Math.max(1, maxOffset + 1)
   return Array.from({ length: count }, (_, offset) => {
     const { start, end } = getPeriodRangeAtOffset(period, offset)
     return {

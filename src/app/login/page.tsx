@@ -136,8 +136,8 @@ export default function LoginPage() {
             <div className="flex items-center gap-2.5 mb-5">
               <CoupleCashLogo className="w-[42px] h-[42px] shrink-0" />
               <div className="leading-tight">
-                <p className="text-[22px] font-bold text-gray-900 tracking-tight">CoupleCash</p>
-                <p className="text-[11.5px] text-gray-500 font-medium">Finanzas en pareja, fácil y feliz</p>
+                <p className="text-[22px] font-bold text-gray-900 tracking-tight">Couple Hub</p>
+                <p className="text-[11.5px] text-gray-500 font-medium">Finanzas, tiempo y más — en pareja</p>
               </div>
             </div>
 

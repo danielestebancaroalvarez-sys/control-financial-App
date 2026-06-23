@@ -9,7 +9,15 @@ import {
   deleteSavingsGoal,
 } from '@/lib/finance/actions'
 import { formatMoney, getTodayString } from '@/lib/finance/format'
-import { formatEstimatedTime } from '@/lib/finance/savings'
+import {
+  estimateContributionFromTargetDate,
+  estimateTargetDateFromContribution,
+  formatPlanningSummary,
+  goalInputFromForm,
+  inferPlanningMode,
+  resolveSavingsPayloadFromForm,
+  type SavingsPlanningMode,
+} from '@/lib/finance/savings-plan'
 import {
   autoRegisterToMode,
   modeToAutoRegister,
@@ -18,7 +26,7 @@ import {
 import { SavingsCategoryPicker } from '@/components/savings/savings-category-picker'
 import { SavingsSimulationCollapsible } from '@/components/savings/savings-simulation-collapsible'
 import { SavingsContributionButton } from '@/components/savings/savings-contribution-sheet'
-import { formToSavingsGoalInput } from '@/components/savings/savings-projection-chart'
+import { formatEstimatedTime } from '@/lib/finance/savings'
 import { CategoryIcon } from '@/components/transactions/category-icon'
 import { PaymentModeBadge, PaymentModeSelector } from '@/components/transactions/payment-mode-selector'
 import {
@@ -42,6 +50,7 @@ type FormState = {
   mode: 'static' | 'compound'
   rate: string
   targetDate: string
+  planningMode: SavingsPlanningMode
 }
 
 const emptyForm = (): FormState => ({
@@ -56,6 +65,7 @@ const emptyForm = (): FormState => ({
   mode: 'static',
   rate: '',
   targetDate: '',
+  planningMode: 'by_contribution',
 })
 
 function goalToForm(goal: SavingsGoal): FormState {
@@ -76,6 +86,7 @@ function goalToForm(goal: SavingsGoal): FormState {
       ? String(goal.annual_interest_rate * 100)
       : '',
     targetDate: goal.target_date ?? '',
+    planningMode: inferPlanningMode(goal),
   }
 }
 
@@ -121,8 +132,27 @@ function SavingsGoalForm({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const simulationGoal = useMemo(() => formToSavingsGoalInput(form), [form])
+  const simulationGoal = useMemo(() => goalInputFromForm(form), [form])
   const selectedCategory = getSavingsCategory(form.category)
+
+  const planningPreview = useMemo(() => {
+    const input = goalInputFromForm(form)
+    if (form.planningMode === 'by_date') {
+      if (!form.targetDate) return null
+      const needed = estimateContributionFromTargetDate(
+        input,
+        form.targetDate,
+        form.contributionFrequency
+      )
+      if (needed === null) return 'La fecha debe ser futura.'
+      const freq = form.contributionFrequency === 'weekly' ? 'semana' : 'mes'
+      return `Necesitas aportar ${formatMoney(needed, currency)} por ${freq}`
+    }
+    if (!form.contribution || parseFloat(form.contribution) <= 0) return null
+    const date = estimateTargetDateFromContribution(input)
+    if (!date) return null
+    return `Llegarías el ${new Date(`${date}T12:00:00`).toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' })}`
+  }, [form, currency])
 
   function set(field: keyof FormState, value: string) {
     setForm(prev => ({ ...prev, [field]: value }))
@@ -132,6 +162,13 @@ function SavingsGoalForm({
     e.preventDefault()
     setLoading(true)
     setError(null)
+
+    const resolved = resolveSavingsPayloadFromForm(form)
+    if ('error' in resolved) {
+      setError(resolved.error)
+      setLoading(false)
+      return
+    }
 
     const savingsCat = getSavingsCategory(form.category)
 
@@ -143,17 +180,13 @@ function SavingsGoalForm({
       color: savingsCat.color,
       targetAmount: parseFloat(form.target),
       currentAmount: parseFloat(form.current) || 0,
-      targetDate: form.targetDate || undefined,
-      contributionAmount: form.contribution
-        ? parseFloat(form.contribution)
-        : undefined,
-      contributionFrequency: form.contribution
-        ? form.contributionFrequency
-        : undefined,
-      autoContribute: form.contribution
+      targetDate: resolved.targetDate,
+      contributionAmount: resolved.contributionAmount,
+      contributionFrequency: resolved.contributionFrequency,
+      autoContribute: resolved.contributionAmount
         ? modeToAutoRegister(form.contributionMode)
         : undefined,
-      nextContribution: form.contribution
+      nextContribution: resolved.contributionAmount
         ? form.contributionStartDate
         : undefined,
       savingsMode: form.mode,
@@ -226,32 +259,104 @@ function SavingsGoalForm({
         </Field>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="Aporte periódico" hint="Cuánto aportarás">
-          <input
-            type="number"
-            value={form.contribution}
-            onChange={e => set('contribution', e.target.value)}
-            min="0"
-            step="0.01"
-            className="w-full px-4 py-3 rounded-xl bg-[#F5F5F5] text-[14px] outline-none"
-          />
-        </Field>
-        <Field label="Cada cuánto">
-          <select
-            value={form.contributionFrequency}
-            onChange={e =>
-              set('contributionFrequency', e.target.value)
+      <Field label="¿Cómo quieres planificar?">
+        <div className="flex gap-2 mt-1">
+          <button
+            type="button"
+            onClick={() =>
+              setForm(prev => ({ ...prev, planningMode: 'by_contribution' }))
             }
-            className="w-full px-4 py-3 rounded-xl bg-[#F5F5F5] text-[14px] outline-none"
+            className={`flex-1 py-2.5 rounded-xl text-[11px] font-bold leading-tight px-2 ${
+              form.planningMode === 'by_contribution'
+                ? 'bg-[#00BFA5] text-white'
+                : 'bg-[#F5F5F5] text-cc-secondary'
+            }`}
           >
-            <option value="weekly">Semanal</option>
-            <option value="monthly">Mensual</option>
-          </select>
-        </Field>
-      </div>
+            Sé cuánto aporto
+          </button>
+          <button
+            type="button"
+            onClick={() =>
+              setForm(prev => ({ ...prev, planningMode: 'by_date' }))
+            }
+            className={`flex-1 py-2.5 rounded-xl text-[11px] font-bold leading-tight px-2 ${
+              form.planningMode === 'by_date'
+                ? 'bg-[#00BFA5] text-white'
+                : 'bg-[#F5F5F5] text-cc-secondary'
+            }`}
+          >
+            Tengo fecha límite
+          </button>
+        </div>
+        <p className="text-[10px] text-cc-muted mt-1">
+          {form.planningMode === 'by_contribution'
+            ? 'Indicas el aporte y calculamos cuándo llegarías.'
+            : 'Indicas la fecha y calculamos cuánto aportar cada periodo.'}
+        </p>
+      </Field>
 
-      {form.contribution && parseFloat(form.contribution) > 0 && (
+      {form.planningMode === 'by_contribution' ? (
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Aporte periódico" hint="Cuánto puedes aportar">
+            <input
+              type="number"
+              value={form.contribution}
+              onChange={e => set('contribution', e.target.value)}
+              min="0"
+              step="0.01"
+              required
+              className="w-full px-4 py-3 rounded-xl bg-[#F5F5F5] text-[14px] outline-none"
+            />
+          </Field>
+          <Field label="Cada cuánto">
+            <select
+              value={form.contributionFrequency}
+              onChange={e =>
+                set('contributionFrequency', e.target.value)
+              }
+              className="w-full px-4 py-3 rounded-xl bg-[#F5F5F5] text-[14px] outline-none"
+            >
+              <option value="weekly">Semanal</option>
+              <option value="monthly">Mensual</option>
+            </select>
+          </Field>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Fecha objetivo" hint="Cuándo quieres lograrlo">
+            <input
+              type="date"
+              value={form.targetDate}
+              onChange={e => set('targetDate', e.target.value)}
+              required
+              min={getTodayString()}
+              className="w-full px-4 py-3 rounded-xl bg-[#F5F5F5] text-[14px] outline-none"
+            />
+          </Field>
+          <Field label="Frecuencia del aporte">
+            <select
+              value={form.contributionFrequency}
+              onChange={e =>
+                set('contributionFrequency', e.target.value)
+              }
+              className="w-full px-4 py-3 rounded-xl bg-[#F5F5F5] text-[14px] outline-none"
+            >
+              <option value="weekly">Semanal</option>
+              <option value="monthly">Mensual</option>
+            </select>
+          </Field>
+        </div>
+      )}
+
+      {planningPreview && (
+        <div className="rounded-xl bg-[#E8F5E9] px-3 py-2.5 text-[12px] font-semibold text-[#2E7D32]">
+          {planningPreview}
+        </div>
+      )}
+
+      {(form.planningMode === 'by_contribution'
+        ? form.contribution && parseFloat(form.contribution) > 0
+        : form.targetDate) && (
         <>
           <Field
             label="Fecha del primer aporte"
@@ -272,15 +377,6 @@ function SavingsGoalForm({
           />
         </>
       )}
-
-      <Field label="Fecha objetivo (opcional)" hint="Cuándo te gustaría lograrlo">
-        <input
-          type="date"
-          value={form.targetDate}
-          onChange={e => set('targetDate', e.target.value)}
-          className="w-full px-4 py-3 rounded-xl bg-[#F5F5F5] text-[14px] outline-none"
-        />
-      </Field>
 
       <Field label="Tipo de ahorro">
         <div className="flex gap-2 mt-1">
@@ -450,6 +546,7 @@ export function AhorrosClient({
             Math.round((goal.current_amount / goal.target_amount) * 100)
           )
           const estimate = formatEstimatedTime(goal)
+          const planning = formatPlanningSummary(goal, currency)
           const savingsCat = getSavingsCategory(goal.category)
           const simulationGoal: SavingsGoalInput = {
             target_amount: goal.target_amount,
@@ -534,14 +631,18 @@ export function AhorrosClient({
                 <span className="font-bold" style={{ color: goal.color }}>
                   {pct}% completado
                 </span>
-                {goal.target_date && (
-                  <span className="text-cc-secondary">Meta: {goal.target_date}</span>
-                )}
               </div>
 
               <div className="mt-3 flex items-start gap-2 rounded-xl bg-[#F5F5F5] px-3 py-2.5">
                 <Clock className="w-4 h-4 text-[#00BFA5] shrink-0 mt-0.5" />
-                <p className="text-[12px] text-cc-primary font-medium">{estimate}</p>
+                <div>
+                  <p className="text-[12px] text-cc-primary font-medium">{estimate}</p>
+                  {planning.secondary && (
+                    <p className="text-[11px] text-cc-secondary mt-0.5">
+                      {planning.secondary}
+                    </p>
+                  )}
+                </div>
               </div>
 
               {goal.contribution_amount && (

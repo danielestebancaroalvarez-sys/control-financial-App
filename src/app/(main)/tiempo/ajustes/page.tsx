@@ -81,6 +81,11 @@ export default async function TiempoAjustesPage() {
             </li>
           ))}
         </ul>
+        <p className="text-[12px] pt-2">
+          <Link href="/tiempo/actividades" className="text-[#6366F1] font-semibold">
+            Gestionar actividades guardadas →
+          </Link>
+        </p>
       </section>
 
       <section className="cc-surface rounded-[24px] p-5">
@@ -88,6 +93,14 @@ export default async function TiempoAjustesPage() {
           Tiempo
         </p>
         <ActivityReminderSetting />
+        <p className="text-[12px] mt-4">
+          <Link
+            href="/tiempo/configuracion-inicial?review=1"
+            className="text-[#6366F1] font-semibold"
+          >
+            Volver a configuración inicial →
+          </Link>
+        </p>
       </section>
 
       <section className="cc-surface rounded-[24px] p-5">

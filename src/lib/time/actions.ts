@@ -7,8 +7,10 @@ import { uploadGoalImage } from './upload-goal-image'
 import type {
   CreateHouseholdTaskInput,
   CreateProductivityGoalInput,
+  CreateTaskTemplateInput,
   CreateTimeBlockInput,
   CreateTimeEntryInput,
+  UpdateTaskTemplateInput,
   UpdateTimeBlockInput,
 } from './types'
 
@@ -19,6 +21,7 @@ const TIME_PATHS = [
   '/tiempo/horario',
   '/tiempo/fijos',
   '/tiempo/tareas',
+  '/tiempo/actividades',
   '/tiempo/metas',
   '/tiempo/ajustes',
   '/tiempo/configuracion-inicial',
@@ -187,6 +190,7 @@ export async function createHouseholdTask(
       icon: input.icon ?? 'package',
       scheduled_start: input.scheduledStart ?? null,
       scheduled_end: input.scheduledEnd ?? null,
+      template_id: input.templateId ?? null,
     })
     .select('id')
     .single()
@@ -194,6 +198,131 @@ export async function createHouseholdTask(
   if (error || !data) return { error: error?.message ?? 'No se pudo crear la tarea.' }
   revalidateTime()
   return { id: data.id }
+}
+
+export async function createTaskTemplate(
+  input: CreateTaskTemplateInput
+): Promise<{ error?: string; id?: string }> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Debes iniciar sesión.' }
+  if (!input.title.trim()) return { error: 'El título es obligatorio.' }
+  if (!input.estimatedMinutes || input.estimatedMinutes <= 0) {
+    return { error: 'Indica una duración válida.' }
+  }
+
+  const { data, error } = await supabase
+    .from('household_task_templates')
+    .insert({
+      household_id: input.householdId,
+      created_by: user.id,
+      title: input.title.trim(),
+      description: input.description?.trim() || null,
+      estimated_minutes: input.estimatedMinutes,
+      difficulty: input.difficulty ?? 2,
+      color: input.color ?? '#6366F1',
+      icon: input.icon ?? 'package',
+    })
+    .select('id')
+    .single()
+
+  if (error || !data) return { error: error?.message ?? 'No se pudo crear la actividad.' }
+  revalidateTime()
+  return { id: data.id }
+}
+
+export async function createTaskTemplatesBatch(
+  householdId: string,
+  templates: CreateTaskTemplateInput[]
+): Promise<{ error?: string }> {
+  for (const template of templates) {
+    const result = await createTaskTemplate({ ...template, householdId })
+    if (result.error) return { error: result.error }
+  }
+  return {}
+}
+
+export async function updateTaskTemplate(
+  input: UpdateTaskTemplateInput
+): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Debes iniciar sesión.' }
+  if (!input.title.trim()) return { error: 'El título es obligatorio.' }
+  if (!input.estimatedMinutes || input.estimatedMinutes <= 0) {
+    return { error: 'Indica una duración válida.' }
+  }
+
+  const { error } = await supabase
+    .from('household_task_templates')
+    .update({
+      title: input.title.trim(),
+      description: input.description?.trim() || null,
+      estimated_minutes: input.estimatedMinutes,
+      difficulty: input.difficulty ?? 2,
+      color: input.color ?? '#6366F1',
+      icon: input.icon ?? 'package',
+    })
+    .eq('id', input.templateId)
+    .eq('household_id', input.householdId)
+
+  if (error) return { error: error.message }
+  revalidateTime()
+  return {}
+}
+
+export async function deleteTaskTemplate(
+  householdId: string,
+  templateId: string
+): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Debes iniciar sesión.' }
+
+  const { error } = await supabase
+    .from('household_task_templates')
+    .update({ is_active: false })
+    .eq('id', templateId)
+    .eq('household_id', householdId)
+
+  if (error) return { error: error.message }
+  revalidateTime()
+  return {}
+}
+
+export async function createHouseholdTaskFromTemplate(
+  templateId: string,
+  input: Omit<CreateHouseholdTaskInput, 'title' | 'estimatedMinutes' | 'difficulty' | 'color' | 'icon'>
+): Promise<{ error?: string; id?: string }> {
+  const supabase = await createClient()
+  const { data: template, error: templateError } = await supabase
+    .from('household_task_templates')
+    .select('title, description, estimated_minutes, difficulty, color, icon')
+    .eq('id', templateId)
+    .eq('household_id', input.householdId)
+    .eq('is_active', true)
+    .maybeSingle()
+
+  if (templateError || !template) {
+    return { error: 'No se encontró la actividad guardada.' }
+  }
+
+  return createHouseholdTask({
+    ...input,
+    title: template.title,
+    description: input.description ?? template.description ?? undefined,
+    estimatedMinutes: template.estimated_minutes,
+    difficulty: (template.difficulty ?? 2) as 1 | 2 | 3,
+    color: template.color ?? '#6366F1',
+    icon: template.icon ?? 'package',
+    templateId,
+  })
 }
 
 export async function completeHouseholdTask(

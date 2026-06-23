@@ -1,6 +1,7 @@
 import type {
   HouseholdTask,
   ProductivityGoal,
+  TaskTemplate,
   TimeBlock,
   TimeCategory,
   TimeDashboardSummary,
@@ -80,6 +81,7 @@ type TaskRow = {
   scheduled_end: string | null
   status: 'pending' | 'done' | 'cancelled'
   completed_at: string | null
+  template_id?: string | null
 }
 
 type GoalRow = {
@@ -170,6 +172,33 @@ export function mapHouseholdTask(row: TaskRow, members: MemberRow[]): HouseholdT
     scheduledEnd: row.scheduled_end,
     status: row.status,
     completedAt: row.completed_at,
+    templateId: row.template_id ?? null,
+  }
+}
+
+export function mapTaskTemplate(
+  row: {
+    id: string
+    title: string
+    description: string | null
+    estimated_minutes: number
+    difficulty: number
+    color: string | null
+    icon: string | null
+    created_by: string
+  },
+  members: MemberRow[]
+): TaskTemplate {
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    estimatedMinutes: row.estimated_minutes,
+    difficulty: (row.difficulty ?? 2) as 1 | 2 | 3,
+    color: row.color ?? '#6366F1',
+    icon: row.icon ?? 'package',
+    createdBy: row.created_by,
+    creatorName: memberName(members, row.created_by),
   }
 }
 

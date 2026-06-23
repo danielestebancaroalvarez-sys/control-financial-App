@@ -25,6 +25,7 @@ import {
   type TaskDifficulty,
   type TimeCategory,
   type TimeFrequency,
+  type TaskTemplate,
 } from '@/lib/time/types'
 import type { CategoryIconId } from '@/lib/finance/category-icons'
 import { TASK_COLOR_PRESETS } from '@/lib/time/task-icons'
@@ -44,6 +45,7 @@ export function TiempoNuevoClient({
   initialDate,
   initialUserId,
   sleepData,
+  taskTemplates = [],
 }: {
   householdId: string
   categories: TimeCategory[]
@@ -52,6 +54,7 @@ export function TiempoNuevoClient({
   initialDate?: string
   initialUserId?: string
   sleepData: SleepTrackerData
+  taskTemplates?: TaskTemplate[]
 }) {
   const router = useRouter()
   const [kind, setKind] = useState<EntryKind>('time')
@@ -72,6 +75,7 @@ export function TiempoNuevoClient({
   const [scheduledStart, setScheduledStart] = useState('')
   const [scheduledEnd, setScheduledEnd] = useState('')
   const [description, setDescription] = useState('')
+  const [selectedTemplateId, setSelectedTemplateId] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -97,10 +101,23 @@ export function TiempoNuevoClient({
     kind === 'sleep'
       ? 'El sueño real sustituye el bloque fijo programado ese día en el horario y las estadísticas.'
       : kind === 'task'
-        ? 'Crea una tarea del hogar y asígnala a alguien de la pareja.'
+        ? 'Crea una tarea del hogar y asígnala a alguien de la pareja, o usa una actividad guardada.'
         : nature === 'fixed'
           ? 'Programa una actividad que se repite en tu horario semanal.'
           : 'Registra el tiempo que ya dedicaste a una actividad.'
+
+  function applyTemplate(templateId: string) {
+    setSelectedTemplateId(templateId)
+    if (!templateId) return
+    const template = taskTemplates.find(t => t.id === templateId)
+    if (!template) return
+    setTitle(template.title)
+    setDescription(template.description ?? '')
+    setTaskDuration(String(template.estimatedMinutes))
+    setDifficulty(template.difficulty)
+    setTaskColor(template.color)
+    setTaskIcon(template.icon as CategoryIconId)
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -122,6 +139,7 @@ export function TiempoNuevoClient({
         icon: taskIcon,
         scheduledStart: scheduledStart || null,
         scheduledEnd: scheduledEnd || null,
+        templateId: selectedTemplateId || null,
       })
       if (result.error) {
         setError(result.error)
@@ -294,6 +312,26 @@ export function TiempoNuevoClient({
               })}
             </div>
           </FormSection>
+        )}
+
+        {kind === 'task' && taskTemplates.length > 0 && (
+          <FormField
+            label="Usar actividad guardada"
+            hint="Rellena título, duración y dificultad desde tu biblioteca."
+          >
+            <select
+              value={selectedTemplateId}
+              onChange={e => applyTemplate(e.target.value)}
+              className={`w-full px-3 py-2.5 rounded-xl cc-input text-[13px] outline-none ${TIME_THEME.focus}`}
+            >
+              <option value="">Escribir manualmente</option>
+              {taskTemplates.map(t => (
+                <option key={t.id} value={t.id}>
+                  {t.title} ({formatDuration(t.estimatedMinutes)})
+                </option>
+              ))}
+            </select>
+          </FormField>
         )}
 
         <FormField

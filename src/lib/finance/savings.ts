@@ -1,5 +1,10 @@
 import type { CompoundProjectionPoint, SavingsGoalInput, SavingsGoal } from './types'
 import { toMonthlyAmount } from './guilt-free'
+import {
+  estimateContributionFromTargetDate,
+  estimateTargetDateFromContribution,
+  inferPlanningMode,
+} from './savings-plan'
 
 export function estimateMonthsToGoalStatic(
   target: number,
@@ -52,45 +57,49 @@ export function monthsToReachTargetCompound(
 export function formatEstimatedTime(goal: SavingsGoal): string {
   if (goal.current_amount >= goal.target_amount) return 'Meta alcanzada'
 
-  const monthly = goal.contribution_amount
-    ? toMonthlyAmount(
-        goal.contribution_amount,
-        goal.contribution_frequency ?? 'monthly'
-      )
-    : 0
+  const mode = inferPlanningMode(goal)
 
-  let months: number | null
-  if (goal.savings_mode === 'compound' && goal.annual_interest_rate) {
-    months = monthsToReachTargetCompound({
-      target_amount: goal.target_amount,
-      current_amount: goal.current_amount,
-      contribution_amount: goal.contribution_amount,
-      contribution_frequency: goal.contribution_frequency,
-      savings_mode: goal.savings_mode,
-      annual_interest_rate: goal.annual_interest_rate,
-      target_date: goal.target_date,
-    })
-  } else {
-    months = estimateMonthsToGoalStatic(
-      goal.target_amount,
-      goal.current_amount,
-      monthly
+  if (mode === 'by_date' && goal.target_date) {
+    const needed = estimateContributionFromTargetDate(
+      {
+        target_amount: goal.target_amount,
+        current_amount: goal.current_amount,
+        contribution_amount: goal.contribution_amount,
+        contribution_frequency: goal.contribution_frequency,
+        savings_mode: goal.savings_mode,
+        annual_interest_rate: goal.annual_interest_rate,
+        target_date: goal.target_date,
+      },
+      goal.target_date,
+      goal.contribution_frequency ?? 'monthly'
     )
+    if (needed === null) return 'La fecha objetivo ya pasó o no es válida'
+    const freq = goal.contribution_frequency === 'weekly' ? 'semana' : 'mes'
+    const dateLabel = new Date(`${goal.target_date}T12:00:00`).toLocaleDateString(
+      'es',
+      { day: 'numeric', month: 'short', year: 'numeric' }
+    )
+    return `Para el ${dateLabel}: aporta ${needed.toLocaleString('es')} por ${freq}`
   }
 
-  if (months === null) return 'Agrega un aporte periódico para estimar el tiempo'
-  if (months === 0) return 'Meta alcanzada'
+  const estimatedDate = estimateTargetDateFromContribution({
+    target_amount: goal.target_amount,
+    current_amount: goal.current_amount,
+    contribution_amount: goal.contribution_amount,
+    contribution_frequency: goal.contribution_frequency,
+    savings_mode: goal.savings_mode,
+    annual_interest_rate: goal.annual_interest_rate,
+    target_date: null,
+  })
 
-  if (months < 12) {
-    return `Tiempo estimado: ${months} mes${months === 1 ? '' : 'es'}`
-  }
+  if (!estimatedDate) return 'Agrega un aporte periódico para estimar la fecha'
 
-  const years = Math.floor(months / 12)
-  const rem = months % 12
-  if (rem === 0) {
-    return `Tiempo estimado: ${years} año${years === 1 ? '' : 's'}`
-  }
-  return `Tiempo estimado: ${years} año${years === 1 ? '' : 's'} y ${rem} mes${rem === 1 ? '' : 'es'}`
+  const dateLabel = new Date(`${estimatedDate}T12:00:00`).toLocaleDateString('es', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  })
+  return `Llegarías aprox. el ${dateLabel}`
 }
 
 export function estimateMonthsForGoalInput(goal: SavingsGoalInput): number | null {

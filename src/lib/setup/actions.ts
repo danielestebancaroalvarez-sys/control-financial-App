@@ -107,6 +107,23 @@ export async function completeInitialSetup(
       if (expenseResult.error) return { error: expenseResult.error }
     }
 
+    const subscriptionsCategoryId = categoryByName.get('Suscripciones')
+    for (const sub of input.subscriptions ?? []) {
+      if (!sub.amount || sub.amount <= 0 || !sub.label.trim()) continue
+      if (!subscriptionsCategoryId) continue
+
+      const subResult = await createRecurringSchedule({
+        householdId: input.householdId,
+        type: 'expense',
+        categoryId: subscriptionsCategoryId,
+        description: sub.label.trim(),
+        amount: sub.amount,
+        frequency: 'monthly',
+        startDate: today,
+      })
+      if (subResult.error) return { error: subResult.error }
+    }
+
     if (
       input.savingsGoalName?.trim() &&
       input.savingsMonthly &&

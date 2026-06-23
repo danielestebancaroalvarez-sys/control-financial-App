@@ -21,11 +21,17 @@ export type FixedExpenseInput = {
   amount: number
 }
 
+export type SubscriptionInput = {
+  label: string
+  amount: number
+}
+
 export type InitialSetupInput = {
   householdId: string
   mode: SetupMode
   monthlyIncome?: number
   fixedExpenses?: FixedExpenseInput[]
+  subscriptions?: SubscriptionInput[]
   savingsGoalName?: string
   savingsMonthly?: number
   savingsTarget?: number

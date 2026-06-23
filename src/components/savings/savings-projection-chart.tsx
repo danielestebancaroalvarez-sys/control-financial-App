@@ -1,4 +1,5 @@
 import { projectCompoundGrowth } from '@/lib/finance/savings'
+import { goalInputFromForm, type SavingsPlanningMode } from '@/lib/finance/savings-plan'
 import type { SavingsGoalInput } from '@/lib/finance/types'
 
 type Props = {
@@ -169,15 +170,10 @@ export function formToSavingsGoalInput(form: {
   mode: 'static' | 'compound'
   rate: string
   targetDate: string
+  planningMode?: 'by_contribution' | 'by_date'
 }): SavingsGoalInput {
-  return {
-    target_amount: parseFloat(form.target) || 0,
-    current_amount: parseFloat(form.current) || 0,
-    contribution_amount: form.contribution ? parseFloat(form.contribution) : null,
-    contribution_frequency: form.contribution ? form.contributionFrequency : null,
-    savings_mode: form.mode,
-    annual_interest_rate:
-      form.mode === 'compound' && form.rate ? parseFloat(form.rate) / 100 : null,
-    target_date: form.targetDate || null,
-  }
+  return goalInputFromForm({
+    ...form,
+    planningMode: form.planningMode ?? 'by_contribution',
+  })
 }

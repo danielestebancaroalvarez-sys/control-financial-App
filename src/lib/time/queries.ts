@@ -1,8 +1,8 @@
 import { cache } from 'react'
 import { createClient } from '@/utils/supabase/server'
 import { getHouseholdMembers } from '@/lib/household/queries'
-import { buildTimeDashboardSummary, mapHouseholdTask, mapProductivityGoal, mapTimeBlock, mapTimeEntry } from './dashboard'
-import { getPeriodRangeAtOffset } from './format'
+import { buildTimeDashboardSummary, mapHouseholdTask, mapProductivityGoal, mapTaskTemplate, mapTimeBlock, mapTimeEntry } from './dashboard'
+import { getPeriodRangeAtOffset, getPeriodOffsetForDate } from './format'
 import { buildWeeklyScheduleEvents } from './schedule'
 import type {
   HouseholdTask,
@@ -11,6 +11,7 @@ import type {
   TimeCategory,
   TimeDashboardSummary,
   TimeEntry,
+  TaskTemplate,
 } from './types'
 import type { ScheduleEvent } from './schedule'
 import type { HouseholdMember } from '@/lib/household/types'
@@ -67,7 +68,7 @@ export async function getTimeDashboard(
       supabase
         .from('household_tasks')
         .select(
-          'id, title, description, assigned_to, created_by, due_date, estimated_minutes, difficulty, color, icon, scheduled_start, scheduled_end, status, completed_at'
+          'id, title, description, assigned_to, created_by, due_date, estimated_minutes, difficulty, color, icon, scheduled_start, scheduled_end, status, completed_at, template_id'
         )
         .eq('household_id', householdId)
         .neq('status', 'cancelled'),
@@ -153,7 +154,7 @@ export async function getHouseholdTasks(
   const { data } = await supabase
     .from('household_tasks')
     .select(
-      'id, title, description, assigned_to, created_by, due_date, estimated_minutes, difficulty, color, icon, scheduled_start, scheduled_end, status, completed_at'
+      'id, title, description, assigned_to, created_by, due_date, estimated_minutes, difficulty, color, icon, scheduled_start, scheduled_end, status, completed_at, template_id'
     )
     .eq('household_id', householdId)
     .neq('status', 'cancelled')
@@ -240,7 +241,7 @@ export async function getWeeklySchedule(
     supabase
       .from('household_tasks')
       .select(
-        'id, title, description, assigned_to, created_by, due_date, estimated_minutes, difficulty, color, icon, scheduled_start, scheduled_end, status, completed_at'
+        'id, title, description, assigned_to, created_by, due_date, estimated_minutes, difficulty, color, icon, scheduled_start, scheduled_end, status, completed_at, template_id'
       )
       .eq('household_id', householdId)
       .neq('status', 'cancelled')
@@ -261,4 +262,75 @@ export async function getWeeklySchedule(
     blocks,
     members,
   }
+}
+
+export async function getTaskTemplates(
+  householdId: string
+): Promise<TaskTemplate[]> {
+  const supabase = await createClient()
+  const members = await getHouseholdMembers(householdId)
+  const memberRows = members.map(m => ({
+    user_id: m.user_id,
+    full_name: m.full_name,
+    avatar_url: m.avatar_url,
+  }))
+
+  const { data } = await supabase
+    .from('household_task_templates')
+    .select(
+      'id, title, description, estimated_minutes, difficulty, color, icon, created_by'
+    )
+    .eq('household_id', householdId)
+    .eq('is_active', true)
+    .order('title')
+
+  return (data ?? []).map(row => mapTaskTemplate(row, memberRows))
+}
+
+export async function getMaxWeekOffsetWithData(
+  householdId: string
+): Promise<number> {
+  const supabase = await createClient()
+
+  const [{ data: entryMin }, { data: tasks }] = await Promise.all([
+    supabase
+      .from('time_entries')
+      .select('entry_date')
+      .eq('household_id', householdId)
+      .order('entry_date', { ascending: true })
+      .limit(1)
+      .maybeSingle(),
+    supabase
+      .from('household_tasks')
+      .select('due_date, completed_at')
+      .eq('household_id', householdId)
+      .neq('status', 'cancelled'),
+  ])
+
+  let maxOffset = 0
+
+  if (entryMin?.entry_date) {
+    maxOffset = Math.max(
+      maxOffset,
+      getPeriodOffsetForDate('weekly', entryMin.entry_date)
+    )
+  }
+
+  for (const task of tasks ?? []) {
+    if (task.due_date) {
+      maxOffset = Math.max(
+        maxOffset,
+        getPeriodOffsetForDate('weekly', task.due_date)
+      )
+    }
+    if (task.completed_at) {
+      const completedDate = task.completed_at.slice(0, 10)
+      maxOffset = Math.max(
+        maxOffset,
+        getPeriodOffsetForDate('weekly', completedDate)
+      )
+    }
+  }
+
+  return Math.min(11, maxOffset)
 }

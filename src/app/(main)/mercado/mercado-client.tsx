@@ -111,7 +111,7 @@ export function MercadoClient({
     const unchecked = insights.shoppingList.filter(item => !checked.has(item.name))
     if (unchecked.length === 0) return
     const text = [
-      '🛒 Lista de compra CoupleCash',
+      '🛒 Lista de compra Couple Hub',
       ...unchecked.map(
         (item, i) => `${i + 1}. ${item.name} (~${fmt(item.estimatedPrice)})`
       ),

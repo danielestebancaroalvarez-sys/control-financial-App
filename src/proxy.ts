@@ -47,7 +47,8 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  const { pathname } = request.nextUrl
+  const { pathname, searchParams } = request.nextUrl
+  const isReviewMode = searchParams.get('review') === '1'
   const isAuthRoute =
     pathname.startsWith('/login') || pathname.startsWith('/auth')
   const isOnboardingRoute = pathname.startsWith('/onboarding')
@@ -126,13 +127,13 @@ export async function proxy(request: NextRequest) {
       }
     }
 
-    if (hasHousehold && financeSetupCompleted && isFinanceSetupRoute) {
+    if (hasHousehold && financeSetupCompleted && isFinanceSetupRoute && !isReviewMode) {
       const url = request.nextUrl.clone()
       url.pathname = '/'
       return NextResponse.redirect(url)
     }
 
-    if (hasHousehold && timeSetupCompleted && isTimeSetupRoute) {
+    if (hasHousehold && timeSetupCompleted && isTimeSetupRoute && !isReviewMode) {
       const url = request.nextUrl.clone()
       url.pathname = '/tiempo'
       return NextResponse.redirect(url)

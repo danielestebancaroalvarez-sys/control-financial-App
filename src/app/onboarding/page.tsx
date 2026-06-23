@@ -43,8 +43,10 @@ export default function OnboardingPage() {
     <div className="min-h-screen cc-app-bg flex flex-col items-center justify-center px-5 py-10">
       <div className="flex flex-col items-center mb-6">
         <CoupleCashLogo className="w-16 h-16 mb-3" />
-        <h1 className="text-[26px] font-bold text-cc-primary">CoupleCash</h1>
-        <p className="text-[13px] text-cc-secondary mt-1">Configura tu hogar financiero</p>
+        <h1 className="text-[26px] font-bold text-cc-primary">Couple Hub</h1>
+        <p className="text-[14px] text-cc-secondary mt-1 text-center">
+          Finanzas, tiempo y viajes en un solo lugar para tu hogar.
+        </p>
       </div>
 
       <div className="w-full max-w-[380px] rounded-[40px] cc-surface shadow-[0_20px_60px_rgba(0,0,0,0.10)] px-7 py-8">

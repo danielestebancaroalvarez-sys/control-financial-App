@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { getMainAppContext } from '@/lib/app/context'
-import { getTimeDashboard } from '@/lib/time/queries'
+import { getTimeDashboard, getMaxWeekOffsetWithData } from '@/lib/time/queries'
 import { hasCompletedTimeSetup } from '@/lib/setup/queries'
 import { TiempoDashboardClient } from './tiempo-dashboard-client'
 import { SetupNudgeBanner } from '@/components/setup/setup-nudge-banner'
@@ -16,10 +16,13 @@ export default async function TiempoPage({
   if (!ctx) redirect('/login')
 
   const params = await searchParams
-  const periodOffset = Math.max(
+  const requestedOffset = Math.max(
     0,
     Math.min(11, parseInt(params.block ?? '0', 10) || 0)
   )
+
+  const maxWeekOffset = await getMaxWeekOffsetWithData(ctx.household.id)
+  const periodOffset = Math.min(requestedOffset, maxWeekOffset)
 
   const [summary, timeSetupComplete] = await Promise.all([
     getTimeDashboard(ctx.household.id, periodOffset),
@@ -33,12 +36,13 @@ export default async function TiempoPage({
           module="time"
           href="/tiempo/configuracion-inicial"
           title="Completa la configuración de Tiempo"
-          description="Configura sueño y recordatorios para aprovechar el módulo."
+          description="Configura sueño, actividades guardadas y recordatorios para aprovechar el módulo."
         />
       )}
       <TiempoDashboardClient
         summary={summary}
         periodOffset={periodOffset}
+        maxWeekOffset={maxWeekOffset}
         householdName={ctx.household.name}
       />
     </div>

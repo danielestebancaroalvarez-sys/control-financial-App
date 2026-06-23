@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { after } from 'next/server'
 import { getMainAppContextWithPeriod } from '@/lib/app/context'
-import { getDashboardSummary, getMarketInsights, getPredictionsSummary } from '@/lib/finance/queries'
+import { getDashboardSummary, getMarketInsights, getPredictionsSummary, getMaxPeriodOffsetWithData } from '@/lib/finance/queries'
 import { getCopAudRates } from '@/lib/finance/exchange-rates'
 import { buildProactiveInsight } from '@/lib/insights/proactive-insight'
 import { processDueRecurringSchedules } from '@/lib/finance/recurring'
@@ -31,10 +31,16 @@ export default async function DashboardPage({
     ])
   })
 
-  const periodOffset = Math.max(
+  const requestedOffset = Math.max(
     0,
     Math.min(11, parseInt(params.block ?? '0', 10) || 0)
   )
+
+  const maxPeriodOffset = await getMaxPeriodOffsetWithData(
+    ctx.household.id,
+    ctx.period
+  )
+  const periodOffset = Math.min(requestedOffset, maxPeriodOffset)
 
   const [summary, predictions, financeSetupComplete, marketInsights, fxRates] =
     await Promise.all([
@@ -64,7 +70,7 @@ export default async function DashboardPage({
           module="finance"
           href="/configuracion-inicial"
           title="Completa la configuración de Finanzas"
-          description="Indica ingresos, gastos fijos y periodo para ver el dashboard con datos reales."
+          description="Indica ingresos, gastos fijos, suscripciones y periodo para ver el dashboard con datos reales."
         />
       )}
       <DashboardView
@@ -76,6 +82,7 @@ export default async function DashboardPage({
         proactiveInsight={proactiveInsight}
         fxRates={fxRates}
         marketInsights={marketInsights}
+        maxPeriodOffset={maxPeriodOffset}
       />
     </div>
   )

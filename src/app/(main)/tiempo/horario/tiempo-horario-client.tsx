@@ -16,6 +16,7 @@ export function TiempoHorarioClient({
   events,
   members,
   periodOffset,
+  maxWeekOffset = 0,
   currentUserId,
 }: {
   periodStart: string
@@ -23,6 +24,7 @@ export function TiempoHorarioClient({
   events: ScheduleEvent[]
   members: HouseholdMember[]
   periodOffset: number
+  maxWeekOffset?: number
   currentUserId: string
 }) {
   const [activeUserId, setActiveUserId] = useState(currentUserId)
@@ -60,7 +62,11 @@ export function TiempoHorarioClient({
 
       <p className="text-[10px] text-cc-muted">{periodCaption}</p>
 
-      <WeekSelector activeOffset={periodOffset} basePath="/tiempo/horario" />
+      <WeekSelector
+        activeOffset={periodOffset}
+        basePath="/tiempo/horario"
+        maxOffset={maxWeekOffset}
+      />
 
       <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
         {members.map(member => {

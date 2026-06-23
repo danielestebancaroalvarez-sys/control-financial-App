@@ -3,7 +3,7 @@
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { createTimeBlock } from '@/lib/time/actions'
+import { createTimeBlock, createTaskTemplatesBatch } from '@/lib/time/actions'
 import { minutesFromTimeRange } from '@/lib/time/format'
 import { ensureUserProfile } from '@/lib/profile/sync'
 import type { TimeSetupInput } from './time-types'
@@ -14,6 +14,7 @@ const REVALIDATE_PATHS = [
   '/tiempo/nuevo',
   '/tiempo/horario',
   '/tiempo/tareas',
+  '/tiempo/actividades',
   '/tiempo/metas',
   '/tiempo/ajustes',
   '/tiempo/configuracion-inicial',
@@ -87,6 +88,22 @@ export async function completeTimeSetup(
       })
       if (blockResult.error) return { error: blockResult.error }
     }
+  }
+
+  if (input.activityTemplates && input.activityTemplates.length > 0) {
+    const templatesResult = await createTaskTemplatesBatch(
+      input.householdId,
+      input.activityTemplates.map(t => ({
+        householdId: input.householdId,
+        title: t.title,
+        description: t.description,
+        estimatedMinutes: t.estimatedMinutes,
+        difficulty: t.difficulty,
+        color: t.color,
+        icon: t.icon,
+      }))
+    )
+    if (templatesResult.error) return { error: templatesResult.error }
   }
 
   const done = await markTimeSetupCompleted()

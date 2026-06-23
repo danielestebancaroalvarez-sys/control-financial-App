@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import { getMainAppContext } from '@/lib/app/context'
 import { getAuthUser } from '@/lib/auth/session'
 import { getHouseholdMembers } from '@/lib/household/queries'
-import { getTimeCategories } from '@/lib/time/queries'
+import { getTimeCategories, getTaskTemplates } from '@/lib/time/queries'
 import { getSleepTrackerData } from '@/lib/time/sleep-queries'
 import { TiempoNuevoClient } from './tiempo-nuevo-client'
 
@@ -16,10 +16,11 @@ export default async function TiempoNuevoPage({
 
   const params = await searchParams
   const user = await getAuthUser()
-  const [categories, members, sleepData] = await Promise.all([
+  const [categories, members, sleepData, taskTemplates] = await Promise.all([
     getTimeCategories(ctx.household.id),
     getHouseholdMembers(ctx.household.id),
     getSleepTrackerData(ctx.household.id, user!.id),
+    getTaskTemplates(ctx.household.id),
   ])
 
   return (
@@ -31,6 +32,7 @@ export default async function TiempoNuevoPage({
       initialDate={params.date}
       initialUserId={params.user}
       sleepData={sleepData}
+      taskTemplates={taskTemplates}
     />
   )
 }

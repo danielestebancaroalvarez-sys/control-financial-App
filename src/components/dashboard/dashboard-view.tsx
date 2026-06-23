@@ -78,6 +78,7 @@ export function DashboardView({
   proactiveInsight,
   fxRates,
   marketInsights,
+  maxPeriodOffset = 0,
 }: {
   firstName: string
   householdName: string
@@ -87,6 +88,7 @@ export function DashboardView({
   proactiveInsight?: ProactiveInsight | null
   fxRates: CopAudRates | null
   marketInsights: MarketInsights
+  maxPeriodOffset?: number
 }) {
   const fmt = (n: number) => formatMoney(n, currency)
   const labels = getPeriodLabels(summary.period)
@@ -149,6 +151,7 @@ export function DashboardView({
         <PeriodBlockSelector
           period={summary.period}
           activeOffset={summary.periodOffset}
+          maxOffset={maxPeriodOffset}
         />
       </div>
 

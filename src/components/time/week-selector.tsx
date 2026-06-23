@@ -4,13 +4,13 @@ import { getWeekSelectorLabel } from '@/lib/time/format'
 export function WeekSelector({
   activeOffset,
   basePath,
-  count = 6,
+  maxOffset = 0,
 }: {
   activeOffset: number
   basePath: string
-  count?: number
+  maxOffset?: number
 }) {
-  const blocks = Array.from({ length: count }, (_, offset) => ({
+  const blocks = Array.from({ length: Math.max(1, maxOffset + 1) }, (_, offset) => ({
     offset,
     label: getWeekSelectorLabel(offset),
     href: offset === 0 ? basePath : `${basePath}?block=${offset}`,
