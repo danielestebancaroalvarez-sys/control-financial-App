@@ -13,6 +13,7 @@ import { ProfileSettingsForm } from '@/components/profile/profile-settings-form'
 import { CategoryIcon } from '@/components/transactions/category-icon'
 import { ActivityReminderSetting } from './activity-reminder-setting'
 import { ResetTimeDataButton } from './reset-time-data-button'
+import { DeleteAccountButton } from '@/app/(main)/ajustes/delete-account-button'
 
 export default async function TiempoAjustesPage() {
   const ctx = await getMainAppContext()
@@ -130,6 +131,8 @@ export default async function TiempoAjustesPage() {
       />
 
       <ResetTimeDataButton householdId={ctx.household.id} />
+
+      <DeleteAccountButton email={ctx.user.email} />
 
       <section className="cc-surface rounded-[24px] p-5">
         <h2 className="text-[15px] font-bold text-cc-primary mb-3">Sesión</h2>

@@ -11,6 +11,7 @@ import { ThemeSetting } from './theme-setting'
 import { CategoriesManager } from './categories-manager'
 import { PaymentReminderSetting } from './payment-reminder-setting'
 import { ResetDataButton } from './reset-data-button'
+import { DeleteAccountButton } from './delete-account-button'
 import { HouseholdMembersSection } from './household-members-section'
 import { ProfileSettingsForm } from '@/components/profile/profile-settings-form'
 import { Users, Coins } from 'lucide-react'
@@ -95,6 +96,8 @@ export default async function AjustesPage() {
       />
 
       <ResetDataButton householdId={ctx.household.id} />
+
+      <DeleteAccountButton email={ctx.user.email} />
 
       <section className="cc-surface rounded-[24px] p-5">
         <h2 className="text-[15px] font-bold text-cc-primary mb-3">Sesión</h2>

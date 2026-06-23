@@ -27,6 +27,9 @@ export default function LoginPage() {
     const params = new URLSearchParams(window.location.search)
     const urlError = params.get('error')
     if (urlError) setError(decodeURIComponent(urlError))
+    if (params.get('deleted') === '1') {
+      setSuccess('Tu cuenta y datos personales fueron eliminados correctamente.')
+    }
   }, [])
 
   function switchMode(next: AuthMode) {
