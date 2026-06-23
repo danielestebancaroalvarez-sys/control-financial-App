@@ -3,6 +3,7 @@
 import { useEffect, useTransition } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { activateAssistant } from '@/lib/setup/assistant-actions'
+import { moduleHomePath } from '@/lib/app/module'
 import type { AssistantModule } from '@/lib/setup/assistant-types'
 
 export function AssistantActivateHandler() {
@@ -17,7 +18,8 @@ export function AssistantActivateHandler() {
     const module = raw as AssistantModule
     startTransition(async () => {
       await activateAssistant(module)
-      router.replace('/', { scroll: false })
+      router.replace(moduleHomePath(module), { scroll: false })
+      router.refresh()
     })
   }, [searchParams, router])
 

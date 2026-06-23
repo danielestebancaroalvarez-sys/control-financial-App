@@ -1,12 +1,11 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Loader2, Pencil, Plus, Sparkles, Trash2 } from 'lucide-react'
 import { CategoryIcon } from '@/components/transactions/category-icon'
 import { TaskAppearancePicker } from '@/components/time/task-appearance-picker'
-import { GuideCoachBanner } from '@/components/setup/guide-coach-banner'
 import { refreshAssistantProgress } from '@/lib/setup/assistant-actions'
 import {
   createTaskTemplate,
@@ -49,8 +48,6 @@ export function TiempoActividadesClient({
   initialTemplates: TaskTemplate[]
 }) {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const guideNew = searchParams.get('guide') === 'new'
   const [templates, setTemplates] = useState(initialTemplates)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
@@ -65,14 +62,6 @@ export function TiempoActividadesClient({
     () => [...templates].sort((a, b) => a.title.localeCompare(b.title, 'es')),
     [templates]
   )
-
-  useEffect(() => {
-    if (!guideNew) return
-    setEditingId(null)
-    setForm(emptyForm())
-    setShowForm(true)
-    setError(null)
-  }, [guideNew])
 
   function openCreate() {
     setEditingId(null)
@@ -210,15 +199,6 @@ export function TiempoActividadesClient({
           </p>
         </div>
       </div>
-
-      {guideNew && (
-        <GuideCoachBanner
-          module="time"
-          stepIndex={3}
-          totalSteps={4}
-          title="Crea una actividad guardada reutilizable"
-        />
-      )}
 
       <button
         type="button"

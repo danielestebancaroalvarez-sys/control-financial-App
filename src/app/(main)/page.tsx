@@ -1,5 +1,4 @@
 import { redirect } from 'next/navigation'
-import { Suspense } from 'react'
 import { after } from 'next/server'
 import { getMainAppContextWithPeriod } from '@/lib/app/context'
 import { getDashboardSummary, getMarketInsights, getPredictionsSummary, getMaxPeriodOffsetWithData } from '@/lib/finance/queries'
@@ -10,9 +9,6 @@ import { processDueSavingsContributions } from '@/lib/finance/savings-recurring'
 import { getFirstName } from '@/lib/utils/name'
 import { createClient } from '@/utils/supabase/server'
 import { DashboardView } from '@/components/dashboard/dashboard-view'
-import { AssistantWelcomeCard } from '@/components/setup/assistant-welcome-card'
-import { AssistantActivateHandler } from '@/components/setup/assistant-activate-handler'
-import { getAssistantState, shouldShowWelcomeCard } from '@/lib/setup/assistant-queries'
 
 type SearchParams = Promise<{ block?: string }>
 
@@ -44,14 +40,12 @@ export default async function DashboardPage({
   )
   const periodOffset = Math.min(requestedOffset, maxPeriodOffset)
 
-  const [summary, predictions, assistantState, marketInsights, fxRates] =
-    await Promise.all([
-      getDashboardSummary(ctx.household.id, ctx.period, periodOffset),
-      getPredictionsSummary(ctx.household.id, ctx.period),
-      getAssistantState(),
-      getMarketInsights(ctx.household.id, ctx.period),
-      getCopAudRates(),
-    ])
+  const [summary, predictions, marketInsights, fxRates] = await Promise.all([
+    getDashboardSummary(ctx.household.id, ctx.period, periodOffset),
+    getPredictionsSummary(ctx.household.id, ctx.period),
+    getMarketInsights(ctx.household.id, ctx.period),
+    getCopAudRates(),
+  ])
 
   const proactiveInsight = buildProactiveInsight(
     summary,
@@ -65,15 +59,8 @@ export default async function DashboardPage({
     ctx.user.email?.split('@')[0] ??
     'Usuario'
 
-  const showWelcome =
-    assistantState && shouldShowWelcomeCard(assistantState)
-
   return (
     <div className="space-y-3">
-      <Suspense fallback={null}>
-        <AssistantActivateHandler />
-      </Suspense>
-      {showWelcome && <AssistantWelcomeCard />}
       <DashboardView
         firstName={getFirstName(displayName)}
         householdName={ctx.household.name}

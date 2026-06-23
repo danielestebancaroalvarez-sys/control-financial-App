@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import { CalendarClock, Check, Clock, ListTodo, Loader2, Moon, Repeat } from 'lucide-react'
 import { CategoryIcon } from '@/components/transactions/category-icon'
 import { SleepTracker } from '@/components/time/sleep-tracker'
-import { GuideCoachBanner } from '@/components/setup/guide-coach-banner'
 import { refreshAssistantProgress } from '@/lib/setup/assistant-actions'
 import { FormField, FormSection } from '@/components/time/form-field'
 import { TaskAppearancePicker } from '@/components/time/task-appearance-picker'
@@ -89,23 +88,6 @@ export function TiempoNuevoClient({
     if (initialGuide === 'sleep') setKind('sleep')
     if (initialGuide === 'task') setKind('task')
   }, [initialGuide])
-
-  const guideBanner =
-    initialGuide === 'sleep' ? (
-      <GuideCoachBanner
-        module="time"
-        stepIndex={2}
-        totalSteps={4}
-        title="Registra o configura tu sueño"
-      />
-    ) : initialGuide === 'task' ? (
-      <GuideCoachBanner
-        module="time"
-        stepIndex={4}
-        totalSteps={4}
-        title="Crea tu primera tarea del hogar"
-      />
-    ) : null
 
   const selectedCategory = categories.find(
     c => c.id === (categoryId || categories[0]?.id)
@@ -243,8 +225,6 @@ export function TiempoNuevoClient({
         <h1 className="text-[20px] font-bold text-cc-primary">{pageTitle}</h1>
         <p className="text-[12px] text-cc-secondary mt-0.5">{pageHint}</p>
       </div>
-
-      {guideBanner}
 
       <FormSection title="¿Qué vas a registrar?" description="Elige entre tiempo, sueño o una tarea del hogar.">
         <div className="grid grid-cols-3 gap-2">

@@ -15,17 +15,9 @@ import { ActivityReminderSetting } from './activity-reminder-setting'
 import { ResetTimeDataButton } from './reset-time-data-button'
 import { DeleteAccountButton } from '@/app/(main)/ajustes/delete-account-button'
 import { AssistantSettingsPanel } from '@/components/setup/assistant-settings-panel'
-import { TiempoAjustesGuideBanner } from '@/components/setup/tiempo-ajustes-guide-banner'
 import { getAssistantState } from '@/lib/setup/assistant-queries'
 
-type SearchParams = Promise<{ guide?: string }>
-
-export default async function TiempoAjustesPage({
-  searchParams,
-}: {
-  searchParams: SearchParams
-}) {
-  const params = await searchParams
+export default async function TiempoAjustesPage() {
   const ctx = await getMainAppContext()
   if (!ctx) redirect('/login')
 
@@ -45,8 +37,6 @@ export default async function TiempoAjustesPage({
           Perfil y hogar compartidos · preferencias del módulo Tiempo
         </p>
       </div>
-
-      <TiempoAjustesGuideBanner guide={params.guide ?? null} />
 
       {assistantState && (
         <AssistantSettingsPanel

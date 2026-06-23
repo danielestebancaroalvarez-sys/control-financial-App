@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import {
   ArrowLeft,
   CalendarClock,
@@ -13,21 +13,12 @@ import {
   Trash2,
 } from 'lucide-react'
 import { CategoryIcon } from '@/components/transactions/category-icon'
-import {
-  AddFixedScheduleSheet,
-  type FijosGuideMode,
-} from '@/components/transactions/add-fixed-schedule-sheet'
 import { EditFixedScheduleSheet } from '@/components/transactions/edit-fixed-schedule-sheet'
 import { PaymentModeBadge } from '@/components/transactions/payment-mode-selector'
-import { refreshAssistantProgress } from '@/lib/setup/assistant-actions'
 import { deactivateRecurringSchedule } from '@/lib/finance/actions'
 import { formatFrequency, formatMoney, formatShortDate, getPeriodLabels } from '@/lib/finance/format'
 import type { Category, Period, RecurringScheduleItem } from '@/lib/finance/types'
 import type { CurrencyCode } from '@/lib/household/types'
-
-function isFijosGuide(value: string | null): value is FijosGuideMode {
-  return value === 'income' || value === 'fixed' || value === 'subscription'
-}
 
 function ScheduleList({
   title,
@@ -141,32 +132,12 @@ export function FijosClient({
   categories: Category[]
 }) {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const guideParam = searchParams.get('guide')
   const labels = getPeriodLabels(period)
   const [schedules, setSchedules] = useState(initialSchedules)
   const [editingItem, setEditingItem] = useState<RecurringScheduleItem | null>(null)
-  const [guideOpen, setGuideOpen] = useState(false)
-  const [activeGuide, setActiveGuide] = useState<FijosGuideMode | null>(null)
 
   const incomes = schedules.filter(s => s.type === 'income')
   const expenses = schedules.filter(s => s.type === 'expense')
-
-  useEffect(() => {
-    if (isFijosGuide(guideParam)) {
-      setActiveGuide(guideParam)
-      setGuideOpen(true)
-    }
-  }, [guideParam])
-
-  function clearGuideFromUrl() {
-    router.replace('/fijos', { scroll: false })
-  }
-
-  async function handleGuideSaved() {
-    await refreshAssistantProgress('finance')
-    router.refresh()
-  }
 
   return (
     <div className="space-y-4">
@@ -231,21 +202,6 @@ export function FijosClient({
             }}
           />
         </>
-      )}
-
-      {guideOpen && activeGuide && (
-        <AddFixedScheduleSheet
-          guide={activeGuide}
-          householdId={householdId}
-          currency={currency}
-          categories={categories}
-          onClose={() => {
-            setGuideOpen(false)
-            setActiveGuide(null)
-            clearGuideFromUrl()
-          }}
-          onSaved={handleGuideSaved}
-        />
       )}
 
       {editingItem && (

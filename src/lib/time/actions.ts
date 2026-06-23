@@ -24,7 +24,6 @@ const TIME_PATHS = [
   '/tiempo/actividades',
   '/tiempo/metas',
   '/tiempo/ajustes',
-  '/tiempo/configuracion-inicial',
 ]
 
 function revalidateTime() {

@@ -47,9 +47,3 @@ export const getAssistantState = cache(async (): Promise<AssistantState | null> 
   }
 })
 
-export function shouldShowWelcomeCard(state: AssistantState): boolean {
-  if (state.welcomeSeen) return false
-  return (
-    state.finance.status === 'unset' || state.time.status === 'unset'
-  )
-}

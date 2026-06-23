@@ -27,7 +27,6 @@ const TRAVEL_PATHS = [
   '/viajes/presupuesto',
   '/viajes/preparacion',
   '/viajes/ajustes',
-  '/viajes/configuracion-inicial',
 ]
 
 function revalidateTravel(tripId?: string) {

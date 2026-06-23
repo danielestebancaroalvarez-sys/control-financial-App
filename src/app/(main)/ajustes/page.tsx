@@ -15,18 +15,10 @@ import { DeleteAccountButton } from './delete-account-button'
 import { HouseholdMembersSection } from './household-members-section'
 import { ProfileSettingsForm } from '@/components/profile/profile-settings-form'
 import { AssistantSettingsPanel } from '@/components/setup/assistant-settings-panel'
-import { AjustesGuideBanner } from '@/components/setup/ajustes-guide-banner'
 import { getAssistantState } from '@/lib/setup/assistant-queries'
 import { Users, Coins } from 'lucide-react'
 
-type SearchParams = Promise<{ guide?: string }>
-
-export default async function AjustesPage({
-  searchParams,
-}: {
-  searchParams: SearchParams
-}) {
-  const params = await searchParams
+export default async function AjustesPage() {
   const ctx = await getMainAppContextWithPeriod()
   if (!ctx) redirect('/login')
 
@@ -43,8 +35,6 @@ export default async function AjustesPage({
         <h1 className="text-[22px] font-bold text-cc-primary">Cuenta y Ajustes</h1>
         <p className="text-[13px] text-cc-secondary">Gestiona tu hogar y preferencias</p>
       </div>
-
-      <AjustesGuideBanner guide={params.guide ?? null} />
 
       {assistantState && (
         <AssistantSettingsPanel

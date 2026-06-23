@@ -7,7 +7,7 @@ import type { ThemePreference } from '@/components/theme/apply-theme'
 import { ensureUserProfile } from './sync'
 import { uploadUserAvatar } from './upload-avatar'
 
-const REVALIDATE_PATHS = ['/', '/buscar', '/ahorros', '/predicciones', '/nuevo', '/ajustes', '/configuracion-inicial']
+const REVALIDATE_PATHS = ['/', '/buscar', '/ahorros', '/predicciones', '/nuevo', '/ajustes']
 
 function revalidateApp() {
   for (const path of REVALIDATE_PATHS) revalidatePath(path)

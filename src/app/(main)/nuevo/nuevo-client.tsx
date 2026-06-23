@@ -1,15 +1,46 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { ArrowDownLeft, ArrowUpRight, CalendarPlus, Repeat } from 'lucide-react'
 import { AddTransactionForm } from '@/components/transactions/add-transaction-form'
 import { FixedScheduleForm } from '@/components/transactions/fixed-schedule-form'
+import { refreshAssistantProgress } from '@/lib/setup/assistant-actions'
 import { TX_TYPE_THEME, type TxType } from '@/components/transactions/tx-type-theme'
 import type { Category } from '@/lib/finance/types'
 import type { CurrencyCode, HouseholdMember } from '@/lib/household/types'
 
 type EntryMode = 'variable' | 'fixed'
+
+export type NuevoGuideMode = 'income' | 'fixed' | 'subscription'
+
+function guideToDefaults(guide: NuevoGuideMode | null): {
+  txType: TxType
+  mode: EntryMode
+  defaultCategoryName?: string
+  categoryFilter?: (category: Category) => boolean
+} {
+  if (guide === 'income') {
+    return { txType: 'income', mode: 'fixed' }
+  }
+  if (guide === 'fixed') {
+    return {
+      txType: 'expense',
+      mode: 'fixed',
+      categoryFilter: c => c.is_fixed,
+    }
+  }
+  if (guide === 'subscription') {
+    return {
+      txType: 'expense',
+      mode: 'fixed',
+      defaultCategoryName: 'Suscripciones',
+      categoryFilter: c => c.is_subscription,
+    }
+  }
+  return { txType: 'expense', mode: 'variable' }
+}
 
 export function NuevoClient({
   householdId,
@@ -19,6 +50,7 @@ export function NuevoClient({
   currentUserId,
   authorName,
   authorAvatarUrl,
+  initialGuide = null,
 }: {
   householdId: string
   baseCurrency: CurrencyCode
@@ -27,10 +59,26 @@ export function NuevoClient({
   currentUserId: string
   authorName: string
   authorAvatarUrl?: string | null
+  initialGuide?: NuevoGuideMode | null
 }) {
-  const [txType, setTxType] = useState<TxType>('expense')
-  const [mode, setMode] = useState<EntryMode>('variable')
+  const router = useRouter()
+  const defaults = useMemo(() => guideToDefaults(initialGuide), [initialGuide])
+  const [txType, setTxType] = useState<TxType>(defaults.txType)
+  const [mode, setMode] = useState<EntryMode>(defaults.mode)
   const theme = TX_TYPE_THEME[txType]
+
+  useEffect(() => {
+    const next = guideToDefaults(initialGuide)
+    setTxType(next.txType)
+    setMode(next.mode)
+  }, [initialGuide])
+
+  async function handleFixedSaved() {
+    if (initialGuide) {
+      await refreshAssistantProgress('finance')
+    }
+    router.refresh()
+  }
 
   return (
     <div className="space-y-5">
@@ -153,12 +201,15 @@ export function NuevoClient({
         ) : (
           <>
             <FixedScheduleForm
-              key={`fix-${txType}`}
+              key={`fix-${txType}-${initialGuide ?? 'none'}`}
               householdId={householdId}
               baseCurrency={baseCurrency}
               categories={categories}
               defaultType={txType}
               hideTypeSelector
+              defaultCategoryName={defaults.defaultCategoryName}
+              categoryFilter={defaults.categoryFilter}
+              onSuccess={initialGuide ? handleFixedSaved : undefined}
             />
             <Link
               href="/fijos"

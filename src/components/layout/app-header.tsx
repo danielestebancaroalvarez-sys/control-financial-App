@@ -4,7 +4,9 @@ import { usePathname } from 'next/navigation'
 import { AppModulePicker } from './app-module-picker'
 import { NotificationInbox } from '@/components/notifications/notification-inbox'
 import { AccountAvatarLink } from './account-avatar-link'
+import { AssistantHeaderButton } from '@/components/setup/assistant-header-button'
 import { getAppModule } from '@/lib/app/module'
+import type { AssistantState } from '@/lib/setup/assistant-types'
 
 const HEADER_BORDER: Record<ReturnType<typeof getAppModule>, string> = {
   finance: 'border-b border-[#00BFA5]/10',
@@ -16,10 +18,12 @@ export function AppHeader({
   firstName,
   email,
   avatarUrl,
+  assistantState,
 }: {
   firstName: string
   email?: string | null
   avatarUrl?: string | null
+  assistantState?: AssistantState | null
 }) {
   const pathname = usePathname()
   const module = getAppModule(pathname)
@@ -30,6 +34,7 @@ export function AppHeader({
         <AppModulePicker />
         <div className="flex items-center gap-2 shrink-0">
           <NotificationInbox module={module} />
+          {assistantState && <AssistantHeaderButton state={assistantState} />}
           <AccountAvatarLink
             firstName={firstName}
             email={email}
