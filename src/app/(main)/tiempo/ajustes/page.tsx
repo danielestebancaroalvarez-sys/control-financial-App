@@ -14,16 +14,27 @@ import { CategoryIcon } from '@/components/transactions/category-icon'
 import { ActivityReminderSetting } from './activity-reminder-setting'
 import { ResetTimeDataButton } from './reset-time-data-button'
 import { DeleteAccountButton } from '@/app/(main)/ajustes/delete-account-button'
+import { AssistantSettingsPanel } from '@/components/setup/assistant-settings-panel'
+import { TiempoAjustesGuideBanner } from '@/components/setup/tiempo-ajustes-guide-banner'
+import { getAssistantState } from '@/lib/setup/assistant-queries'
 
-export default async function TiempoAjustesPage() {
+type SearchParams = Promise<{ guide?: string }>
+
+export default async function TiempoAjustesPage({
+  searchParams,
+}: {
+  searchParams: SearchParams
+}) {
+  const params = await searchParams
   const ctx = await getMainAppContext()
   if (!ctx) redirect('/login')
 
-  const [members, profile, timeCategories, theme] = await Promise.all([
+  const [members, profile, timeCategories, theme, assistantState] = await Promise.all([
     getHouseholdMembers(ctx.household.id),
     getUserProfile(),
     getTimeCategories(ctx.household.id),
     getUserTheme(),
+    getAssistantState(),
   ])
 
   return (
@@ -34,6 +45,17 @@ export default async function TiempoAjustesPage() {
           Perfil y hogar compartidos · preferencias del módulo Tiempo
         </p>
       </div>
+
+      <TiempoAjustesGuideBanner guide={params.guide ?? null} />
+
+      {assistantState && (
+        <AssistantSettingsPanel
+          module="time"
+          status={assistantState.time.status}
+          completedCount={assistantState.time.completedCount}
+          totalCount={assistantState.time.totalCount}
+        />
+      )}
 
       {profile && (
         <section className="cc-surface rounded-[24px] p-5">
@@ -94,14 +116,6 @@ export default async function TiempoAjustesPage() {
           Tiempo
         </p>
         <ActivityReminderSetting />
-        <p className="text-[12px] mt-4">
-          <Link
-            href="/tiempo/configuracion-inicial?review=1"
-            className="text-[#6366F1] font-semibold"
-          >
-            Volver a configuración inicial →
-          </Link>
-        </p>
       </section>
 
       <section className="cc-surface rounded-[24px] p-5">

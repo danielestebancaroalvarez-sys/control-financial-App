@@ -12,6 +12,8 @@ import { ActivityReminderManager } from '@/components/notifications/activity-rem
 import { PartnerActivityWatcher } from '@/components/notifications/partner-activity-watcher'
 import { ApplyTheme } from '@/components/theme/apply-theme'
 import { SavedFlashToast } from '@/components/ui/saved-flash-toast'
+import { AssistantDock } from '@/components/setup/assistant-dock'
+import { getAssistantState } from '@/lib/setup/assistant-queries'
 import { getFirstName } from '@/lib/utils/name'
 
 export default async function MainLayout({
@@ -22,10 +24,11 @@ export default async function MainLayout({
   const user = await getAuthUser()
   if (!user) redirect('/login')
 
-  const [household, theme, profile] = await Promise.all([
+  const [household, theme, profile, assistantState] = await Promise.all([
     getUserHousehold(),
     getUserTheme(),
     getUserProfile(),
+    getAssistantState(),
   ])
   if (!household) redirect('/onboarding')
 
@@ -50,6 +53,7 @@ export default async function MainLayout({
       <div className="mx-auto flex min-h-screen max-w-md flex-col px-5 pt-[max(0.5rem,env(safe-area-inset-top))] pb-[calc(7rem+env(safe-area-inset-bottom))]">
         <AppHeader firstName={firstName} email={user.email} avatarUrl={avatarUrl} />
         <MainContent>{children}</MainContent>
+        {assistantState && <AssistantDock state={assistantState} />}
         <BottomTabBar />
       </div>
     </div>

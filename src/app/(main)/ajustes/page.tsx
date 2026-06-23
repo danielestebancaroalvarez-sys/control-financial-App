@@ -14,16 +14,27 @@ import { ResetDataButton } from './reset-data-button'
 import { DeleteAccountButton } from './delete-account-button'
 import { HouseholdMembersSection } from './household-members-section'
 import { ProfileSettingsForm } from '@/components/profile/profile-settings-form'
+import { AssistantSettingsPanel } from '@/components/setup/assistant-settings-panel'
+import { AjustesGuideBanner } from '@/components/setup/ajustes-guide-banner'
+import { getAssistantState } from '@/lib/setup/assistant-queries'
 import { Users, Coins } from 'lucide-react'
 
-export default async function AjustesPage() {
+type SearchParams = Promise<{ guide?: string }>
+
+export default async function AjustesPage({
+  searchParams,
+}: {
+  searchParams: SearchParams
+}) {
+  const params = await searchParams
   const ctx = await getMainAppContextWithPeriod()
   if (!ctx) redirect('/login')
 
-  const [members, categories, profile] = await Promise.all([
+  const [members, categories, profile, assistantState] = await Promise.all([
     getHouseholdMembers(ctx.household.id),
     getCategories(ctx.household.id),
     getUserProfile(),
+    getAssistantState(),
   ])
 
   return (
@@ -32,6 +43,17 @@ export default async function AjustesPage() {
         <h1 className="text-[22px] font-bold text-cc-primary">Cuenta y Ajustes</h1>
         <p className="text-[13px] text-cc-secondary">Gestiona tu hogar y preferencias</p>
       </div>
+
+      <AjustesGuideBanner guide={params.guide ?? null} />
+
+      {assistantState && (
+        <AssistantSettingsPanel
+          module="finance"
+          status={assistantState.finance.status}
+          completedCount={assistantState.finance.completedCount}
+          totalCount={assistantState.finance.totalCount}
+        />
+      )}
 
       {profile && (
         <section className="cc-surface rounded-[24px] p-5">
@@ -44,19 +66,6 @@ export default async function AjustesPage() {
       )}
 
       <DashboardPeriodSetting current={ctx.period} />
-
-      <section className="cc-surface rounded-[24px] p-5">
-        <h2 className="text-[15px] font-bold text-cc-primary mb-2">Configuración inicial</h2>
-        <p className="text-[12px] text-cc-secondary mb-3">
-          Revisa ingresos, gastos fijos y suscripciones del hogar.
-        </p>
-        <Link
-          href="/configuracion-inicial?review=1"
-          className="text-[13px] font-bold text-[#00BFA5]"
-        >
-          Abrir asistente de Finanzas →
-        </Link>
-      </section>
 
       <ThemeSetting current={ctx.theme} />
 

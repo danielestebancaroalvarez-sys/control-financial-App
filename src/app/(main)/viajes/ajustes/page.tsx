@@ -49,12 +49,6 @@ export default async function ViajesAjustesPage() {
           Los presupuestos usan la moneda base del hogar ({ctx.household.base_currency}).
           Las metas de ahorro se sincronizan con Finanzas automáticamente.
         </p>
-        <Link
-          href="/viajes/configuracion-inicial"
-          className="inline-block mt-3 text-[12px] font-bold text-[#0EA5E9]"
-        >
-          Repetir configuración inicial →
-        </Link>
       </section>
 
       <section className="cc-surface rounded-[24px] p-5 flex items-center justify-between">

@@ -15,6 +15,7 @@ export type InAppNotification = {
     | 'task-tomorrow'
     | 'task-upcoming'
     | 'goal-milestone'
+    | 'setup-guide'
   title: string
   body: string
   href: string

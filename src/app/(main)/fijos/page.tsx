@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { Suspense } from 'react'
 import { getMainAppContextWithPeriod } from '@/lib/app/context'
 import { getCategories, getRecurringScheduleItems } from '@/lib/finance/queries'
 import { FijosClient } from './fijos-client'
@@ -13,12 +14,14 @@ export default async function FijosPage() {
   ])
 
   return (
-    <FijosClient
-      schedules={schedules}
-      householdId={ctx.household.id}
-      currency={ctx.household.base_currency}
-      period={ctx.period}
-      categories={categories}
-    />
+    <Suspense fallback={null}>
+      <FijosClient
+        schedules={schedules}
+        householdId={ctx.household.id}
+        currency={ctx.household.base_currency}
+        period={ctx.period}
+        categories={categories}
+      />
+    </Suspense>
   )
 }

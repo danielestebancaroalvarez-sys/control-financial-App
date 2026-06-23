@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
-import { Bell, CalendarClock, CheckSquare, Target, Users, X } from 'lucide-react'
+import { Bell, CalendarClock, CheckSquare, Sparkles, Target, Users, X } from 'lucide-react'
 import {
   getFinanceInAppNotifications,
   getTimeInAppNotifications,
@@ -24,6 +24,19 @@ function NotificationIcon({
   type: InAppNotification['type']
   module: NotificationModule
 }) {
+  if (type === 'setup-guide') {
+    const setupAccent =
+      module === 'time' ? '#6366F1' : module === 'travel' ? '#0EA5E9' : '#00BFA5'
+    return (
+      <div
+        className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+        style={{ backgroundColor: `${setupAccent}22`, color: setupAccent }}
+      >
+        <Sparkles className="w-4 h-4" />
+      </div>
+    )
+  }
+
   if (type === 'partner-expense') {
     return (
       <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-[#E8EAF6] text-[#5C6BC0] dark:bg-[#2a2d42] dark:text-[#9fa8da]">

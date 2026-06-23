@@ -28,10 +28,12 @@ export function SleepTracker({
   householdId,
   data,
   variant = 'standalone',
+  onActionSuccess,
 }: {
   householdId: string
   data: SleepTrackerData
   variant?: 'standalone' | 'embedded'
+  onActionSuccess?: () => void
 }) {
   const router = useRouter()
   const [pending, startTransition] = useTransition()
@@ -59,6 +61,7 @@ export function SleepTracker({
         setError(result.error)
         return
       }
+      onActionSuccess?.()
       if (options?.navigateTo) {
         router.push(options.navigateTo)
       }

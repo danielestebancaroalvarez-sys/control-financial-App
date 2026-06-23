@@ -8,6 +8,10 @@ import {
   listPaymentDueDates,
   type PaymentDueReminder,
 } from '@/lib/finance/payment-reminders'
+import {
+  householdHasFinanceData,
+  householdHasTimeData,
+} from '@/lib/setup/assistant-progress'
 import { buildInAppNotifications, type InAppNotification } from './build-notifications'
 import {
   buildTimeInAppNotifications,
@@ -110,7 +114,34 @@ export async function getPaymentReminderPayload(): Promise<PaymentReminderPayloa
 export async function getFinanceInAppNotifications(): Promise<InAppNotification[]> {
   const payload = await getPaymentReminderPayload()
   if (!payload) return []
-  return buildInAppNotifications(payload)
+
+  const items = buildInAppNotifications(payload)
+  const ctx = await getMainAppContext()
+  if (!ctx) return items
+
+  const supabase = await createClient()
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('assistant_finance_status')
+    .eq('id', ctx.user.id)
+    .maybeSingle()
+
+  const status = profile?.assistant_finance_status ?? 'unset'
+  const hasData = await householdHasFinanceData()
+
+  if ((status === 'unset' || status === 'declined') && !hasData) {
+    items.unshift({
+      id: 'setup-guide-finance',
+      module: 'finance',
+      type: 'setup-guide',
+      title: 'Configura tus finanzas',
+      body: 'Activa el asistente y te guiamos paso a paso.',
+      href: '/?activateAssistant=finance',
+      createdAt: new Date().toISOString(),
+    })
+  }
+
+  return items
 }
 
 /** @deprecated Use getFinanceInAppNotifications */
@@ -187,5 +218,32 @@ export async function getTimeActivityReminderPayload(): Promise<TimeActivityRemi
 export async function getTimeInAppNotifications(): Promise<InAppNotification[]> {
   const payload = await getTimeActivityReminderPayload()
   if (!payload) return []
-  return buildTimeInAppNotifications(payload)
+
+  const items = buildTimeInAppNotifications(payload)
+  const ctx = await getMainAppContext()
+  if (!ctx) return items
+
+  const supabase = await createClient()
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('assistant_time_status')
+    .eq('id', ctx.user.id)
+    .maybeSingle()
+
+  const status = profile?.assistant_time_status ?? 'unset'
+  const hasData = await householdHasTimeData()
+
+  if ((status === 'unset' || status === 'declined') && !hasData) {
+    items.unshift({
+      id: 'setup-guide-time',
+      module: 'time',
+      type: 'setup-guide',
+      title: 'Configura tu tiempo',
+      body: 'Activa el asistente y te guiamos con sueño, actividades y tareas.',
+      href: '/?activateAssistant=time',
+      createdAt: new Date().toISOString(),
+    })
+  }
+
+  return items
 }

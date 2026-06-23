@@ -23,12 +23,18 @@ export function FixedScheduleForm({
   categories,
   defaultType = 'expense',
   hideTypeSelector = false,
+  defaultCategoryName,
+  categoryFilter,
+  onSuccess,
 }: {
   householdId: string
   baseCurrency: CurrencyCode
   categories: Category[]
   defaultType?: TxType
   hideTypeSelector?: boolean
+  defaultCategoryName?: string
+  categoryFilter?: (category: Category) => boolean
+  onSuccess?: () => void
 }) {
   const router = useRouter()
   const [scheduleType, setScheduleType] = useState<TxType>(defaultType)
@@ -47,10 +53,20 @@ export function FixedScheduleForm({
     setCategoryId('')
   }, [defaultType])
 
-  const filteredCategories = useMemo(
-    () => categories.filter(c => c.type === scheduleType),
-    [categories, scheduleType]
-  )
+  const filteredCategories = useMemo(() => {
+    const byType = categories.filter(c => c.type === scheduleType)
+    if (!categoryFilter) return byType
+    const filtered = byType.filter(categoryFilter)
+    return filtered.length > 0 ? filtered : byType
+  }, [categories, scheduleType, categoryFilter])
+
+  useEffect(() => {
+    if (!defaultCategoryName) return
+    const match = filteredCategories.find(
+      c => c.name.toLowerCase() === defaultCategoryName.toLowerCase()
+    )
+    if (match) setCategoryId(match.id)
+  }, [defaultCategoryName, filteredCategories])
 
   const selectedCategory = filteredCategories.find(
     c => c.id === (categoryId || filteredCategories[0]?.id)
@@ -105,6 +121,11 @@ export function FixedScheduleForm({
     }
 
     setLoading(false)
+    if (onSuccess) {
+      onSuccess()
+      router.refresh()
+      return
+    }
     router.push(`/?saved=fixed-${scheduleType}`)
     router.refresh()
   }
