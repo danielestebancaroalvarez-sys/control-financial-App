@@ -98,6 +98,13 @@ export function DashboardView({
     ? summary.periodRealSavings
     : summary.periodSavings
 
+  const hasFinanceData =
+    summary.monthlyIncome > 0 ||
+    pieTotal > 0 ||
+    budgetSlices.length > 0 ||
+    summary.savingsGoals.length > 0 ||
+    summary.trend.some(t => t.income > 0 || t.expenses > 0)
+
   const topCategory = summary.allCategories[0]
   const topMember = summary.memberSpending.reduce(
     (best, m) => (m.amount > (best?.amount ?? 0) ? m : best),
@@ -155,15 +162,17 @@ export function DashboardView({
         />
       </div>
 
-      <BalanceSnapshotCard
-        householdId={householdId}
-        currentBalance={summary.realBalance}
-        currency={currency}
-        breakdown={summary.balanceBreakdown}
-        guiltFreeMoney={summary.guiltFreeMoney}
-      />
+      {hasFinanceData && (
+        <BalanceSnapshotCard
+          householdId={householdId}
+          currentBalance={summary.realBalance}
+          currency={currency}
+          breakdown={summary.balanceBreakdown}
+          guiltFreeMoney={summary.guiltFreeMoney}
+        />
+      )}
 
-      {budgetSlices.length > 0 && (
+      {hasFinanceData && budgetSlices.length > 0 && (
         <CollapsibleSection
           title="Presupuesto del periodo"
           summary={budgetSummary}
@@ -229,7 +238,7 @@ export function DashboardView({
         </CollapsibleSection>
       )}
 
-      {summary.trend.length > 0 && (
+      {summary.trend.some(t => t.income > 0 || t.expenses > 0) && (
         <CollapsibleSection
           title="Tendencia"
           summary={trendSummary}
@@ -320,18 +329,9 @@ export function DashboardView({
 
       <CurrencyConverterWidget initialRates={fxRates} />
 
-      <MarketMetricsPreview insights={marketInsights} currency={currency} />
-
-      {summary.allCategories.length === 0 &&
-        summary.savingsGoals.length === 0 &&
-        summary.monthlyIncome === 0 &&
-        budgetSlices.length === 0 && (
-          <div className="cc-surface rounded-[24px] px-5 py-4 text-center">
-            <p className="text-[13px] text-cc-secondary">
-              Añade transacciones para ver gráficos en este periodo.
-            </p>
-          </div>
-        )}
+      {marketInsights.hasMercadoData && (
+        <MarketMetricsPreview insights={marketInsights} currency={currency} />
+      )}
     </div>
   )
 }

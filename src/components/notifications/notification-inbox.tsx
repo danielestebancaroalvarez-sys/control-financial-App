@@ -14,6 +14,7 @@ import {
   getStoredNotifications,
   markAllNotificationsRead,
   markNotificationRead,
+  clearAllNotifications,
   syncInAppNotifications,
 } from '@/lib/notifications/in-app-store'
 
@@ -81,6 +82,7 @@ function NotificationPanel({
   onClose,
   onRead,
   onReadAll,
+  onClearAll,
 }: {
   notifications: InAppNotification[]
   loading: boolean
@@ -89,6 +91,7 @@ function NotificationPanel({
   onClose: () => void
   onRead: (id: string) => void
   onReadAll: () => void
+  onClearAll: () => void
 }) {
   const isTime = module === 'time'
   const isTravel = module === 'travel'
@@ -124,6 +127,15 @@ function NotificationPanel({
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          {notifications.length > 0 && (
+            <button
+              type="button"
+              onClick={onClearAll}
+              className="text-[10px] font-semibold text-cc-muted hover:text-cc-primary"
+            >
+              Limpiar
+            </button>
+          )}
           {unread > 0 && (
             <button
               type="button"
@@ -292,6 +304,12 @@ export function NotificationInbox({ module }: { module: NotificationModule }) {
     setUnread(0)
   }
 
+  function handleClearAll() {
+    clearAllNotifications(module)
+    setNotifications([])
+    setUnread(0)
+  }
+
   const panel = open ? (
     <div className="fixed inset-0 z-[100] flex items-start justify-center p-4 pt-[max(4.5rem,env(safe-area-inset-top)+3.5rem)]">
       <button
@@ -309,6 +327,7 @@ export function NotificationInbox({ module }: { module: NotificationModule }) {
           onClose={() => setOpen(false)}
           onRead={handleRead}
           onReadAll={handleReadAll}
+          onClearAll={handleClearAll}
         />
       </div>
     </div>

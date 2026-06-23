@@ -110,6 +110,15 @@ export function markAllNotificationsRead(module: NotificationModule) {
   localStorage.setItem(STORAGE_KEYS[module].read, JSON.stringify(ids))
 }
 
+export function clearAllNotifications(module: NotificationModule) {
+  if (typeof window === 'undefined') return
+  localStorage.setItem(STORAGE_KEYS[module].items, JSON.stringify([]))
+  localStorage.setItem(STORAGE_KEYS[module].read, JSON.stringify([]))
+  window.dispatchEvent(
+    new CustomEvent('couplecash-notifications-updated', { detail: { module } })
+  )
+}
+
 export function isNotificationRead(id: string, module: NotificationModule): boolean {
   return readIds(module).has(id)
 }

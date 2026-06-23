@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { redirect } from 'next/navigation'
 import { getMainAppContextWithPeriod } from '@/lib/app/context'
 import { getDashboardSummary, getSavingsGoals } from '@/lib/finance/queries'
@@ -13,12 +14,14 @@ export default async function AhorrosPage() {
   ])
 
   return (
-    <AhorrosClient
-      goals={goals}
-      householdId={ctx.household.id}
-      currency={ctx.household.base_currency}
-      guiltFreeMoney={dashboard.guiltFreeMoney}
-      periodSavings={dashboard.periodSavings}
-    />
+    <Suspense fallback={null}>
+      <AhorrosClient
+        goals={goals}
+        householdId={ctx.household.id}
+        currency={ctx.household.base_currency}
+        guiltFreeMoney={dashboard.guiltFreeMoney}
+        periodSavings={dashboard.periodSavings}
+      />
+    </Suspense>
   )
 }

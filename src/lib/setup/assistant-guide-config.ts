@@ -54,7 +54,7 @@ export const GUIDE_STEPS: Record<GuideStepId, GuideStepConfig> = {
     totalSteps: 5,
     title: 'Añade un gasto fijo',
     description: 'Arriendo, servicios u otros pagos regulares del hogar.',
-    hint: 'Elige una categoría de servicio y programa la recurrencia.',
+    hint: 'El tipo Gasto y la forma Fijo ya están preseleccionados.',
   },
   subscription: {
     id: 'subscription',

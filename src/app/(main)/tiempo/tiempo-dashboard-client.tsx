@@ -69,7 +69,8 @@ export function TiempoDashboardClient({
         />
       </div>
 
-      {/* KPIs compactos */}
+      {/* KPIs compactos — solo con datos */}
+      {summary.totalMinutes > 0 && (
       <div className="grid grid-cols-2 gap-2">
         <div className="cc-surface rounded-[20px] p-3.5">
           <p className="text-[10px] font-bold text-cc-secondary uppercase tracking-wide">
@@ -117,6 +118,7 @@ export function TiempoDashboardClient({
           </p>
         </div>
       </div>
+      )}
 
       {generalSlices.length > 0 && (
         <CollapsibleSection
@@ -369,20 +371,6 @@ export function TiempoDashboardClient({
             Ver todas las metas →
           </Link>
         </CollapsibleSection>
-      )}
-
-      {summary.totalMinutes === 0 && (
-        <div className="cc-surface rounded-[24px] p-6 text-center">
-          <p className="text-[13px] text-cc-secondary">
-            Registra bloques fijos, tiempo puntual o tareas para ver tu semana.
-          </p>
-          <Link
-            href="/tiempo/nuevo"
-            className="inline-block mt-3 text-[13px] font-bold text-[#6366F1]"
-          >
-            Añadir primer registro →
-          </Link>
-        </div>
       )}
     </div>
   )

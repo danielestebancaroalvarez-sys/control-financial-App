@@ -1,7 +1,7 @@
 'use client'
 
-import { useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useMemo, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Loader2, Plus, Pencil, Trash2, Clock } from 'lucide-react'
 import {
   createSavingsGoal,
@@ -466,9 +466,17 @@ export function AhorrosClient({
   periodSavings?: number
 }) {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const guideSavings = searchParams.get('guide') === 'savings'
   const [mode, setMode] = useState<'list' | 'create' | 'edit'>('list')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (guideSavings && goals.length === 0) {
+      setMode('create')
+    }
+  }, [guideSavings, goals.length])
 
   const fmt = (n: number) => formatMoney(n, currency)
   const editingGoal = goals.find(g => g.id === editingId)
@@ -528,15 +536,6 @@ export function AhorrosClient({
           onDone={closeForm}
           onCancel={closeForm}
         />
-      )}
-
-      {mode === 'list' && goals.length === 0 && (
-        <div className="cc-surface rounded-[24px] p-8 text-center">
-          <p className="text-[14px] text-cc-secondary">
-            Crea tu primera meta con el botón +. Define el monto objetivo y tu
-            aporte periódico para ver el tiempo estimado.
-          </p>
-        </div>
       )}
 
       {mode === 'list' &&

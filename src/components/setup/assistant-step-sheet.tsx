@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { Check, ChevronRight, Sparkles, X } from 'lucide-react'
 import type { AssistantModule, AssistantStep } from '@/lib/setup/assistant-types'
+import { getGuideStepTheme } from '@/lib/setup/guide-step-theme'
 
 const MODULE_LABELS: Record<AssistantModule, string> = {
   finance: 'Finanzas',
@@ -86,13 +87,14 @@ export function AssistantStepSheet({
           {steps.map((step, index) => {
             const isOptional = step.optional
             const done = step.completed
+            const stepTheme = getGuideStepTheme(step.id)
             return (
               <li key={step.id}>
                 {done ? (
                   <div className="flex items-center gap-3 p-3 rounded-2xl cc-surface-muted opacity-80">
                     <span
                       className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 text-white"
-                      style={{ backgroundColor: accent }}
+                      style={{ background: stepTheme.gradient }}
                     >
                       <Check className="w-4 h-4" />
                     </span>
@@ -108,9 +110,16 @@ export function AssistantStepSheet({
                   <Link
                     href={step.href}
                     onClick={onClose}
-                    className="flex items-center gap-3 p-3 rounded-2xl cc-surface-muted hover:cc-surface transition-colors"
+                    className="flex items-center gap-3 p-3 rounded-2xl border transition-colors hover:opacity-90"
+                    style={{
+                      borderColor: stepTheme.border,
+                      backgroundColor: stepTheme.accentLight,
+                    }}
                   >
-                    <span className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 text-[12px] font-bold text-cc-secondary bg-white dark:bg-[#2a2a2a] border border-[#EEEEEE]">
+                    <span
+                      className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 text-[12px] font-bold text-white"
+                      style={{ background: stepTheme.gradient }}
+                    >
                       {index + 1}
                     </span>
                     <div className="min-w-0 flex-1">
