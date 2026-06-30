@@ -1,11 +1,13 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { CalendarClock, Check, Clock, ListTodo, Loader2, Moon, Repeat } from 'lucide-react'
 import { CategoryIcon } from '@/components/transactions/category-icon'
 import { SleepTracker } from '@/components/time/sleep-tracker'
 import { refreshAssistantProgress } from '@/lib/setup/assistant-actions'
+import { resolveGuideStepTheme } from '@/lib/setup/guide-step-theme'
+import { useIsDark } from '@/hooks/use-is-dark'
 import { FormField, FormSection } from '@/components/time/form-field'
 import { TaskAppearancePicker } from '@/components/time/task-appearance-picker'
 import {
@@ -38,6 +40,27 @@ type EntryNature = 'fixed' | 'variable'
 
 const inputClass = `w-full px-4 py-3 rounded-xl cc-input text-[14px] outline-none ring-2 ring-transparent ${TIME_THEME.focus}`
 
+type TiempoGuideMode = 'sleep' | 'task'
+
+function parseTiempoGuide(value: string | null | undefined): TiempoGuideMode | null {
+  if (value === 'sleep' || value === 'task') return value
+  return null
+}
+
+function guideKindStyle(
+  active: boolean,
+  stepId: 'sleep' | 'task',
+  isDark: boolean
+): React.CSSProperties | undefined {
+  if (!active) return undefined
+  const t = resolveGuideStepTheme(stepId, isDark)
+  return {
+    borderColor: t.accent,
+    backgroundColor: t.surfaceBg,
+    boxShadow: `0 0 0 2px ${t.accent}28`,
+  }
+}
+
 export function TiempoNuevoClient({
   householdId,
   categories,
@@ -60,8 +83,15 @@ export function TiempoNuevoClient({
   initialGuide?: 'sleep' | 'task' | null
 }) {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const isDark = useIsDark()
+  const guide = useMemo(
+    () => parseTiempoGuide(searchParams.get('guide')) ?? parseTiempoGuide(initialGuide),
+    [searchParams, initialGuide]
+  )
+  const locked = guide !== null
   const [kind, setKind] = useState<EntryKind>(
-    initialGuide === 'sleep' ? 'sleep' : initialGuide === 'task' ? 'task' : 'time'
+    guide === 'sleep' ? 'sleep' : guide === 'task' ? 'task' : 'time'
   )
   const [nature, setNature] = useState<EntryNature>('variable')
   const [categoryId, setCategoryId] = useState('')
@@ -85,9 +115,9 @@ export function TiempoNuevoClient({
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (initialGuide === 'sleep') setKind('sleep')
-    if (initialGuide === 'task') setKind('task')
-  }, [initialGuide])
+    if (guide === 'sleep') setKind('sleep')
+    if (guide === 'task') setKind('task')
+  }, [guide])
 
   const selectedCategory = categories.find(
     c => c.id === (categoryId || categories[0]?.id)
@@ -157,7 +187,7 @@ export function TiempoNuevoClient({
         return
       }
       setLoading(false)
-      if (initialGuide === 'task') {
+      if (guide === 'task') {
         await refreshAssistantProgress('time')
       }
       router.push('/tiempo/tareas')
@@ -230,8 +260,11 @@ export function TiempoNuevoClient({
         <div className="grid grid-cols-3 gap-2">
           <button
             type="button"
-            onClick={() => setKind('time')}
-            className={`rounded-2xl border-2 p-3 text-left ${kind === 'time' ? TIME_THEME.cardActive : TIME_THEME.cardIdle}`}
+            onClick={() => !locked && setKind('time')}
+            disabled={locked && kind !== 'time'}
+            className={`rounded-2xl border-2 p-3 text-left ${
+              kind === 'time' ? TIME_THEME.cardActive : TIME_THEME.cardIdle
+            } ${locked && kind !== 'time' ? 'opacity-60' : ''}`}
           >
             <Clock className="w-5 h-5 text-[#6366F1] mb-2" />
             <p className="text-[12px] font-bold text-cc-primary">Tiempo</p>
@@ -239,19 +272,27 @@ export function TiempoNuevoClient({
           </button>
           <button
             type="button"
-            onClick={() => setKind('sleep')}
-            className={`rounded-2xl border-2 p-3 text-left ${kind === 'sleep' ? TIME_THEME.cardActive : TIME_THEME.cardIdle}`}
+            onClick={() => !locked && setKind('sleep')}
+            disabled={locked && kind !== 'sleep'}
+            className={`rounded-2xl border-2 p-3 text-left ${
+              kind === 'sleep' ? '' : TIME_THEME.cardIdle
+            } ${locked && kind !== 'sleep' ? 'opacity-60' : ''}`}
+            style={guideKindStyle(kind === 'sleep', 'sleep', isDark)}
           >
-            <Moon className="w-5 h-5 text-[#4F46E5] mb-2" />
+            <Moon className="w-5 h-5 mb-2" style={{ color: resolveGuideStepTheme('sleep', isDark).accent }} />
             <p className="text-[12px] font-bold text-cc-primary">Sueño</p>
             <p className="text-[9px] text-cc-secondary leading-tight">Dormir / despertar</p>
           </button>
           <button
             type="button"
-            onClick={() => setKind('task')}
-            className={`rounded-2xl border-2 p-3 text-left ${kind === 'task' ? TIME_THEME.cardActive : TIME_THEME.cardIdle}`}
+            onClick={() => !locked && setKind('task')}
+            disabled={locked && kind !== 'task'}
+            className={`rounded-2xl border-2 p-3 text-left ${
+              kind === 'task' ? '' : TIME_THEME.cardIdle
+            } ${locked && kind !== 'task' ? 'opacity-60' : ''}`}
+            style={guideKindStyle(kind === 'task', 'task', isDark)}
           >
-            <ListTodo className="w-5 h-5 text-[#6366F1] mb-2" />
+            <ListTodo className="w-5 h-5 mb-2" style={{ color: resolveGuideStepTheme('task', isDark).accent }} />
             <p className="text-[12px] font-bold text-cc-primary">Tarea</p>
             <p className="text-[9px] text-cc-secondary leading-tight">Reparar, limpiar…</p>
           </button>
@@ -264,7 +305,7 @@ export function TiempoNuevoClient({
           data={sleepData}
           variant="embedded"
           onActionSuccess={() => {
-            if (initialGuide === 'sleep') {
+            if (guide === 'sleep') {
               void refreshAssistantProgress('time')
             }
           }}

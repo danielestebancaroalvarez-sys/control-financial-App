@@ -35,6 +35,7 @@ import {
   isValidSavingsCategoryId,
   type SavingsCategoryId,
 } from '@/lib/finance/savings-categories'
+import { SAVINGS_ACCENT } from '@/lib/setup/guide-step-theme'
 import type { SavingsGoal, SavingsGoalInput } from '@/lib/finance/types'
 import type { CurrencyCode } from '@/lib/household/types'
 
@@ -268,9 +269,14 @@ function SavingsGoalForm({
             }
             className={`flex-1 py-2.5 rounded-xl text-[11px] font-bold leading-tight px-2 ${
               form.planningMode === 'by_contribution'
-                ? 'bg-[#00BFA5] text-white'
-                : 'bg-[#F5F5F5] text-cc-secondary'
+                ? 'text-white'
+                : 'bg-[#F5F5F5] text-cc-secondary dark:bg-[var(--cc-input-bg)]'
             }`}
+            style={
+              form.planningMode === 'by_contribution'
+                ? { backgroundColor: SAVINGS_ACCENT }
+                : undefined
+            }
           >
             Sé cuánto aporto
           </button>
@@ -281,9 +287,14 @@ function SavingsGoalForm({
             }
             className={`flex-1 py-2.5 rounded-xl text-[11px] font-bold leading-tight px-2 ${
               form.planningMode === 'by_date'
-                ? 'bg-[#00BFA5] text-white'
-                : 'bg-[#F5F5F5] text-cc-secondary'
+                ? 'text-white'
+                : 'bg-[#F5F5F5] text-cc-secondary dark:bg-[var(--cc-input-bg)]'
             }`}
+            style={
+              form.planningMode === 'by_date'
+                ? { backgroundColor: SAVINGS_ACCENT }
+                : undefined
+            }
           >
             Tengo fecha límite
           </button>
@@ -349,7 +360,7 @@ function SavingsGoalForm({
       )}
 
       {planningPreview && (
-        <div className="rounded-xl bg-[#E8F5E9] px-3 py-2.5 text-[12px] font-semibold text-[#2E7D32]">
+        <div className="rounded-xl px-3 py-2.5 text-[12px] font-semibold cc-accent-warn text-[#B45309] dark:text-[#FBBF24]">
           {planningPreview}
         </div>
       )}
@@ -387,9 +398,10 @@ function SavingsGoalForm({
               onClick={() => set('mode', m)}
               className={`flex-1 py-2.5 rounded-xl text-[12px] font-bold ${
                 form.mode === m
-                  ? 'bg-[#00BFA5] text-white'
-                  : 'bg-[#F5F5F5] text-cc-secondary'
+                  ? 'text-white'
+                  : 'bg-[#F5F5F5] text-cc-secondary dark:bg-[var(--cc-input-bg)]'
               }`}
+              style={form.mode === m ? { backgroundColor: SAVINGS_ACCENT } : undefined}
             >
               {m === 'static' ? 'Sin interés' : 'Con rentabilidad'}
             </button>
@@ -437,7 +449,8 @@ function SavingsGoalForm({
         <button
           type="submit"
           disabled={loading}
-          className="flex-1 py-3 rounded-xl bg-[#00BFA5] text-white font-bold text-[14px] disabled:opacity-60 flex items-center justify-center gap-2"
+          className="flex-1 py-3 rounded-xl text-white font-bold text-[14px] disabled:opacity-60 flex items-center justify-center gap-2"
+          style={{ backgroundColor: SAVINGS_ACCENT }}
         >
           {loading ? (
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -505,7 +518,8 @@ export function AhorrosClient({
           <button
             type="button"
             onClick={() => setMode('create')}
-            className="w-10 h-10 rounded-full bg-[#00BFA5] text-white flex items-center justify-center shadow-md"
+            className="w-10 h-10 rounded-full text-white flex items-center justify-center shadow-md"
+            style={{ backgroundColor: SAVINGS_ACCENT }}
             aria-label="Nueva meta"
           >
             <Plus className="w-5 h-5" />
@@ -595,7 +609,7 @@ export function AhorrosClient({
                       setEditingId(goal.id)
                       setMode('edit')
                     }}
-                    className="w-9 h-9 rounded-xl bg-[#F5F5F5] flex items-center justify-center text-cc-secondary hover:text-[#00BFA5] hover:bg-[#00BFA5]/10 transition-colors"
+                    className="w-9 h-9 rounded-xl bg-[var(--cc-surface-muted)] flex items-center justify-center text-cc-secondary hover:text-[#F59E0B] hover:bg-[#F59E0B]/10 transition-colors"
                     aria-label={`Editar ${goal.name}`}
                   >
                     <Pencil className="w-4 h-4" />
@@ -633,7 +647,7 @@ export function AhorrosClient({
               </div>
 
               <div className="mt-3 flex items-start gap-2 rounded-xl bg-[#F5F5F5] px-3 py-2.5">
-                <Clock className="w-4 h-4 text-[#00BFA5] shrink-0 mt-0.5" />
+                <Clock className="w-4 h-4 shrink-0 mt-0.5" style={{ color: SAVINGS_ACCENT }} />
                 <div>
                   <p className="text-[12px] text-cc-primary font-medium">{estimate}</p>
                   {planning.secondary && (

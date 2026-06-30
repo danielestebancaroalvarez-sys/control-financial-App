@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { redirect } from 'next/navigation'
 import { getMainAppContext } from '@/lib/app/context'
 import { getTaskTemplates } from '@/lib/time/queries'
@@ -10,9 +11,11 @@ export default async function TiempoActividadesPage() {
   const templates = await getTaskTemplates(ctx.household.id)
 
   return (
-    <TiempoActividadesClient
-      householdId={ctx.household.id}
-      initialTemplates={templates}
-    />
+    <Suspense fallback={null}>
+      <TiempoActividadesClient
+        householdId={ctx.household.id}
+        initialTemplates={templates}
+      />
+    </Suspense>
   )
 }

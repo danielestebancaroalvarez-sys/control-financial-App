@@ -35,6 +35,7 @@ export default async function NuevoPage({
   return (
     <Suspense fallback={null}>
       <NuevoClient
+        key={guide ?? 'default'}
         householdId={ctx.household.id}
         baseCurrency={ctx.household.base_currency}
         categories={categories}

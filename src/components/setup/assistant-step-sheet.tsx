@@ -4,8 +4,9 @@ import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { Check, ChevronRight, Sparkles, X } from 'lucide-react'
+import { useIsDark } from '@/hooks/use-is-dark'
 import type { AssistantModule, AssistantStep } from '@/lib/setup/assistant-types'
-import { getGuideStepTheme } from '@/lib/setup/guide-step-theme'
+import { resolveGuideStepTheme } from '@/lib/setup/guide-step-theme'
 
 const MODULE_LABELS: Record<AssistantModule, string> = {
   finance: 'Finanzas',
@@ -31,6 +32,7 @@ export function AssistantStepSheet({
   onClose: () => void
 }) {
   const [mounted, setMounted] = useState(false)
+  const isDark = useIsDark()
   const accent = MODULE_ACCENTS[module]
   const label = MODULE_LABELS[module]
   const progress = totalCount > 0 ? (completedCount / totalCount) * 100 : 0
@@ -50,12 +52,12 @@ export function AssistantStepSheet({
     <div className="fixed inset-0 z-[80] flex items-end justify-center">
       <button
         type="button"
-        className="absolute inset-0 bg-black/40"
+        className="absolute inset-0 bg-black/50"
         aria-label="Cerrar"
         onClick={onClose}
       />
-      <div className="relative w-full max-w-md rounded-t-[24px] cc-surface-solid border-t border-[#EEEEEE] shadow-[0_-8px_40px_rgba(0,0,0,0.12)] max-h-[75vh] flex flex-col">
-        <div className="px-5 pt-4 pb-3 border-b border-[#F0F0F0]">
+      <div className="relative w-full max-w-md rounded-t-[24px] cc-surface-solid border-t border-[var(--cc-border-subtle)] shadow-[0_-8px_40px_rgba(0,0,0,0.25)] max-h-[75vh] flex flex-col">
+        <div className="px-5 pt-4 pb-3 border-b border-[var(--cc-border-subtle)]">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-[11px] font-bold uppercase tracking-wide text-cc-muted flex items-center gap-1.5">
@@ -69,13 +71,13 @@ export function AssistantStepSheet({
             <button
               type="button"
               onClick={onClose}
-              className="p-2 rounded-xl text-cc-muted hover:text-cc-primary"
+              className="p-2 rounded-xl text-cc-muted hover:text-cc-primary hover:bg-[var(--cc-surface-muted)]"
               aria-label="Cerrar"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
-          <div className="mt-3 h-2 rounded-full bg-[#F0F0F0] overflow-hidden">
+          <div className="mt-3 h-2 rounded-full bg-[var(--cc-surface-muted)] overflow-hidden">
             <div
               className="h-full rounded-full transition-all"
               style={{ width: `${progress}%`, backgroundColor: accent }}
@@ -87,11 +89,11 @@ export function AssistantStepSheet({
           {steps.map((step, index) => {
             const isOptional = step.optional
             const done = step.completed
-            const stepTheme = getGuideStepTheme(step.id)
+            const stepTheme = resolveGuideStepTheme(step.id, isDark)
             return (
               <li key={step.id}>
                 {done ? (
-                  <div className="flex items-center gap-3 p-3 rounded-2xl cc-surface-muted opacity-80">
+                  <div className="flex items-center gap-3 p-3 rounded-2xl bg-[var(--cc-surface-muted)] opacity-80">
                     <span
                       className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 text-white"
                       style={{ background: stepTheme.gradient }}
@@ -110,10 +112,10 @@ export function AssistantStepSheet({
                   <Link
                     href={step.href}
                     onClick={onClose}
-                    className="flex items-center gap-3 p-3 rounded-2xl border transition-colors hover:opacity-90"
+                    className="flex items-center gap-3 p-3 rounded-2xl border-2 transition-colors hover:opacity-95"
                     style={{
-                      borderColor: stepTheme.border,
-                      backgroundColor: stepTheme.accentLight,
+                      borderColor: stepTheme.accent,
+                      backgroundColor: stepTheme.surfaceBg,
                     }}
                   >
                     <span
@@ -133,7 +135,10 @@ export function AssistantStepSheet({
                       </p>
                       <p className="text-[11px] text-cc-secondary">{step.description}</p>
                     </div>
-                    <ChevronRight className="w-4 h-4 text-cc-muted shrink-0" />
+                    <ChevronRight
+                      className="w-4 h-4 shrink-0"
+                      style={{ color: stepTheme.accent }}
+                    />
                   </Link>
                 )}
               </li>

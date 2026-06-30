@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowDownLeft, ArrowUpRight, CalendarPlus, Repeat } from 'lucide-react'
 import { AddTransactionForm } from '@/components/transactions/add-transaction-form'
 import { FixedScheduleForm } from '@/components/transactions/fixed-schedule-form'
@@ -14,6 +14,13 @@ import type { CurrencyCode, HouseholdMember } from '@/lib/household/types'
 type EntryMode = 'variable' | 'fixed'
 
 export type NuevoGuideMode = 'income' | 'fixed' | 'subscription'
+
+function parseGuide(value: string | null | undefined): NuevoGuideMode | null {
+  if (value === 'income' || value === 'fixed' || value === 'subscription') {
+    return value
+  }
+  return null
+}
 
 function guideToDefaults(guide: NuevoGuideMode | null): {
   txType: TxType
@@ -42,6 +49,11 @@ function guideToDefaults(guide: NuevoGuideMode | null): {
   return { txType: 'expense', mode: 'variable' }
 }
 
+function getFormTheme(guide: NuevoGuideMode | null, txType: TxType) {
+  if (guide === 'subscription') return TX_TYPE_THEME.subscription
+  return TX_TYPE_THEME[txType]
+}
+
 export function NuevoClient({
   householdId,
   baseCurrency,
@@ -62,19 +74,25 @@ export function NuevoClient({
   initialGuide?: NuevoGuideMode | null
 }) {
   const router = useRouter()
-  const defaults = useMemo(() => guideToDefaults(initialGuide), [initialGuide])
+  const searchParams = useSearchParams()
+  const guide = useMemo(
+    () => parseGuide(searchParams.get('guide')) ?? parseGuide(initialGuide),
+    [searchParams, initialGuide]
+  )
+  const locked = guide !== null
+  const defaults = useMemo(() => guideToDefaults(guide), [guide])
   const [txType, setTxType] = useState<TxType>(defaults.txType)
   const [mode, setMode] = useState<EntryMode>(defaults.mode)
-  const theme = TX_TYPE_THEME[txType]
+  const theme = getFormTheme(guide, txType)
 
   useEffect(() => {
-    const next = guideToDefaults(initialGuide)
+    const next = guideToDefaults(guide)
     setTxType(next.txType)
     setMode(next.mode)
-  }, [initialGuide])
+  }, [guide])
 
   async function handleFixedSaved() {
-    if (initialGuide) {
+    if (guide) {
       await refreshAssistantProgress('finance')
     }
     router.refresh()
@@ -87,7 +105,9 @@ export function NuevoClient({
         <p className="text-[12px] text-cc-secondary mt-0.5">
           {txType === 'income'
             ? 'Registra dinero que entra o programa ingresos recurrentes.'
-            : 'Registra dinero que sale o programa gastos recurrentes.'}
+            : guide === 'subscription'
+              ? 'Programa suscripciones y débitos automáticos recurrentes.'
+              : 'Registra dinero que sale o programa gastos recurrentes.'}
         </p>
       </div>
 
@@ -100,14 +120,16 @@ export function NuevoClient({
             const t = TX_TYPE_THEME[type]
             const active = txType === type
             const Icon = type === 'income' ? ArrowDownLeft : ArrowUpRight
+            const disabled = locked && !active
             return (
               <button
                 key={type}
                 type="button"
-                onClick={() => setTxType(type)}
+                onClick={() => !locked && setTxType(type)}
+                disabled={disabled}
                 className={`rounded-2xl border-2 p-4 text-left transition-all ${
                   active ? t.cardActive : t.cardIdle
-                }`}
+                } ${disabled ? 'opacity-60 cursor-default' : ''}`}
               >
                 <div
                   className={`w-9 h-9 rounded-xl flex items-center justify-center mb-2 bg-gradient-to-br ${t.gradient} text-white`}
@@ -133,10 +155,11 @@ export function NuevoClient({
         <div className="grid grid-cols-1 gap-2">
           <button
             type="button"
-            onClick={() => setMode('variable')}
+            onClick={() => !locked && setMode('variable')}
+            disabled={locked && mode !== 'variable'}
             className={`flex items-start gap-3 rounded-2xl border-2 p-4 text-left transition-all ${
               mode === 'variable' ? theme.cardActive : theme.cardIdle
-            }`}
+            } ${locked && mode !== 'variable' ? 'opacity-60 cursor-default' : ''}`}
           >
             <div
               className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-gradient-to-br ${theme.gradient} text-white`}
@@ -154,10 +177,11 @@ export function NuevoClient({
           </button>
           <button
             type="button"
-            onClick={() => setMode('fixed')}
+            onClick={() => !locked && setMode('fixed')}
+            disabled={locked && mode !== 'fixed'}
             className={`flex items-start gap-3 rounded-2xl border-2 p-4 text-left transition-all ${
               mode === 'fixed' ? theme.cardActive : theme.cardIdle
-            }`}
+            } ${locked && mode !== 'fixed' ? 'opacity-60 cursor-default' : ''}`}
           >
             <div
               className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-gradient-to-br ${theme.gradient} text-white`}
@@ -201,7 +225,7 @@ export function NuevoClient({
         ) : (
           <>
             <FixedScheduleForm
-              key={`fix-${txType}-${initialGuide ?? 'none'}`}
+              key={`fix-${txType}-${guide ?? 'none'}`}
               householdId={householdId}
               baseCurrency={baseCurrency}
               categories={categories}
@@ -209,7 +233,7 @@ export function NuevoClient({
               hideTypeSelector
               defaultCategoryName={defaults.defaultCategoryName}
               categoryFilter={defaults.categoryFilter}
-              onSuccess={initialGuide ? handleFixedSaved : undefined}
+              onSuccess={guide ? handleFixedSaved : undefined}
             />
             <Link
               href="/fijos"

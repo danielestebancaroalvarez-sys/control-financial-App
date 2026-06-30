@@ -16,8 +16,9 @@ import {
   User,
   X,
 } from 'lucide-react'
+import { useIsDark } from '@/hooks/use-is-dark'
 import type { GuideStepConfig } from '@/lib/setup/assistant-guide-config'
-import { getGuideStepTheme } from '@/lib/setup/guide-step-theme'
+import { resolveGuideStepTheme } from '@/lib/setup/guide-step-theme'
 
 function StepIcon({ stepId }: { stepId: GuideStepConfig['id'] }) {
   const className = 'w-5 h-5 text-white'
@@ -53,7 +54,8 @@ export function FloatingGuideModal({
   onDismiss: () => void
 }) {
   const [mounted, setMounted] = useState(false)
-  const theme = getGuideStepTheme(step.id)
+  const isDark = useIsDark()
+  const theme = resolveGuideStepTheme(step.id, isDark)
   const progress = (step.stepIndex / step.totalSteps) * 100
 
   useEffect(() => {
@@ -71,7 +73,7 @@ export function FloatingGuideModal({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
-        className="fixed inset-0 z-[69] bg-black/35 backdrop-blur-[2px]"
+        className="fixed inset-0 z-[69] bg-black/50 backdrop-blur-[2px]"
         aria-label="Cerrar guía"
         onClick={onDismiss}
       />
@@ -84,15 +86,15 @@ export function FloatingGuideModal({
         className="fixed inset-x-0 bottom-[calc(5.25rem+env(safe-area-inset-bottom))] z-[70] flex justify-center px-4 pointer-events-none"
       >
         <div
-          className="pointer-events-auto w-full max-w-md rounded-[22px] overflow-hidden border-2 bg-white dark:bg-[#1a1a1a]"
+          className="pointer-events-auto w-full max-w-md rounded-[22px] overflow-hidden border-2 cc-surface-solid"
           style={{
             borderColor: theme.accent,
-            boxShadow: `${theme.glow}, 0 8px 32px rgba(0,0,0,0.12)`,
+            boxShadow: `${theme.glow}, 0 8px 32px rgba(0,0,0,0.2)`,
           }}
           role="dialog"
           aria-label={step.title}
         >
-          <div className="h-1.5 w-full bg-black/5 dark:bg-white/10 overflow-hidden">
+          <div className="h-1.5 w-full bg-[var(--cc-surface-muted)] overflow-hidden">
             <motion.div
               className="h-full rounded-r-full"
               style={{ background: theme.gradient }}
@@ -104,10 +106,10 @@ export function FloatingGuideModal({
 
           <div
             className="px-4 py-3 flex items-center gap-3 relative overflow-hidden"
-            style={{ background: theme.accentLight }}
+            style={{ backgroundColor: theme.surfaceBg }}
           >
             <div
-              className="absolute -right-6 -top-6 w-24 h-24 rounded-full opacity-30 blur-2xl pointer-events-none"
+              className="absolute -right-6 -top-6 w-24 h-24 rounded-full opacity-20 blur-2xl pointer-events-none"
               style={{ background: theme.accent }}
             />
             <motion.span
@@ -132,14 +134,14 @@ export function FloatingGuideModal({
             <button
               type="button"
               onClick={onDismiss}
-              className="p-2 rounded-xl bg-white/90 dark:bg-black/30 text-cc-muted hover:text-cc-primary shrink-0 relative shadow-sm"
+              className="p-2 rounded-xl bg-[var(--cc-surface-solid)] text-cc-muted hover:text-cc-primary shrink-0 relative shadow-sm border border-[var(--cc-border-subtle)]"
               aria-label="Cerrar guía"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
 
-          <div className="px-4 py-3 space-y-3">
+          <div className="px-4 py-3 space-y-3 bg-[var(--cc-surface-solid)]">
             <div className="flex justify-center gap-1.5">
               {Array.from({ length: step.totalSteps }, (_, i) => {
                 const n = i + 1
@@ -166,8 +168,8 @@ export function FloatingGuideModal({
                 className="text-[11px] font-semibold rounded-xl px-3 py-2 border"
                 style={{
                   color: theme.accent,
-                  backgroundColor: theme.accentLight,
-                  borderColor: `${theme.accent}30`,
+                  backgroundColor: theme.surfaceBg,
+                  borderColor: `${theme.accent}40`,
                 }}
               >
                 {step.hint}

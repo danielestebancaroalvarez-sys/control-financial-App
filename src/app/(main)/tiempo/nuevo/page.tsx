@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { redirect } from 'next/navigation'
 import { getMainAppContext } from '@/lib/app/context'
 import { getAuthUser } from '@/lib/auth/session'
@@ -26,16 +27,19 @@ export default async function TiempoNuevoPage({
   ])
 
   return (
-    <TiempoNuevoClient
-      householdId={ctx.household.id}
-      categories={categories}
-      members={members}
-      currentUserId={user!.id}
-      initialDate={params.date}
-      initialUserId={params.user}
-      sleepData={sleepData}
-      taskTemplates={taskTemplates}
-      initialGuide={guide}
-    />
+    <Suspense fallback={null}>
+      <TiempoNuevoClient
+        key={guide ?? 'default'}
+        householdId={ctx.household.id}
+        categories={categories}
+        members={members}
+        currentUserId={user!.id}
+        initialDate={params.date}
+        initialUserId={params.user}
+        sleepData={sleepData}
+        taskTemplates={taskTemplates}
+        initialGuide={guide}
+      />
+    </Suspense>
   )
 }

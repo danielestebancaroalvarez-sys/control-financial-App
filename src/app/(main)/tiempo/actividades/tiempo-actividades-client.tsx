@@ -1,12 +1,13 @@
 'use client'
 
-import { useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useMemo, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Loader2, Pencil, Plus, Sparkles, Trash2 } from 'lucide-react'
 import { CategoryIcon } from '@/components/transactions/category-icon'
 import { TaskAppearancePicker } from '@/components/time/task-appearance-picker'
 import { refreshAssistantProgress } from '@/lib/setup/assistant-actions'
+import { getGuideStepTheme } from '@/lib/setup/guide-step-theme'
 import {
   createTaskTemplate,
   deleteTaskTemplate,
@@ -40,6 +41,8 @@ const emptyForm = (): FormState => ({
   icon: 'package',
 })
 
+const activityTheme = getGuideStepTheme('new')
+
 export function TiempoActividadesClient({
   householdId,
   initialTemplates,
@@ -48,6 +51,8 @@ export function TiempoActividadesClient({
   initialTemplates: TaskTemplate[]
 }) {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const guideNew = searchParams.get('guide') === 'new'
   const [templates, setTemplates] = useState(initialTemplates)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
@@ -69,6 +74,10 @@ export function TiempoActividadesClient({
     setShowForm(true)
     setError(null)
   }
+
+  useEffect(() => {
+    if (guideNew) openCreate()
+  }, [guideNew])
 
   function openEdit(template: TaskTemplate) {
     setEditingId(template.id)
@@ -191,7 +200,7 @@ export function TiempoActividadesClient({
       <div className="flex items-start justify-between gap-3">
         <div>
           <h1 className="text-[20px] font-bold text-cc-primary flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-[#6366F1]" />
+            <Sparkles className="w-5 h-5" style={{ color: activityTheme.accent }} />
             Actividades guardadas
           </h1>
           <p className="text-[12px] text-cc-secondary mt-0.5">
@@ -203,7 +212,8 @@ export function TiempoActividadesClient({
       <button
         type="button"
         onClick={openCreate}
-        className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white text-[13px] font-bold"
+        className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl text-white text-[13px] font-bold"
+        style={{ background: activityTheme.gradient }}
       >
         <Plus className="w-4 h-4" />
         Nueva actividad
@@ -275,7 +285,8 @@ export function TiempoActividadesClient({
               type="button"
               disabled={loading}
               onClick={handleSave}
-              className="flex-1 py-3 rounded-xl bg-[#6366F1] text-white text-[13px] font-bold disabled:opacity-60 flex items-center justify-center gap-2"
+              className="flex-1 py-3 rounded-xl text-white text-[13px] font-bold disabled:opacity-60 flex items-center justify-center gap-2"
+              style={{ background: activityTheme.gradient }}
             >
               {loading && <Loader2 className="w-4 h-4 animate-spin" />}
               Guardar
@@ -327,7 +338,7 @@ export function TiempoActividadesClient({
               <button
                 type="button"
                 onClick={() => openEdit(template)}
-                className="p-2 rounded-xl text-cc-secondary hover:text-[#6366F1]"
+                className="p-2 rounded-xl text-cc-secondary hover:text-[#8B5CF6] transition-colors"
                 aria-label="Editar"
               >
                 <Pencil className="w-4 h-4" />
@@ -351,7 +362,7 @@ export function TiempoActividadesClient({
       )}
 
       <p className="text-center text-[11px] text-cc-muted pb-2">
-        <Link href="/tiempo/tareas" className="text-[#6366F1] font-semibold">
+        <Link href="/tiempo/tareas" className="font-semibold" style={{ color: activityTheme.accent }}>
           ← Volver a tareas
         </Link>
       </p>

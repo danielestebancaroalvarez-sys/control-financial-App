@@ -68,7 +68,7 @@ export function AssistantWelcomeModal({ state }: { state: AssistantState }) {
         aria-label="Cerrar"
         onClick={() => run(() => exploreFreely())}
       />
-      <div className="relative w-full max-w-md rounded-[24px] cc-surface-solid border border-[#EEEEEE] shadow-[0_12px_40px_rgba(0,0,0,0.18)] p-5">
+      <div className="relative w-full max-w-md rounded-[24px] cc-surface-solid border border-[var(--cc-border-subtle)] shadow-[0_12px_40px_rgba(0,0,0,0.25)] p-5">
         <button
           type="button"
           onClick={() => run(() => exploreFreely())}

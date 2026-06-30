@@ -53,4 +53,29 @@ export const TX_TYPE_THEME = {
     savedMessage: 'Gasto guardado',
     savedFixedMessage: 'Gasto fijo programado',
   },
+  subscription: {
+    label: 'Suscripción',
+    fixedLabel: 'Suscripción recurrente',
+    variableLabel: 'Suscripción puntual',
+    variableHint: 'Pago único de una suscripción o servicio digital.',
+    fixedHint:
+      'Se repite cada periodo: Netflix, Spotify, gym, software…',
+    fixedFormHint:
+      'Programa el débito automático para el radar y el presupuesto.',
+    gradient: 'from-[#7E57C2] to-[#9575CD]',
+    solid: 'bg-[#7E57C2]',
+    text: 'text-[#5E35B1] dark:text-[#B39DDB]',
+    ring: 'ring-[#7E57C2]/40',
+    chipActive: 'bg-[#7E57C2] text-white shadow-md',
+    chipIdle:
+      'bg-[#EDE7F6] text-[#5E35B1] border border-[#D1C4E9] dark:bg-[#2d2640] dark:text-[#B39DDB] dark:border-[#7E57C2]/30',
+    cardActive:
+      'border-[#7E57C2] bg-[#EDE7F6] dark:bg-[#2d2640] dark:border-[#9575CD] ring-2 ring-[#7E57C2]/30',
+    cardIdle: 'border-[var(--cc-border)] cc-surface-muted',
+    submit:
+      'bg-gradient-to-r from-[#7E57C2] to-[#9575CD] shadow-lg shadow-[#7E57C2]/30',
+    focus: 'focus:ring-[#7E57C2]/30',
+    savedMessage: 'Suscripción guardada',
+    savedFixedMessage: 'Suscripción programada',
+  },
 } as const
