@@ -10,6 +10,7 @@ import {
 } from '@/lib/finance/payment-reminders'
 import {
   householdHasFinanceData,
+  householdHasTimeData,
 } from '@/lib/setup/assistant-progress'
 import { buildInAppNotifications, type InAppNotification } from './build-notifications'
 import {
@@ -218,5 +219,31 @@ export async function getTimeInAppNotifications(): Promise<InAppNotification[]> 
   const payload = await getTimeActivityReminderPayload()
   if (!payload) return []
 
-  return buildTimeInAppNotifications(payload)
+  const items = buildTimeInAppNotifications(payload)
+  const ctx = await getMainAppContext()
+  if (!ctx) return items
+
+  const supabase = await createClient()
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('assistant_time_status')
+    .eq('id', ctx.user.id)
+    .maybeSingle()
+
+  const status = profile?.assistant_time_status ?? 'unset'
+  const hasData = await householdHasTimeData()
+
+  if ((status === 'unset' || status === 'declined') && !hasData) {
+    items.unshift({
+      id: 'setup-guide-time',
+      module: 'time',
+      type: 'setup-guide',
+      title: 'Configura tu tiempo',
+      body: 'Sigue la guía con flechas: sueño, horario, actividades y tareas.',
+      href: '/tiempo?activateAssistant=time',
+      createdAt: new Date().toISOString(),
+    })
+  }
+
+  return items
 }

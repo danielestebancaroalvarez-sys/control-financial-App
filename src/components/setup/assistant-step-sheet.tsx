@@ -5,17 +5,27 @@ import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { Check, ChevronRight, Sparkles, X } from 'lucide-react'
 import { useIsDark } from '@/hooks/use-is-dark'
-import type { AssistantStep } from '@/lib/setup/assistant-types'
+import type { AssistantModule, AssistantStep } from '@/lib/setup/assistant-types'
 import { resolveTourStepTheme } from '@/lib/setup/tour-step-theme'
 
-const ACCENT = '#00BFA5'
+const MODULE_LABELS: Record<AssistantModule, string> = {
+  finance: 'Finanzas',
+  time: 'Tiempo',
+}
+
+const MODULE_ACCENTS: Record<AssistantModule, string> = {
+  finance: '#00BFA5',
+  time: '#6366F1',
+}
 
 export function AssistantStepSheet({
+  module,
   steps,
   completedCount,
   totalCount,
   onClose,
 }: {
+  module: AssistantModule
   steps: AssistantStep[]
   completedCount: number
   totalCount: number
@@ -28,6 +38,8 @@ export function AssistantStepSheet({
     () => true,
     () => false
   )
+  const accent = MODULE_ACCENTS[module]
+  const label = MODULE_LABELS[module]
   const progress = totalCount > 0 ? (completedCount / totalCount) * 100 : 0
 
   useEffect(() => {
@@ -64,8 +76,8 @@ export function AssistantStepSheet({
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-[11px] font-bold uppercase tracking-wide text-cc-muted flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5" style={{ color: ACCENT }} />
-                Guía de Finanzas
+                <Sparkles className="w-3.5 h-3.5" style={{ color: accent }} />
+                Guía de {label}
               </p>
               <p className="text-[18px] font-bold text-cc-primary mt-1">
                 {completedCount}/{totalCount} pasos
@@ -83,14 +95,14 @@ export function AssistantStepSheet({
           <div className="mt-3 h-2 rounded-full bg-[var(--cc-surface-muted)] overflow-hidden">
             <div
               className="h-full rounded-full transition-all"
-              style={{ width: `${progress}%`, backgroundColor: ACCENT }}
+              style={{ width: `${progress}%`, backgroundColor: accent }}
             />
           </div>
         </div>
 
         {steps.length === 0 ? (
           <p className="px-5 py-6 text-[13px] text-cc-secondary leading-relaxed">
-            El administrador del hogar configura ingresos y gastos fijos.
+            El administrador del hogar configura este módulo.
           </p>
         ) : (
           <ul className="overflow-y-auto px-4 py-3 space-y-2">

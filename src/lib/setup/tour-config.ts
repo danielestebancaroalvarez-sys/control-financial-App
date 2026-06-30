@@ -1,14 +1,18 @@
 import type { DriveStep } from 'driver.js'
-import type { FinanceStepId } from './assistant-types'
+import type { FinanceStepId, TimeStepId } from './assistant-types'
 
-export type TourStepId =
+export type FinanceTourStepId =
   | 'income-fixed'
   | 'expense-fixed'
   | 'subscription'
   | 'savings'
   | 'receipt-scan'
 
-const TOUR_IDS: TourStepId[] = [
+export type TimeTourStepId = 'sleep' | 'time-fixed' | 'activity' | 'task'
+
+export type TourStepId = FinanceTourStepId | TimeTourStepId
+
+const FINANCE_TOUR_IDS: FinanceTourStepId[] = [
   'income-fixed',
   'expense-fixed',
   'subscription',
@@ -16,13 +20,25 @@ const TOUR_IDS: TourStepId[] = [
   'receipt-scan',
 ]
 
+const TIME_TOUR_IDS: TimeTourStepId[] = ['sleep', 'time-fixed', 'activity', 'task']
+
 export function parseTourParam(value: string | null): TourStepId | null {
   if (!value) return null
-  return TOUR_IDS.includes(value as TourStepId) ? (value as TourStepId) : null
+  if (FINANCE_TOUR_IDS.includes(value as FinanceTourStepId)) {
+    return value as FinanceTourStepId
+  }
+  if (TIME_TOUR_IDS.includes(value as TimeTourStepId)) {
+    return value as TimeTourStepId
+  }
+  return null
 }
 
-export function tourIdForFinanceStep(stepId: FinanceStepId): TourStepId {
-  const map: Record<FinanceStepId, TourStepId> = {
+export function isTimeTour(tourId: TourStepId): tourId is TimeTourStepId {
+  return TIME_TOUR_IDS.includes(tourId as TimeTourStepId)
+}
+
+export function tourIdForFinanceStep(stepId: FinanceStepId): FinanceTourStepId {
+  const map: Record<FinanceStepId, FinanceTourStepId> = {
     income: 'income-fixed',
     fixed_expense: 'expense-fixed',
     subscription: 'subscription',
@@ -32,18 +48,24 @@ export function tourIdForFinanceStep(stepId: FinanceStepId): TourStepId {
   return map[stepId]
 }
 
-export function financeStepForTourId(tourId: TourStepId): FinanceStepId {
-  const map: Record<TourStepId, FinanceStepId> = {
-    'income-fixed': 'income',
-    'expense-fixed': 'fixed_expense',
-    subscription: 'subscription',
-    savings: 'savings',
-    'receipt-scan': 'receipt_scan',
+export function tourIdForTimeStep(stepId: TimeStepId): TimeTourStepId {
+  const map: Record<TimeStepId, TimeTourStepId> = {
+    sleep: 'sleep',
+    fixed_time: 'time-fixed',
+    activity: 'activity',
+    first_task: 'task',
   }
-  return map[tourId]
+  return map[stepId]
 }
 
 export function getTourDriverSteps(tourId: TourStepId): DriveStep[] {
+  if (isTimeTour(tourId)) {
+    return getTimeTourDriverSteps(tourId)
+  }
+  return getFinanceTourDriverSteps(tourId)
+}
+
+function getFinanceTourDriverSteps(tourId: FinanceTourStepId): DriveStep[] {
   switch (tourId) {
     case 'income-fixed':
       return [
@@ -208,6 +230,121 @@ export function getTourDriverSteps(tourId: TourStepId): DriveStep[] {
             title: 'Escanear recibo',
             description:
               'Toma una foto del recibo: la IA extrae productos y el total.',
+            side: 'top',
+            align: 'center',
+          },
+        },
+      ]
+    default:
+      return []
+  }
+}
+
+function getTimeTourDriverSteps(tourId: TimeTourStepId): DriveStep[] {
+  switch (tourId) {
+    case 'sleep':
+      return [
+        {
+          element: '[data-tour="kind-sleep"]',
+          popover: {
+            title: 'Sueño',
+            description: 'Elige Sueño para registrar cuándo dormiste.',
+            side: 'bottom',
+            align: 'start',
+          },
+        },
+        {
+          element: '[data-tour="sleep-tracker"]',
+          popover: {
+            title: 'Registra tu sueño',
+            description:
+              'Pulsa "Estoy durmiendo" al acostarte o usa el registro manual con horas de inicio y fin.',
+            side: 'top',
+            align: 'center',
+          },
+        },
+      ]
+    case 'time-fixed':
+      return [
+        {
+          element: '[data-tour="kind-time"]',
+          popover: {
+            title: 'Tiempo',
+            description: 'Registra bloques de trabajo, estudio u otras actividades.',
+            side: 'bottom',
+            align: 'start',
+          },
+        },
+        {
+          element: '[data-tour="nature-fixed"]',
+          popover: {
+            title: 'Bloque fijo',
+            description:
+              'Programa actividades que se repiten cada semana en tu horario.',
+            side: 'bottom',
+            align: 'start',
+          },
+        },
+        {
+          element: '[data-tour="time-category-picker"]',
+          popover: {
+            title: 'Categoría',
+            description: 'Elige el área: trabajo, hogar, ejercicio, etc.',
+            side: 'bottom',
+            align: 'start',
+          },
+        },
+        {
+          element: '[data-tour="time-form"]',
+          popover: {
+            title: 'Horario y guardar',
+            description:
+              'Indica nombre, hora de inicio y fin, luego guarda el bloque.',
+            side: 'top',
+            align: 'center',
+          },
+        },
+      ]
+    case 'activity':
+      return [
+        {
+          element: '[data-tour="new-activity"]',
+          popover: {
+            title: 'Nueva actividad',
+            description:
+              'Las actividades guardadas reutilizan título y duración en tareas futuras.',
+            side: 'bottom',
+            align: 'center',
+          },
+        },
+        {
+          element: '[data-tour="activity-form"]',
+          popover: {
+            title: 'Define la actividad',
+            description:
+              'Nombre, duración y dificultad. Guarda para usarla en tareas.',
+            side: 'top',
+            align: 'center',
+          },
+        },
+      ]
+    case 'task':
+      return [
+        {
+          element: '[data-tour="kind-task"]',
+          popover: {
+            title: 'Tarea',
+            description: 'Crea una tarea del hogar para ti o tu pareja.',
+            side: 'bottom',
+            align: 'start',
+          },
+        },
+        {
+          element: '[data-tour="time-form"]',
+          popover: {
+            title: 'Detalles de la tarea',
+            description:
+              'Nombre, duración estimada y opcionalmente fecha límite. Luego guarda.',
             side: 'top',
             align: 'center',
           },

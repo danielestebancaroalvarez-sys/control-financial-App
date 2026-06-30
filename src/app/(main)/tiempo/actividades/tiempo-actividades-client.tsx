@@ -1,12 +1,15 @@
 'use client'
 
-import { useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useMemo, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Loader2, Pencil, Plus, Sparkles, Trash2 } from 'lucide-react'
 import { CategoryIcon } from '@/components/transactions/category-icon'
 import { TaskAppearancePicker } from '@/components/time/task-appearance-picker'
 import { TIME_THEME } from '@/lib/time/theme'
+import { refreshAssistantProgress } from '@/lib/setup/assistant-actions'
+import { getNextTimeStepHref } from '@/lib/setup/tour-advance'
+import { parseTourParam } from '@/lib/setup/tour-config'
 import {
   createTaskTemplate,
   deleteTaskTemplate,
@@ -53,6 +56,8 @@ export function TiempoActividadesClient({
   initialTemplates: TaskTemplate[]
 }) {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const isActivityTour = parseTourParam(searchParams.get('tour')) === 'activity'
   const [templates, setTemplates] = useState(initialTemplates)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
@@ -60,6 +65,22 @@ export function TiempoActividadesClient({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [removingId, setRemovingId] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!isActivityTour) return
+    setEditingId(null)
+    setForm(emptyForm())
+    setShowForm(true)
+    setError(null)
+  }, [isActivityTour])
+
+  async function handleTourSave() {
+    await refreshAssistantProgress('time')
+    const next = await getNextTimeStepHref()
+    router.refresh()
+    closeForm()
+    if (next) router.push(next)
+  }
 
   const isEditing = editingId !== null
 
@@ -176,7 +197,8 @@ export function TiempoActividadesClient({
 
     closeForm()
     setLoading(false)
-    router.refresh()
+    if (isActivityTour) await handleTourSave()
+    else router.refresh()
   }
 
   async function handleDelete(id: string) {
@@ -206,6 +228,7 @@ export function TiempoActividadesClient({
 
       <button
         type="button"
+        data-tour="new-activity"
         onClick={openCreate}
         className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl text-white text-[13px] font-bold"
         style={{ background: activityTheme.gradient }}
@@ -215,7 +238,10 @@ export function TiempoActividadesClient({
       </button>
 
       {showForm && (
-        <section className="cc-surface rounded-[24px] p-4 space-y-3">
+        <section
+          className="cc-surface rounded-[24px] p-4 space-y-3"
+          data-tour="activity-form"
+        >
           <h2 className="text-[15px] font-bold text-cc-primary">
             {isEditing ? 'Editar actividad' : 'Nueva actividad'}
           </h2>

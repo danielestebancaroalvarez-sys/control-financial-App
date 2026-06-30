@@ -1,4 +1,4 @@
-import type { FinanceStepId } from './assistant-types'
+import type { SetupStepId } from './assistant-types'
 
 export type TourStepTheme = {
   accent: string
@@ -13,7 +13,7 @@ export type ResolvedTourStepTheme = TourStepTheme & {
   surfaceBg: string
 }
 
-export const TOUR_STEP_THEMES: Record<FinanceStepId, TourStepTheme> = {
+export const TOUR_STEP_THEMES: Record<SetupStepId, TourStepTheme> = {
   income: {
     accent: '#00BFA5',
     accentLight: '#E0F2F1',
@@ -54,11 +54,45 @@ export const TOUR_STEP_THEMES: Record<FinanceStepId, TourStepTheme> = {
     border: '#00BFA550',
     glow: '0 12px 40px rgba(0, 191, 165, 0.35)',
   },
+  sleep: {
+    accent: '#4F46E5',
+    accentLight: '#E0E7FF',
+    accentLightDark: '#1e1b4b',
+    gradient: 'linear-gradient(135deg, #4F46E5 0%, #6366F1 100%)',
+    border: '#4F46E550',
+    glow: '0 12px 40px rgba(79, 70, 229, 0.35)',
+  },
+  fixed_time: {
+    accent: '#6366F1',
+    accentLight: '#EEF2FF',
+    accentLightDark: '#1e1b4b',
+    gradient: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)',
+    border: '#6366F150',
+    glow: '0 12px 40px rgba(99, 102, 241, 0.35)',
+  },
+  activity: {
+    accent: '#8B5CF6',
+    accentLight: '#F3E8FF',
+    accentLightDark: '#2d2640',
+    gradient: 'linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%)',
+    border: '#8B5CF650',
+    glow: '0 12px 40px rgba(139, 92, 246, 0.35)',
+  },
+  first_task: {
+    accent: '#6366F1',
+    accentLight: '#EEF2FF',
+    accentLightDark: '#1e1b4b',
+    gradient: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)',
+    border: '#6366F150',
+    glow: '0 12px 40px rgba(99, 102, 241, 0.35)',
+  },
 }
 
+const DEFAULT_THEME = TOUR_STEP_THEMES.income
+
 export function getTourStepTheme(stepId: string): TourStepTheme {
-  const key = stepId as FinanceStepId
-  return TOUR_STEP_THEMES[key] ?? TOUR_STEP_THEMES.income
+  const key = stepId as SetupStepId
+  return TOUR_STEP_THEMES[key] ?? DEFAULT_THEME
 }
 
 export function resolveTourStepTheme(

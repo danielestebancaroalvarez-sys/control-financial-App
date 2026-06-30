@@ -9,7 +9,9 @@ export type FinanceStepId =
   | 'savings'
   | 'receipt_scan'
 
-export type TimeStepId = never
+export type TimeStepId = 'sleep' | 'fixed_time' | 'activity' | 'first_task'
+
+export type SetupStepId = FinanceStepId | TimeStepId
 
 export type AssistantStep = {
   id: string
@@ -38,5 +40,5 @@ export type AssistantState = {
 export function shouldShowWelcomeCard(state: AssistantState): boolean {
   if (state.welcomeSeen) return false
   if (!state.isOwner) return false
-  return state.finance.status === 'unset'
+  return state.finance.status === 'unset' || state.time.status === 'unset'
 }

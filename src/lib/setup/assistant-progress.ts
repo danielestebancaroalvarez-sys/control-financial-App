@@ -6,8 +6,9 @@ import type {
   AssistantStep,
   FinanceStepId,
   ModuleAssistantState,
+  TimeStepId,
 } from './assistant-types'
-import { tourIdForFinanceStep } from './tour-config'
+import { tourIdForFinanceStep, tourIdForTimeStep } from './tour-config'
 
 async function getMembershipRole(
   householdId: string,
@@ -93,10 +94,16 @@ async function financeProgressData(householdId: string) {
   }
 }
 
-function tourHref(stepId: FinanceStepId): string {
+function financeTourHref(stepId: FinanceStepId): string {
   const tourId = tourIdForFinanceStep(stepId)
   if (stepId === 'savings') return `/ahorros?tour=${tourId}`
   return `/nuevo?tour=${tourId}`
+}
+
+function timeTourHref(stepId: TimeStepId): string {
+  const tourId = tourIdForTimeStep(stepId)
+  if (stepId === 'activity') return `/tiempo/actividades?tour=${tourId}`
+  return `/tiempo/nuevo?tour=${tourId}`
 }
 
 function buildFinanceSteps(
@@ -110,35 +117,35 @@ function buildFinanceSteps(
       id: 'income',
       label: 'Ingreso fijo',
       description: 'Salario u otros ingresos recurrentes.',
-      href: tourHref('income'),
+      href: financeTourHref('income'),
       completed: completed.income,
     },
     {
       id: 'fixed_expense',
       label: 'Gasto fijo',
       description: 'Arriendo, servicios u otros pagos regulares.',
-      href: tourHref('fixed_expense'),
+      href: financeTourHref('fixed_expense'),
       completed: completed.fixed_expense,
     },
     {
       id: 'subscription',
       label: 'Suscripción',
       description: 'Netflix, Spotify y otros débitos automáticos.',
-      href: tourHref('subscription'),
+      href: financeTourHref('subscription'),
       completed: completed.subscription,
     },
     {
       id: 'savings',
       label: 'Meta de ahorro',
       description: 'Define un objetivo de ahorro para el hogar.',
-      href: tourHref('savings'),
+      href: financeTourHref('savings'),
       completed: completed.savings,
     },
     {
       id: 'receipt_scan',
       label: 'Escanear recibo',
       description: 'Escanea un recibo de Mercado con IA.',
-      href: tourHref('receipt_scan'),
+      href: financeTourHref('receipt_scan'),
       completed: completed.receipt_scan,
     },
   ]
@@ -191,13 +198,126 @@ export async function getFinanceModuleProgress(
 }
 
 export async function getTimeModuleProgress(): Promise<ModuleAssistantState> {
+  const user = await getAuthUser()
+  const household = await getUserHousehold()
+  if (!user || !household) {
+    return {
+      status: 'unset',
+      steps: [],
+      completedCount: 0,
+      totalCount: 0,
+      requiredTotal: 0,
+    }
+  }
+
+  const isOwner = await getMembershipRole(household.id, user.id) === 'owner'
+  if (!isOwner) {
+    return {
+      status: 'unset',
+      steps: [],
+      completedCount: 0,
+      totalCount: 0,
+      requiredTotal: 0,
+    }
+  }
+
+  const data = await timeProgressData(household.id, user.id)
+
+  const completed: Record<TimeStepId, boolean> = {
+    sleep: data.hasSleep,
+    fixed_time: data.hasFixedTime,
+    activity: data.templateCount > 0,
+    first_task: data.taskCount > 0,
+  }
+
+  const steps = buildTimeSteps(completed)
+  const summary = summarizeSteps(steps)
+
   return {
     status: 'unset',
-    steps: [],
-    completedCount: 0,
-    totalCount: 0,
-    requiredTotal: 0,
+    steps,
+    ...summary,
   }
+}
+
+async function timeProgressData(householdId: string, userId: string) {
+  const supabase = await createClient()
+
+  const [templatesRes, tasksRes, sleepSessionsRes, sleepBlocksRes] =
+    await Promise.all([
+      supabase
+        .from('household_task_templates')
+        .select('id', { count: 'exact', head: true })
+        .eq('household_id', householdId),
+      supabase
+        .from('household_tasks')
+        .select('id', { count: 'exact', head: true })
+        .eq('household_id', householdId)
+        .in('status', ['pending', 'done']),
+      supabase
+        .from('sleep_sessions')
+        .select('id')
+        .eq('household_id', householdId)
+        .eq('user_id', userId)
+        .not('ended_at', 'is', null)
+        .limit(1),
+      supabase
+        .from('time_blocks')
+        .select('id, time_categories!inner ( name )')
+        .eq('household_id', householdId)
+        .limit(20),
+    ])
+
+  let hasSleepBlock = false
+  let hasFixedTime = false
+
+  for (const row of sleepBlocksRes.data ?? []) {
+    const cat = Array.isArray(row.time_categories)
+      ? row.time_categories[0]
+      : row.time_categories
+    if (cat?.name === 'Sueño') hasSleepBlock = true
+    else hasFixedTime = true
+  }
+
+  return {
+    templateCount: templatesRes.count ?? 0,
+    taskCount: tasksRes.count ?? 0,
+    hasSleep: (sleepSessionsRes.data?.length ?? 0) > 0 || hasSleepBlock,
+    hasFixedTime,
+  }
+}
+
+function buildTimeSteps(completed: Record<TimeStepId, boolean>): AssistantStep[] {
+  return [
+    {
+      id: 'sleep',
+      label: 'Registro de sueño',
+      description: 'Configura o registra tu primer sueño.',
+      href: timeTourHref('sleep'),
+      completed: completed.sleep,
+    },
+    {
+      id: 'fixed_time',
+      label: 'Tiempo fijo',
+      description: 'Programa un bloque recurrente en tu horario.',
+      href: timeTourHref('fixed_time'),
+      completed: completed.fixed_time,
+    },
+    {
+      id: 'activity',
+      label: 'Actividad guardada',
+      description: 'Plantillas reutilizables para tareas frecuentes.',
+      href: timeTourHref('activity'),
+      completed: completed.activity,
+    },
+    {
+      id: 'first_task',
+      label: 'Primera tarea',
+      description: 'Crea una tarea del hogar.',
+      href: timeTourHref('first_task'),
+      completed: completed.first_task,
+    },
+  ]
 }
 
 export async function householdHasFinanceData(): Promise<boolean> {
@@ -216,7 +336,17 @@ export async function householdHasFinanceData(): Promise<boolean> {
 }
 
 export async function householdHasTimeData(): Promise<boolean> {
-  return true
+  const user = await getAuthUser()
+  const household = await getUserHousehold()
+  if (!user || !household) return true
+
+  const data = await timeProgressData(household.id, user.id)
+  return (
+    data.templateCount > 0 ||
+    data.taskCount > 0 ||
+    data.hasSleep ||
+    data.hasFixedTime
+  )
 }
 
 export async function getIsHouseholdOwner(): Promise<boolean> {
@@ -228,9 +358,11 @@ export async function getIsHouseholdOwner(): Promise<boolean> {
 }
 
 export async function isModuleSetupComplete(module: AssistantModule): Promise<boolean> {
-  if (module === 'time') return true
-
   const isOwner = await getIsHouseholdOwner()
+  if (module === 'time') {
+    const progress = await getTimeModuleProgress()
+    return progress.completedCount >= progress.requiredTotal
+  }
   const progress = await getFinanceModuleProgress(isOwner)
   return progress.completedCount >= progress.requiredTotal
 }

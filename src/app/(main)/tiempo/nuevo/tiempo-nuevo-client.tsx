@@ -1,10 +1,13 @@
 'use client'
 
-import { useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useMemo, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { CalendarClock, Check, Clock, ListTodo, Loader2, Moon, Repeat } from 'lucide-react'
 import { CategoryIcon } from '@/components/transactions/category-icon'
 import { SleepTracker } from '@/components/time/sleep-tracker'
+import { refreshAssistantProgress } from '@/lib/setup/assistant-actions'
+import { getNextTimeStepHref } from '@/lib/setup/tour-advance'
+import { parseTourParam } from '@/lib/setup/tour-config'
 import { FormField, FormSection } from '@/components/time/form-field'
 import { TaskAppearancePicker } from '@/components/time/task-appearance-picker'
 import {
@@ -37,6 +40,26 @@ type EntryNature = 'fixed' | 'variable'
 
 const inputClass = `w-full px-4 py-3 rounded-xl cc-input text-[14px] outline-none ring-2 ring-transparent ${TIME_THEME.focus}`
 
+type TimeTourPreset = {
+  kind: EntryKind
+  nature: EntryNature
+}
+
+function getTimeTourPreset(tour: string | null): TimeTourPreset | null {
+  const tourId = parseTourParam(tour)
+  if (!tourId) return null
+  switch (tourId) {
+    case 'sleep':
+      return { kind: 'sleep', nature: 'variable' }
+    case 'time-fixed':
+      return { kind: 'time', nature: 'fixed' }
+    case 'task':
+      return { kind: 'task', nature: 'variable' }
+    default:
+      return null
+  }
+}
+
 export function TiempoNuevoClient({
   householdId,
   categories,
@@ -57,8 +80,13 @@ export function TiempoNuevoClient({
   taskTemplates?: TaskTemplate[]
 }) {
   const router = useRouter()
-  const [kind, setKind] = useState<EntryKind>('time')
-  const [nature, setNature] = useState<EntryNature>('variable')
+  const searchParams = useSearchParams()
+  const tourParam = searchParams.get('tour')
+  const preset = getTimeTourPreset(tourParam)
+  const tourId = parseTourParam(tourParam)
+
+  const [kind, setKind] = useState<EntryKind>(preset?.kind ?? 'time')
+  const [nature, setNature] = useState<EntryNature>(preset?.nature ?? 'variable')
   const [categoryId, setCategoryId] = useState('')
   const [title, setTitle] = useState('')
   const [startTime, setStartTime] = useState('09:00')
@@ -78,6 +106,25 @@ export function TiempoNuevoClient({
   const [selectedTemplateId, setSelectedTemplateId] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const next = getTimeTourPreset(searchParams.get('tour'))
+    if (!next) return
+    setKind(next.kind)
+    setNature(next.nature)
+  }, [searchParams])
+
+  const isSleepTour = tourId === 'sleep'
+  const isFixedTimeTour = tourId === 'time-fixed'
+  const isTaskTour = tourId === 'task'
+
+  async function handleTourSave() {
+    if (!tourId) return
+    await refreshAssistantProgress('time')
+    const next = await getNextTimeStepHref()
+    router.refresh()
+    if (next) router.push(next)
+  }
 
   const selectedCategory = categories.find(
     c => c.id === (categoryId || categories[0]?.id)
@@ -147,7 +194,8 @@ export function TiempoNuevoClient({
         return
       }
       setLoading(false)
-      router.push('/tiempo/tareas')
+      if (isTaskTour) await handleTourSave()
+      else router.push('/tiempo/tareas')
       router.refresh()
       return
     }
@@ -182,7 +230,8 @@ export function TiempoNuevoClient({
         return
       }
       setLoading(false)
-      router.push('/tiempo/horario')
+      if (isFixedTimeTour) await handleTourSave()
+      else router.push('/tiempo/horario')
       router.refresh()
       return
     }
@@ -217,6 +266,7 @@ export function TiempoNuevoClient({
         <div className="grid grid-cols-3 gap-2">
           <button
             type="button"
+            data-tour="kind-time"
             onClick={() => setKind('time')}
             className={`rounded-2xl border-2 p-3 text-left ${
               kind === 'time' ? TIME_THEME.cardActive : TIME_THEME.cardIdle
@@ -228,6 +278,7 @@ export function TiempoNuevoClient({
           </button>
           <button
             type="button"
+            data-tour="kind-sleep"
             onClick={() => setKind('sleep')}
             className={`rounded-2xl border-2 p-3 text-left ${
               kind === 'sleep' ? TIME_THEME.cardActive : TIME_THEME.cardIdle
@@ -239,6 +290,7 @@ export function TiempoNuevoClient({
           </button>
           <button
             type="button"
+            data-tour="kind-task"
             onClick={() => setKind('task')}
             className={`rounded-2xl border-2 p-3 text-left ${
               kind === 'task' ? TIME_THEME.cardActive : TIME_THEME.cardIdle
@@ -256,7 +308,9 @@ export function TiempoNuevoClient({
           householdId={householdId}
           data={sleepData}
           variant="embedded"
-          onActionSuccess={() => {}}
+          onActionSuccess={() => {
+            if (isSleepTour) void handleTourSave()
+          }}
         />
       )}
 
@@ -268,6 +322,7 @@ export function TiempoNuevoClient({
           <div className="grid grid-cols-1 gap-2">
             <button
               type="button"
+              data-tour="nature-variable"
               onClick={() => setNature('variable')}
               className={`flex items-center gap-3 rounded-2xl border-2 p-3 text-left ${nature === 'variable' ? TIME_THEME.cardActive : TIME_THEME.cardIdle}`}
             >
@@ -279,6 +334,7 @@ export function TiempoNuevoClient({
             </button>
             <button
               type="button"
+              data-tour="nature-fixed"
               onClick={() => setNature('fixed')}
               className={`flex items-center gap-3 rounded-2xl border-2 p-3 text-left ${nature === 'fixed' ? TIME_THEME.cardActive : TIME_THEME.cardIdle}`}
             >
@@ -293,10 +349,13 @@ export function TiempoNuevoClient({
       )}
 
       {kind !== 'sleep' && (
-      <form onSubmit={handleSubmit} className="cc-surface rounded-[24px] p-4 space-y-4">
+      <form onSubmit={handleSubmit} className="cc-surface rounded-[24px] p-4 space-y-4" data-tour="time-form">
         {kind === 'time' && (
           <FormSection title="Categoría" description="Clasifica el tiempo para ver estadísticas por área.">
-            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none -mx-1 px-1">
+            <div
+              data-tour="time-category-picker"
+              className="flex gap-2 overflow-x-auto pb-1 scrollbar-none -mx-1 px-1"
+            >
               {categories.map(cat => {
                 const active = (categoryId || categories[0]?.id) === cat.id
                 return (
@@ -573,6 +632,7 @@ export function TiempoNuevoClient({
 
         <button
           type="submit"
+          data-tour="submit-time"
           disabled={loading}
           className={`w-full py-3.5 rounded-2xl text-white text-[14px] font-bold disabled:opacity-60 flex items-center justify-center gap-2 ${TIME_THEME.submit}`}
         >

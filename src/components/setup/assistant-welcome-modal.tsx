@@ -3,19 +3,22 @@
 import { useEffect, useState, useTransition } from 'react'
 import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
-import { Sparkles, Wallet, X } from 'lucide-react'
+import { Clock, Sparkles, Wallet, X } from 'lucide-react'
 import {
   activateAssistant,
   exploreFreely,
 } from '@/lib/setup/assistant-actions'
-import type { AssistantState } from '@/lib/setup/assistant-types'
+import type { AssistantModule, AssistantState } from '@/lib/setup/assistant-types'
 import { shouldShowWelcomeCard } from '@/lib/setup/assistant-types'
+import { getNextModuleStepHref } from '@/lib/setup/tour-advance'
 import { AssistantStepSheet } from './assistant-step-sheet'
 
 export function AssistantWelcomeModal({ state }: { state: AssistantState }) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
-  const [stepSheetOpen, setStepSheetOpen] = useState(false)
+  const [stepSheetModule, setStepSheetModule] = useState<AssistantModule | null>(
+    null
+  )
   const [pending, startTransition] = useTransition()
   const [mounted, setMounted] = useState(false)
 
@@ -26,25 +29,20 @@ export function AssistantWelcomeModal({ state }: { state: AssistantState }) {
     }
   }, [state])
 
-  function firstIncompleteHref(): string | null {
-    const step = state.finance.steps.find(s => !s.completed)
-    return step?.href ?? null
-  }
-
   function run(
     action: () => Promise<{ error?: string }>,
-    options?: { openSheet?: boolean; startTour?: boolean }
+    options?: { module?: AssistantModule; openSheet?: boolean; startTour?: boolean }
   ) {
     startTransition(async () => {
       const result = await action()
       if (result.error) return
       setOpen(false)
-      if (options?.openSheet) {
-        setStepSheetOpen(true)
+      if (options?.openSheet && options.module) {
+        setStepSheetModule(options.module)
         return
       }
-      if (options?.startTour) {
-        const href = firstIncompleteHref()
+      if (options?.startTour && options.module) {
+        const href = await getNextModuleStepHref(options.module)
         if (href) router.push(href)
       }
       router.refresh()
@@ -53,18 +51,26 @@ export function AssistantWelcomeModal({ state }: { state: AssistantState }) {
 
   if (!mounted) return null
 
-  if (stepSheetOpen && state.finance.steps.length > 0) {
-    return (
-      <AssistantStepSheet
-        steps={state.finance.steps}
-        completedCount={state.finance.completedCount}
-        totalCount={state.finance.totalCount}
-        onClose={() => setStepSheetOpen(false)}
-      />
-    )
+  if (stepSheetModule) {
+    const moduleState =
+      stepSheetModule === 'finance' ? state.finance : state.time
+    if (moduleState.steps.length > 0) {
+      return (
+        <AssistantStepSheet
+          module={stepSheetModule}
+          steps={moduleState.steps}
+          completedCount={moduleState.completedCount}
+          totalCount={moduleState.totalCount}
+          onClose={() => setStepSheetModule(null)}
+        />
+      )
+    }
   }
 
   if (!open) return null
+
+  const showFinance = state.finance.status === 'unset'
+  const showTime = state.time.status === 'unset'
 
   const modal = (
     <div className="fixed inset-0 z-[90] flex items-end justify-center p-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
@@ -90,37 +96,77 @@ export function AssistantWelcomeModal({ state }: { state: AssistantState }) {
           </div>
           <div className="min-w-0">
             <h2 className="text-[16px] font-bold text-cc-primary">
-              Configura tu hogar en 5 pasos
+              ¿Quieres que te guiemos?
             </h2>
             <p className="text-[12px] text-cc-secondary mt-1 leading-relaxed">
-              Te guiamos con flechas sobre la app: ingresos fijos, gastos,
-              suscripciones, ahorros y escaneo de recibos.
+              Flechas sobre la app para configurar Finanzas y Tiempo paso a paso.
             </p>
           </div>
         </div>
 
         <div className="mt-4 grid gap-2">
-          <button
-            type="button"
-            disabled={pending}
-            onClick={() =>
-              run(() => activateAssistant('finance'), { startTour: true })
-            }
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-[#00BFA5] text-white text-[13px] font-bold disabled:opacity-60"
-          >
-            <Wallet className="w-4 h-4" />
-            Empezar guía
-          </button>
-          <button
-            type="button"
-            disabled={pending}
-            onClick={() =>
-              run(() => activateAssistant('finance'), { openSheet: true })
-            }
-            className="w-full py-2.5 rounded-2xl text-[12px] font-semibold text-cc-secondary hover:text-cc-primary cc-surface-muted"
-          >
-            Ver lista de pasos
-          </button>
+          {showFinance && (
+            <>
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() =>
+                  run(() => activateAssistant('finance'), {
+                    module: 'finance',
+                    startTour: true,
+                  })
+                }
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-[#00BFA5] text-white text-[13px] font-bold disabled:opacity-60"
+              >
+                <Wallet className="w-4 h-4" />
+                Guía de Finanzas (5 pasos)
+              </button>
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() =>
+                  run(() => activateAssistant('finance'), {
+                    module: 'finance',
+                    openSheet: true,
+                  })
+                }
+                className="w-full py-2 rounded-2xl text-[11px] font-semibold text-cc-secondary hover:text-cc-primary cc-surface-muted"
+              >
+                Ver pasos de Finanzas
+              </button>
+            </>
+          )}
+          {showTime && (
+            <>
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() =>
+                  run(() => activateAssistant('time'), {
+                    module: 'time',
+                    startTour: true,
+                  })
+                }
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-[#6366F1] text-white text-[13px] font-bold disabled:opacity-60"
+              >
+                <Clock className="w-4 h-4" />
+                Guía de Tiempo (4 pasos)
+              </button>
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() =>
+                  run(() => activateAssistant('time'), {
+                    module: 'time',
+                    openSheet: true,
+                  })
+                }
+                className="w-full py-2 rounded-2xl text-[11px] font-semibold text-cc-secondary hover:text-cc-primary cc-surface-muted"
+              >
+                Ver pasos de Tiempo
+              </button>
+            </>
+          )}
           <button
             type="button"
             disabled={pending}

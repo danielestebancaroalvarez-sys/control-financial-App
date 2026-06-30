@@ -73,6 +73,7 @@ export function SleepTracker({
 
   return (
     <section
+      data-tour="sleep-tracker"
       className={
         isEmbedded
           ? 'cc-surface rounded-[24px] p-4 space-y-3'
