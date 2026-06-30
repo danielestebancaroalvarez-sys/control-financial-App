@@ -29,7 +29,6 @@ export default async function TiempoNuevoPage({
   return (
     <Suspense fallback={null}>
       <TiempoNuevoClient
-        key={guide ?? 'default'}
         householdId={ctx.household.id}
         categories={categories}
         members={members}

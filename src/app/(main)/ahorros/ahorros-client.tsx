@@ -36,6 +36,7 @@ import {
   type SavingsCategoryId,
 } from '@/lib/finance/savings-categories'
 import { SAVINGS_ACCENT } from '@/lib/setup/guide-step-theme'
+import { useScrollOnGuideDismiss } from '@/hooks/use-persisted-guide'
 import type { SavingsGoal, SavingsGoalInput } from '@/lib/finance/types'
 import type { CurrencyCode } from '@/lib/household/types'
 
@@ -214,6 +215,7 @@ function SavingsGoalForm({
 
   return (
     <form
+      id="guide-savings-form"
       onSubmit={handleSubmit}
       className="cc-surface rounded-[24px] p-5 space-y-3"
     >
@@ -481,15 +483,22 @@ export function AhorrosClient({
   const router = useRouter()
   const searchParams = useSearchParams()
   const guideSavings = searchParams.get('guide') === 'savings'
+  const [persistedSavingsGuide, setPersistedSavingsGuide] = useState(guideSavings)
   const [mode, setMode] = useState<'list' | 'create' | 'edit'>('list')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
   useEffect(() => {
-    if (guideSavings && goals.length === 0) {
+    if (guideSavings) setPersistedSavingsGuide(true)
+  }, [guideSavings])
+
+  useScrollOnGuideDismiss('guide-savings-form')
+
+  useEffect(() => {
+    if (persistedSavingsGuide && goals.length === 0) {
       setMode('create')
     }
-  }, [guideSavings, goals.length])
+  }, [persistedSavingsGuide, goals.length])
 
   const fmt = (n: number) => formatMoney(n, currency)
   const editingGoal = goals.find(g => g.id === editingId)

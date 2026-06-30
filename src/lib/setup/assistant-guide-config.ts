@@ -45,7 +45,7 @@ export const GUIDE_STEPS: Record<GuideStepId, GuideStepConfig> = {
     totalSteps: 5,
     title: 'Registra tu ingreso fijo',
     description: 'Completa el formulario con categoría, monto, frecuencia y modo de pago.',
-    hint: 'El tipo Ingreso y la forma Fijo ya están preseleccionados.',
+    hint: 'Al continuar verás Ingreso + Fijo ya seleccionados. Completa el formulario abajo.',
   },
   fixed: {
     id: 'fixed',
@@ -54,7 +54,7 @@ export const GUIDE_STEPS: Record<GuideStepId, GuideStepConfig> = {
     totalSteps: 5,
     title: 'Añade un gasto fijo',
     description: 'Arriendo, servicios u otros pagos regulares del hogar.',
-    hint: 'El tipo Gasto y la forma Fijo ya están preseleccionados.',
+    hint: 'Al continuar verás Gasto + Fijo seleccionados. Elige categoría y monto.',
   },
   subscription: {
     id: 'subscription',
@@ -63,7 +63,7 @@ export const GUIDE_STEPS: Record<GuideStepId, GuideStepConfig> = {
     totalSteps: 5,
     title: 'Registra una suscripción',
     description: 'Netflix, Spotify y otros débitos automáticos.',
-    hint: 'La categoría Suscripciones está preseleccionada.',
+    hint: 'Al continuar verás Suscripción + Fijo en morado. Categoría Suscripciones preseleccionada.',
   },
   savings: {
     id: 'savings',

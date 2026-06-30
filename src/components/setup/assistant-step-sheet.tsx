@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Check, ChevronRight, Sparkles, X } from 'lucide-react'
 import { useIsDark } from '@/hooks/use-is-dark'
 import type { AssistantModule, AssistantStep } from '@/lib/setup/assistant-types'
@@ -32,6 +33,7 @@ export function AssistantStepSheet({
   onClose: () => void
 }) {
   const [mounted, setMounted] = useState(false)
+  const router = useRouter()
   const isDark = useIsDark()
   const accent = MODULE_ACCENTS[module]
   const label = MODULE_LABELS[module]
@@ -45,6 +47,12 @@ export function AssistantStepSheet({
       document.body.style.overflow = prev
     }
   }, [])
+
+  useEffect(() => {
+    for (const step of steps) {
+      if (!step.completed) router.prefetch(step.href)
+    }
+  }, [steps, router])
 
   if (!mounted) return null
 

@@ -8,6 +8,7 @@ import { CategoryIcon } from '@/components/transactions/category-icon'
 import { TaskAppearancePicker } from '@/components/time/task-appearance-picker'
 import { refreshAssistantProgress } from '@/lib/setup/assistant-actions'
 import { getGuideStepTheme } from '@/lib/setup/guide-step-theme'
+import { useScrollOnGuideDismiss } from '@/hooks/use-persisted-guide'
 import {
   createTaskTemplate,
   deleteTaskTemplate,
@@ -53,6 +54,7 @@ export function TiempoActividadesClient({
   const router = useRouter()
   const searchParams = useSearchParams()
   const guideNew = searchParams.get('guide') === 'new'
+  const [guideActive, setGuideActive] = useState(guideNew)
   const [templates, setTemplates] = useState(initialTemplates)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
@@ -76,8 +78,13 @@ export function TiempoActividadesClient({
   }
 
   useEffect(() => {
-    if (guideNew) openCreate()
+    if (guideNew) {
+      setGuideActive(true)
+      openCreate()
+    }
   }, [guideNew])
+
+  useScrollOnGuideDismiss('guide-activity-form')
 
   function openEdit(template: TaskTemplate) {
     setEditingId(template.id)
@@ -220,7 +227,7 @@ export function TiempoActividadesClient({
       </button>
 
       {showForm && (
-        <section className="cc-surface rounded-[24px] p-4 space-y-3">
+        <section id="guide-activity-form" className="cc-surface rounded-[24px] p-4 space-y-3">
           <h2 className="text-[15px] font-bold text-cc-primary">
             {isEditing ? 'Editar actividad' : 'Nueva actividad'}
           </h2>

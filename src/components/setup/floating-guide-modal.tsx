@@ -1,8 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useLayoutEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -58,31 +57,21 @@ export function FloatingGuideModal({
   const theme = resolveGuideStepTheme(step.id, isDark)
   const progress = (step.stepIndex / step.totalSteps) * 100
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     setMounted(true)
   }, [])
 
   if (!mounted) return null
 
   const modal = (
-    <AnimatePresence>
-      <motion.button
-        key="backdrop"
+    <>
+      <button
         type="button"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.2 }}
-        className="fixed inset-0 z-[69] bg-black/50 backdrop-blur-[2px]"
+        className="fixed inset-0 z-[69] bg-black/45"
         aria-label="Cerrar guía"
         onClick={onDismiss}
       />
-      <motion.div
-        key="panel"
-        initial={{ opacity: 0, y: 32, scale: 0.94 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: 20, scale: 0.97 }}
-        transition={{ type: 'spring', stiffness: 380, damping: 28 }}
+      <div
         className="fixed inset-x-0 bottom-[calc(5.25rem+env(safe-area-inset-bottom))] z-[70] flex justify-center px-4 pointer-events-none"
       >
         <div
@@ -95,12 +84,9 @@ export function FloatingGuideModal({
           aria-label={step.title}
         >
           <div className="h-1.5 w-full bg-[var(--cc-surface-muted)] overflow-hidden">
-            <motion.div
-              className="h-full rounded-r-full"
-              style={{ background: theme.gradient }}
-              initial={{ width: 0 }}
-              animate={{ width: `${progress}%` }}
-              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            <div
+              className="h-full rounded-r-full transition-none"
+              style={{ background: theme.gradient, width: `${progress}%` }}
             />
           </div>
 
@@ -108,19 +94,13 @@ export function FloatingGuideModal({
             className="px-4 py-3 flex items-center gap-3 relative overflow-hidden"
             style={{ backgroundColor: theme.surfaceBg }}
           >
-            <div
-              className="absolute -right-6 -top-6 w-24 h-24 rounded-full opacity-20 blur-2xl pointer-events-none"
-              style={{ background: theme.accent }}
-            />
-            <motion.span
-              className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 shadow-lg relative"
+            <span
+              className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 shadow-lg"
               style={{ background: theme.gradient }}
-              animate={{ scale: [1, 1.06, 1] }}
-              transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
             >
               <StepIcon stepId={step.id} />
-            </motion.span>
-            <div className="flex-1 min-w-0 relative">
+            </span>
+            <div className="flex-1 min-w-0">
               <p
                 className="text-[10px] font-bold uppercase tracking-widest"
                 style={{ color: theme.accent }}
@@ -134,7 +114,7 @@ export function FloatingGuideModal({
             <button
               type="button"
               onClick={onDismiss}
-              className="p-2 rounded-xl bg-[var(--cc-surface-solid)] text-cc-muted hover:text-cc-primary shrink-0 relative shadow-sm border border-[var(--cc-border-subtle)]"
+              className="p-2 rounded-xl bg-[var(--cc-surface-solid)] text-cc-muted hover:text-cc-primary shrink-0 border border-[var(--cc-border-subtle)]"
               aria-label="Cerrar guía"
             >
               <X className="w-4 h-4" />
@@ -150,7 +130,7 @@ export function FloatingGuideModal({
                 return (
                   <span
                     key={n}
-                    className="h-1.5 rounded-full transition-all"
+                    className="h-1.5 rounded-full"
                     style={{
                       width: current ? 20 : 6,
                       background: done || current ? theme.accent : `${theme.accent}40`,
@@ -185,8 +165,8 @@ export function FloatingGuideModal({
             </button>
           </div>
         </div>
-      </motion.div>
-    </AnimatePresence>
+      </div>
+    </>
   )
 
   return createPortal(modal, document.body)
