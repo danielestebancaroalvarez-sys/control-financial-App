@@ -19,6 +19,7 @@ const REVALIDATE_PATHS = [
   '/tiempo/ajustes',
   '/fijos',
   '/nuevo',
+  '/ahorros',
   '/tiempo/actividades',
   '/tiempo/nuevo',
 ]

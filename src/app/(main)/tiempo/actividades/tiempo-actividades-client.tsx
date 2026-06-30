@@ -6,8 +6,7 @@ import Link from 'next/link'
 import { Loader2, Pencil, Plus, Sparkles, Trash2 } from 'lucide-react'
 import { CategoryIcon } from '@/components/transactions/category-icon'
 import { TaskAppearancePicker } from '@/components/time/task-appearance-picker'
-import { refreshAssistantProgress } from '@/lib/setup/assistant-actions'
-import { getGuideStepTheme } from '@/lib/setup/guide-step-theme'
+import { TIME_THEME } from '@/lib/time/theme'
 import {
   createTaskTemplate,
   deleteTaskTemplate,
@@ -41,7 +40,10 @@ const emptyForm = (): FormState => ({
   icon: 'package',
 })
 
-const activityTheme = getGuideStepTheme('new')
+const activityTheme = {
+  accent: TIME_THEME.accent,
+  gradient: `linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)`,
+}
 
 export function TiempoActividadesClient({
   householdId,
@@ -174,7 +176,6 @@ export function TiempoActividadesClient({
 
     closeForm()
     setLoading(false)
-    await refreshAssistantProgress('time')
     router.refresh()
   }
 

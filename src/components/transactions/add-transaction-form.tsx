@@ -300,7 +300,7 @@ export function AddTransactionForm({
         )}
       </div>
 
-      <div>
+      <div data-tour="category-picker">
         <p className="text-[11px] font-semibold text-cc-secondary mb-2">Categoría</p>
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none -mx-1 px-1">
           {filteredCategories.map(cat => {

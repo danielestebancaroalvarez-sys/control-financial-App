@@ -131,7 +131,7 @@ export function FixedScheduleForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4" data-tour="fixed-form">
       <p className="text-[11px] text-cc-secondary leading-relaxed cc-surface rounded-2xl px-4 py-3">
         {theme.fixedFormHint}
       </p>
@@ -161,7 +161,7 @@ export function FixedScheduleForm({
         </div>
       )}
 
-      <div>
+      <div data-tour="category-picker">
         <p className="text-[11px] font-semibold text-cc-secondary mb-2">Categoría</p>
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none -mx-1 px-1">
           {filteredCategories.map(cat => {
@@ -265,6 +265,7 @@ export function FixedScheduleForm({
 
       <button
         type="submit"
+        data-tour="submit-fixed"
         disabled={loading}
         className={`w-full py-3.5 rounded-2xl text-white text-[14px] font-bold disabled:opacity-60 flex items-center justify-center gap-2 ${theme.submit}`}
       >

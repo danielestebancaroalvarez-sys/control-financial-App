@@ -10,7 +10,6 @@ import {
 } from '@/lib/finance/payment-reminders'
 import {
   householdHasFinanceData,
-  householdHasTimeData,
 } from '@/lib/setup/assistant-progress'
 import { buildInAppNotifications, type InAppNotification } from './build-notifications'
 import {
@@ -135,7 +134,7 @@ export async function getFinanceInAppNotifications(): Promise<InAppNotification[
       module: 'finance',
       type: 'setup-guide',
       title: 'Configura tus finanzas',
-      body: 'Activa el asistente y te guiamos paso a paso.',
+      body: 'Sigue la guía con flechas para ingresos, gastos y ahorros.',
       href: '/?activateAssistant=finance',
       createdAt: new Date().toISOString(),
     })
@@ -219,31 +218,5 @@ export async function getTimeInAppNotifications(): Promise<InAppNotification[]> 
   const payload = await getTimeActivityReminderPayload()
   if (!payload) return []
 
-  const items = buildTimeInAppNotifications(payload)
-  const ctx = await getMainAppContext()
-  if (!ctx) return items
-
-  const supabase = await createClient()
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('assistant_time_status')
-    .eq('id', ctx.user.id)
-    .maybeSingle()
-
-  const status = profile?.assistant_time_status ?? 'unset'
-  const hasData = await householdHasTimeData()
-
-  if ((status === 'unset' || status === 'declined') && !hasData) {
-    items.unshift({
-      id: 'setup-guide-time',
-      module: 'time',
-      type: 'setup-guide',
-      title: 'Configura tu tiempo',
-      body: 'Activa el asistente y te guiamos con sueño, actividades y tareas.',
-      href: '/?activateAssistant=time',
-      createdAt: new Date().toISOString(),
-    })
-  }
-
-  return items
+  return buildTimeInAppNotifications(payload)
 }

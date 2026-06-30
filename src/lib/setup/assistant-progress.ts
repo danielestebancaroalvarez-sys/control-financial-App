@@ -1,19 +1,13 @@
 import { createClient } from '@/utils/supabase/server'
 import { getAuthUser } from '@/lib/auth/session'
 import { getUserHousehold } from '@/lib/household/queries'
-import { getUserProfile } from '@/lib/profile/queries'
 import type {
   AssistantModule,
   AssistantStep,
   FinanceStepId,
   ModuleAssistantState,
-  TimeStepId,
 } from './assistant-types'
-
-async function hasProfileStep(): Promise<boolean> {
-  const profile = await getUserProfile()
-  return (profile?.fullName?.trim().length ?? 0) >= 2
-}
+import { tourIdForFinanceStep } from './tour-config'
 
 async function getMembershipRole(
   householdId: string,
@@ -33,31 +27,39 @@ async function getMembershipRole(
 async function financeProgressData(householdId: string) {
   const supabase = await createClient()
 
-  const [incomeRes, schedulesRes, savingsRes, txRes] = await Promise.all([
-    supabase
-      .from('recurring_schedules')
-      .select('id, categories ( is_fixed, is_subscription )')
-      .eq('household_id', householdId)
-      .eq('is_active', true)
-      .eq('type', 'income')
-      .limit(1),
-    supabase
-      .from('recurring_schedules')
-      .select('id, categories ( is_fixed, is_subscription )')
-      .eq('household_id', householdId)
-      .eq('is_active', true)
-      .eq('type', 'expense'),
-    supabase
-      .from('savings_goals')
-      .select('id')
-      .eq('household_id', householdId)
-      .eq('is_active', true)
-      .limit(1),
-    supabase
-      .from('transactions')
-      .select('id', { count: 'exact', head: true })
-      .eq('household_id', householdId),
-  ])
+  const [incomeRes, schedulesRes, savingsRes, txRes, mercadoCatRes] =
+    await Promise.all([
+      supabase
+        .from('recurring_schedules')
+        .select('id, categories ( is_fixed, is_subscription )')
+        .eq('household_id', householdId)
+        .eq('is_active', true)
+        .eq('type', 'income')
+        .limit(1),
+      supabase
+        .from('recurring_schedules')
+        .select('id, categories ( is_fixed, is_subscription )')
+        .eq('household_id', householdId)
+        .eq('is_active', true)
+        .eq('type', 'expense'),
+      supabase
+        .from('savings_goals')
+        .select('id')
+        .eq('household_id', householdId)
+        .eq('is_active', true)
+        .limit(1),
+      supabase
+        .from('transactions')
+        .select('id', { count: 'exact', head: true })
+        .eq('household_id', householdId),
+      supabase
+        .from('categories')
+        .select('id')
+        .eq('household_id', householdId)
+        .eq('name', 'Mercado')
+        .eq('type', 'expense')
+        .maybeSingle(),
+    ])
 
   const expenses = schedulesRes.data ?? []
   let hasFixed = false
@@ -69,157 +71,75 @@ async function financeProgressData(householdId: string) {
     if (cat?.is_subscription) hasSubscription = true
   }
 
+  let hasReceiptScan = false
+  if (mercadoCatRes.data?.id) {
+    const { count } = await supabase
+      .from('transactions')
+      .select('id', { count: 'exact', head: true })
+      .eq('household_id', householdId)
+      .eq('category_id', mercadoCatRes.data.id)
+      .or('receipt_image_path.not.is.null,line_items.not.is.null')
+
+    hasReceiptScan = (count ?? 0) > 0
+  }
+
   return {
     hasIncome: (incomeRes.data?.length ?? 0) > 0,
     hasFixed,
     hasSubscription,
     hasSavings: (savingsRes.data?.length ?? 0) > 0,
+    hasReceiptScan,
     transactionCount: txRes.count ?? 0,
   }
 }
 
-async function timeProgressData(householdId: string, userId: string) {
-  const supabase = await createClient()
-
-  const [templatesRes, tasksRes, sleepSessionsRes, sleepBlocksRes] =
-    await Promise.all([
-      supabase
-        .from('household_task_templates')
-        .select('id', { count: 'exact', head: true })
-        .eq('household_id', householdId),
-      supabase
-        .from('household_tasks')
-        .select('id', { count: 'exact', head: true })
-        .eq('household_id', householdId)
-        .in('status', ['pending', 'done']),
-      supabase
-        .from('sleep_sessions')
-        .select('id')
-        .eq('household_id', householdId)
-        .eq('user_id', userId)
-        .not('ended_at', 'is', null)
-        .limit(1),
-      supabase
-        .from('time_blocks')
-        .select('id, time_categories!inner ( name )')
-        .eq('household_id', householdId)
-        .limit(20),
-    ])
-
-  let hasSleepBlock = false
-  let hasFixedTime = false
-
-  for (const row of sleepBlocksRes.data ?? []) {
-    const cat = Array.isArray(row.time_categories)
-      ? row.time_categories[0]
-      : row.time_categories
-    if (cat?.name === 'Sueño') hasSleepBlock = true
-    else hasFixedTime = true
-  }
-
-  return {
-    templateCount: templatesRes.count ?? 0,
-    taskCount: tasksRes.count ?? 0,
-    hasSleep:
-      (sleepSessionsRes.data?.length ?? 0) > 0 || hasSleepBlock,
-    hasFixedTime,
-  }
+function tourHref(stepId: FinanceStepId): string {
+  const tourId = tourIdForFinanceStep(stepId)
+  if (stepId === 'savings') return `/ahorros?tour=${tourId}`
+  return `/nuevo?tour=${tourId}`
 }
 
 function buildFinanceSteps(
   isOwner: boolean,
   completed: Record<FinanceStepId, boolean>
 ): AssistantStep[] {
-  const steps: AssistantStep[] = [
-    {
-      id: 'profile',
-      label: 'Tu perfil',
-      description: 'Nombre para que tu pareja te identifique.',
-      href: '/ajustes?guide=profile',
-      completed: completed.profile,
-    },
-    {
-      id: 'period',
-      label: 'Periodo del dashboard',
-      description: 'Elige vista semanal o mensual.',
-      href: '/ajustes?guide=period',
-      completed: completed.period,
-    },
-  ]
+  if (!isOwner) return []
 
-  if (isOwner) {
-    steps.push(
-      {
-        id: 'income',
-        label: 'Ingreso fijo',
-        description: 'Salario u otros ingresos recurrentes.',
-        href: '/nuevo?guide=income',
-        completed: completed.income,
-      },
-      {
-        id: 'fixed_expense',
-        label: 'Gasto fijo',
-        description: 'Arriendo, servicios u otros pagos regulares.',
-        href: '/nuevo?guide=fixed',
-        completed: completed.fixed_expense,
-      },
-      {
-        id: 'subscription',
-        label: 'Suscripción',
-        description: 'Netflix, Spotify y otros débitos automáticos.',
-        href: '/nuevo?guide=subscription',
-        completed: completed.subscription,
-      },
-      {
-        id: 'savings',
-        label: 'Meta de ahorro',
-        description: 'Opcional: define un objetivo de ahorro.',
-        href: '/ahorros?guide=savings',
-        optional: true,
-        completed: completed.savings,
-      }
-    )
-  }
-
-  return steps
-}
-
-function buildTimeSteps(completed: Record<TimeStepId, boolean>): AssistantStep[] {
   return [
     {
-      id: 'profile',
-      label: 'Tu perfil',
-      description: 'Nombre visible en tareas y horario.',
-      href: '/tiempo/ajustes?guide=profile',
-      completed: completed.profile,
+      id: 'income',
+      label: 'Ingreso fijo',
+      description: 'Salario u otros ingresos recurrentes.',
+      href: tourHref('income'),
+      completed: completed.income,
     },
     {
-      id: 'sleep',
-      label: 'Registro de sueño',
-      description: 'Configura o registra tu primer sueño.',
-      href: '/tiempo/nuevo?guide=sleep',
-      completed: completed.sleep,
+      id: 'fixed_expense',
+      label: 'Gasto fijo',
+      description: 'Arriendo, servicios u otros pagos regulares.',
+      href: tourHref('fixed_expense'),
+      completed: completed.fixed_expense,
     },
     {
-      id: 'fixed_time',
-      label: 'Tiempo fijo',
-      description: 'Programa un bloque recurrente en tu horario.',
-      href: '/tiempo/nuevo?guide=time_fixed',
-      completed: completed.fixed_time,
+      id: 'subscription',
+      label: 'Suscripción',
+      description: 'Netflix, Spotify y otros débitos automáticos.',
+      href: tourHref('subscription'),
+      completed: completed.subscription,
     },
     {
-      id: 'activity',
-      label: 'Actividad guardada',
-      description: 'Plantillas reutilizables para tareas frecuentes.',
-      href: '/tiempo/actividades?guide=new',
-      completed: completed.activity,
+      id: 'savings',
+      label: 'Meta de ahorro',
+      description: 'Define un objetivo de ahorro para el hogar.',
+      href: tourHref('savings'),
+      completed: completed.savings,
     },
     {
-      id: 'first_task',
-      label: 'Primera tarea',
-      description: 'Crea una tarea del hogar.',
-      href: '/tiempo/nuevo?guide=task',
-      completed: completed.first_task,
+      id: 'receipt_scan',
+      label: 'Escanear recibo',
+      description: 'Escanea un recibo de Mercado con IA.',
+      href: tourHref('receipt_scan'),
+      completed: completed.receipt_scan,
     },
   ]
 }
@@ -250,18 +170,14 @@ export async function getFinanceModuleProgress(
     }
   }
 
-  const [profileDone, data] = await Promise.all([
-    hasProfileStep(),
-    financeProgressData(household.id),
-  ])
+  const data = await financeProgressData(household.id)
 
   const completed: Record<FinanceStepId, boolean> = {
-    profile: profileDone,
-    period: true,
     income: data.hasIncome,
     fixed_expense: data.hasFixed,
     subscription: data.hasSubscription,
     savings: data.hasSavings,
+    receipt_scan: data.hasReceiptScan,
   }
 
   const steps = buildFinanceSteps(isOwner, completed)
@@ -275,38 +191,12 @@ export async function getFinanceModuleProgress(
 }
 
 export async function getTimeModuleProgress(): Promise<ModuleAssistantState> {
-  const user = await getAuthUser()
-  const household = await getUserHousehold()
-  if (!user || !household) {
-    return {
-      status: 'unset',
-      steps: [],
-      completedCount: 0,
-      totalCount: 0,
-      requiredTotal: 0,
-    }
-  }
-
-  const [profileDone, data] = await Promise.all([
-    hasProfileStep(),
-    timeProgressData(household.id, user.id),
-  ])
-
-  const completed: Record<TimeStepId, boolean> = {
-    profile: profileDone,
-    sleep: data.hasSleep,
-    fixed_time: data.hasFixedTime,
-    activity: data.templateCount > 0,
-    first_task: data.taskCount > 0,
-  }
-
-  const steps = buildTimeSteps(completed)
-  const summary = summarizeSteps(steps)
-
   return {
     status: 'unset',
-    steps,
-    ...summary,
+    steps: [],
+    completedCount: 0,
+    totalCount: 0,
+    requiredTotal: 0,
   }
 }
 
@@ -319,17 +209,14 @@ export async function householdHasFinanceData(): Promise<boolean> {
     data.hasIncome ||
     data.hasFixed ||
     data.hasSubscription ||
+    data.hasSavings ||
+    data.hasReceiptScan ||
     data.transactionCount > 0
   )
 }
 
 export async function householdHasTimeData(): Promise<boolean> {
-  const user = await getAuthUser()
-  const household = await getUserHousehold()
-  if (!user || !household) return true
-
-  const data = await timeProgressData(household.id, user.id)
-  return data.templateCount > 0 || data.taskCount > 0 || data.hasSleep || data.hasFixedTime
+  return true
 }
 
 export async function getIsHouseholdOwner(): Promise<boolean> {
@@ -341,11 +228,9 @@ export async function getIsHouseholdOwner(): Promise<boolean> {
 }
 
 export async function isModuleSetupComplete(module: AssistantModule): Promise<boolean> {
+  if (module === 'time') return true
+
   const isOwner = await getIsHouseholdOwner()
-  if (module === 'finance') {
-    const progress = await getFinanceModuleProgress(isOwner)
-    return progress.completedCount >= progress.requiredTotal
-  }
-  const progress = await getTimeModuleProgress()
+  const progress = await getFinanceModuleProgress(isOwner)
   return progress.completedCount >= progress.requiredTotal
 }

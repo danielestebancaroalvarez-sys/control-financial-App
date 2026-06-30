@@ -1,11 +1,10 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { CalendarClock, Check, Clock, ListTodo, Loader2, Moon, Repeat } from 'lucide-react'
 import { CategoryIcon } from '@/components/transactions/category-icon'
 import { SleepTracker } from '@/components/time/sleep-tracker'
-import { refreshAssistantProgress } from '@/lib/setup/assistant-actions'
 import { FormField, FormSection } from '@/components/time/form-field'
 import { TaskAppearancePicker } from '@/components/time/task-appearance-picker'
 import {
@@ -58,8 +57,6 @@ export function TiempoNuevoClient({
   taskTemplates?: TaskTemplate[]
 }) {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const guide = searchParams.get('guide')
   const [kind, setKind] = useState<EntryKind>('time')
   const [nature, setNature] = useState<EntryNature>('variable')
   const [categoryId, setCategoryId] = useState('')
@@ -150,9 +147,6 @@ export function TiempoNuevoClient({
         return
       }
       setLoading(false)
-      if (guide === 'task') {
-        await refreshAssistantProgress('time')
-      }
       router.push('/tiempo/tareas')
       router.refresh()
       return
@@ -188,9 +182,6 @@ export function TiempoNuevoClient({
         return
       }
       setLoading(false)
-      if (guide === 'time_fixed') {
-        await refreshAssistantProgress('time')
-      }
       router.push('/tiempo/horario')
       router.refresh()
       return
@@ -265,11 +256,7 @@ export function TiempoNuevoClient({
           householdId={householdId}
           data={sleepData}
           variant="embedded"
-          onActionSuccess={() => {
-            if (guide === 'sleep') {
-              void refreshAssistantProgress('time')
-            }
-          }}
+          onActionSuccess={() => {}}
         />
       )}
 

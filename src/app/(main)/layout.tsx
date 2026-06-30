@@ -13,7 +13,7 @@ import { PartnerActivityWatcher } from '@/components/notifications/partner-activ
 import { ApplyTheme } from '@/components/theme/apply-theme'
 import { SavedFlashToast } from '@/components/ui/saved-flash-toast'
 import { AssistantWelcomeModal } from '@/components/setup/assistant-welcome-modal'
-import { AssistantGuideHost } from '@/components/setup/assistant-guide-host'
+import { SetupTourHost } from '@/components/setup/setup-tour-host'
 import { AssistantActivateHandler } from '@/components/setup/assistant-activate-handler'
 import { getAssistantState } from '@/lib/setup/assistant-queries'
 import { getFirstName } from '@/lib/utils/name'
@@ -61,7 +61,9 @@ export default async function MainLayout({
         />
         <MainContent>{children}</MainContent>
         {assistantState && <AssistantWelcomeModal state={assistantState} />}
-        <AssistantGuideHost />
+        <Suspense fallback={null}>
+          <SetupTourHost />
+        </Suspense>
         <Suspense fallback={null}>
           <AssistantActivateHandler />
         </Suspense>

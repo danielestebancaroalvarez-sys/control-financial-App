@@ -1,7 +1,7 @@
 'use client'
 
-import { useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useMemo, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Loader2, Plus, Pencil, Trash2, Clock } from 'lucide-react'
 import {
   createSavingsGoal,
@@ -35,7 +35,10 @@ import {
   isValidSavingsCategoryId,
   type SavingsCategoryId,
 } from '@/lib/finance/savings-categories'
-import { SAVINGS_ACCENT } from '@/lib/setup/guide-step-theme'
+import { SAVINGS_ACCENT } from '@/lib/setup/tour-step-theme'
+import { refreshAssistantProgress } from '@/lib/setup/assistant-actions'
+import { getNextFinanceStepHref } from '@/lib/setup/tour-advance'
+import { parseTourParam } from '@/lib/setup/tour-config'
 import type { SavingsGoal, SavingsGoalInput } from '@/lib/finance/types'
 import type { CurrencyCode } from '@/lib/household/types'
 
@@ -216,6 +219,7 @@ function SavingsGoalForm({
     <form
       onSubmit={handleSubmit}
       className="cc-surface rounded-[24px] p-5 space-y-3"
+      data-tour="savings-form"
     >
       <h2 className="text-[15px] font-bold text-cc-primary">
         {goalId ? 'Editar meta' : 'Nueva meta de ahorro'}
@@ -479,9 +483,23 @@ export function AhorrosClient({
   periodSavings?: number
 }) {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const isSavingsTour = parseTourParam(searchParams.get('tour')) === 'savings'
   const [mode, setMode] = useState<'list' | 'create' | 'edit'>('list')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (isSavingsTour) setMode('create')
+  }, [isSavingsTour])
+
+  async function handleTourSave() {
+    await refreshAssistantProgress('finance')
+    const next = await getNextFinanceStepHref()
+    router.refresh()
+    closeForm()
+    if (next) router.push(next)
+  }
 
   const fmt = (n: number) => formatMoney(n, currency)
   const editingGoal = goals.find(g => g.id === editingId)
@@ -509,6 +527,7 @@ export function AhorrosClient({
         {mode === 'list' && (
           <button
             type="button"
+            data-tour="new-savings-goal"
             onClick={() => setMode('create')}
             className="w-10 h-10 rounded-full text-white flex items-center justify-center shadow-md"
             style={{ backgroundColor: SAVINGS_ACCENT }}
@@ -526,7 +545,10 @@ export function AhorrosClient({
           initial={emptyForm()}
           guiltFreeMoney={guiltFreeMoney}
           periodSavings={periodSavings}
-          onDone={closeForm}
+          onDone={() => {
+            if (isSavingsTour) void handleTourSave()
+            else closeForm()
+          }}
           onCancel={closeForm}
         />
       )}

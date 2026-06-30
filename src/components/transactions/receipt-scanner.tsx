@@ -77,7 +77,7 @@ export function ReceiptScanner({
 
   return (
     <>
-      <div className="cc-scan-card rounded-2xl p-4 space-y-2">
+      <div className="cc-scan-card rounded-2xl p-4 space-y-2" data-tour="receipt-scanner">
         <div className="flex items-center gap-2">
           <ScanLine className="w-4 h-4 text-[#00BFA5]" />
           <span className="text-[13px] font-semibold text-cc-primary">

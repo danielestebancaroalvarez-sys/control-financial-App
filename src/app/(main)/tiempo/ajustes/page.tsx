@@ -14,19 +14,16 @@ import { CategoryIcon } from '@/components/transactions/category-icon'
 import { ActivityReminderSetting } from './activity-reminder-setting'
 import { ResetTimeDataButton } from './reset-time-data-button'
 import { DeleteAccountButton } from '@/app/(main)/ajustes/delete-account-button'
-import { AssistantSettingsPanel } from '@/components/setup/assistant-settings-panel'
-import { getAssistantState } from '@/lib/setup/assistant-queries'
 
 export default async function TiempoAjustesPage() {
   const ctx = await getMainAppContext()
   if (!ctx) redirect('/login')
 
-  const [members, profile, timeCategories, theme, assistantState] = await Promise.all([
+  const [members, profile, timeCategories, theme] = await Promise.all([
     getHouseholdMembers(ctx.household.id),
     getUserProfile(),
     getTimeCategories(ctx.household.id),
     getUserTheme(),
-    getAssistantState(),
   ])
 
   return (
@@ -37,15 +34,6 @@ export default async function TiempoAjustesPage() {
           Perfil y hogar compartidos · preferencias del módulo Tiempo
         </p>
       </div>
-
-      {assistantState && (
-        <AssistantSettingsPanel
-          module="time"
-          status={assistantState.time.status}
-          completedCount={assistantState.time.completedCount}
-          totalCount={assistantState.time.totalCount}
-        />
-      )}
 
       {profile && (
         <section className="cc-surface rounded-[24px] p-5">

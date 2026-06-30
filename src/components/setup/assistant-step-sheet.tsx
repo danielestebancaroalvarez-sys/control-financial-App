@@ -5,31 +5,17 @@ import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { Check, ChevronRight, Sparkles, X } from 'lucide-react'
 import { useIsDark } from '@/hooks/use-is-dark'
-import type { AssistantModule, AssistantStep } from '@/lib/setup/assistant-types'
-import {
-  extractGuideFromHref,
-  openGuideOverlay,
-} from '@/lib/setup/guide-overlay-store'
-import { resolveGuideStepTheme } from '@/lib/setup/guide-step-theme'
+import type { AssistantStep } from '@/lib/setup/assistant-types'
+import { resolveTourStepTheme } from '@/lib/setup/tour-step-theme'
 
-const MODULE_LABELS: Record<AssistantModule, string> = {
-  finance: 'Finanzas',
-  time: 'Tiempo',
-}
-
-const MODULE_ACCENTS: Record<AssistantModule, string> = {
-  finance: '#00BFA5',
-  time: '#6366F1',
-}
+const ACCENT = '#00BFA5'
 
 export function AssistantStepSheet({
-  module,
   steps,
   completedCount,
   totalCount,
   onClose,
 }: {
-  module: AssistantModule
   steps: AssistantStep[]
   completedCount: number
   totalCount: number
@@ -42,8 +28,6 @@ export function AssistantStepSheet({
     () => true,
     () => false
   )
-  const accent = MODULE_ACCENTS[module]
-  const label = MODULE_LABELS[module]
   const progress = totalCount > 0 ? (completedCount / totalCount) * 100 : 0
 
   useEffect(() => {
@@ -55,8 +39,6 @@ export function AssistantStepSheet({
   }, [])
 
   function goToStep(href: string) {
-    const guideId = extractGuideFromHref(href)
-    if (guideId) openGuideOverlay(guideId)
     onClose()
     router.push(href)
   }
@@ -82,8 +64,8 @@ export function AssistantStepSheet({
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-[11px] font-bold uppercase tracking-wide text-cc-muted flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5" style={{ color: accent }} />
-                Asistente {label}
+                <Sparkles className="w-3.5 h-3.5" style={{ color: ACCENT }} />
+                Guía de Finanzas
               </p>
               <p className="text-[18px] font-bold text-cc-primary mt-1">
                 {completedCount}/{totalCount} pasos
@@ -101,71 +83,68 @@ export function AssistantStepSheet({
           <div className="mt-3 h-2 rounded-full bg-[var(--cc-surface-muted)] overflow-hidden">
             <div
               className="h-full rounded-full transition-all"
-              style={{ width: `${progress}%`, backgroundColor: accent }}
+              style={{ width: `${progress}%`, backgroundColor: ACCENT }}
             />
           </div>
         </div>
 
-        <ul className="overflow-y-auto px-4 py-3 space-y-2">
-          {steps.map((step, index) => {
-            const isOptional = step.optional
-            const done = step.completed
-            const stepTheme = resolveGuideStepTheme(step.id, isDark)
-            return (
-              <li key={step.id}>
-                {done ? (
-                  <div className="flex items-center gap-3 p-3 rounded-2xl bg-[var(--cc-surface-muted)] opacity-80">
-                    <span
-                      className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 text-white"
-                      style={{ background: stepTheme.gradient }}
-                    >
-                      <Check className="w-4 h-4" />
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[13px] font-bold text-cc-primary line-through decoration-cc-muted">
-                        {step.label}
-                        {isOptional ? ' (opcional)' : ''}
-                      </p>
-                      <p className="text-[11px] text-cc-secondary">{step.description}</p>
+        {steps.length === 0 ? (
+          <p className="px-5 py-6 text-[13px] text-cc-secondary leading-relaxed">
+            El administrador del hogar configura ingresos y gastos fijos.
+          </p>
+        ) : (
+          <ul className="overflow-y-auto px-4 py-3 space-y-2">
+            {steps.map((step, index) => {
+              const done = step.completed
+              const stepTheme = resolveTourStepTheme(step.id, isDark)
+              return (
+                <li key={step.id}>
+                  {done ? (
+                    <div className="flex items-center gap-3 p-3 rounded-2xl bg-[var(--cc-surface-muted)] opacity-80">
+                      <span
+                        className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 text-white"
+                        style={{ background: stepTheme.gradient }}
+                      >
+                        <Check className="w-4 h-4" />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[13px] font-bold text-cc-primary line-through decoration-cc-muted">
+                          {step.label}
+                        </p>
+                        <p className="text-[11px] text-cc-secondary">{step.description}</p>
+                      </div>
                     </div>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => goToStep(step.href)}
-                    className="flex w-full items-center gap-3 p-3 rounded-2xl border-2 transition-colors hover:opacity-95 text-left"
-                    style={{
-                      borderColor: stepTheme.accent,
-                      backgroundColor: stepTheme.surfaceBg,
-                    }}
-                  >
-                    <span
-                      className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 text-[12px] font-bold text-white"
-                      style={{ background: stepTheme.gradient }}
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => goToStep(step.href)}
+                      className="flex w-full items-center gap-3 p-3 rounded-2xl border-2 transition-colors hover:opacity-95 text-left"
+                      style={{
+                        borderColor: stepTheme.accent,
+                        backgroundColor: stepTheme.surfaceBg,
+                      }}
                     >
-                      {index + 1}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[13px] font-bold text-cc-primary">
-                        {step.label}
-                        {isOptional ? (
-                          <span className="text-[10px] font-semibold text-cc-muted ml-1">
-                            · opcional
-                          </span>
-                        ) : null}
-                      </p>
-                      <p className="text-[11px] text-cc-secondary">{step.description}</p>
-                    </div>
-                    <ChevronRight
-                      className="w-4 h-4 shrink-0"
-                      style={{ color: stepTheme.accent }}
-                    />
-                  </button>
-                )}
-              </li>
-            )
-          })}
-        </ul>
+                      <span
+                        className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 text-[12px] font-bold text-white"
+                        style={{ background: stepTheme.gradient }}
+                      >
+                        {index + 1}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[13px] font-bold text-cc-primary">{step.label}</p>
+                        <p className="text-[11px] text-cc-secondary">{step.description}</p>
+                      </div>
+                      <ChevronRight
+                        className="w-4 h-4 shrink-0"
+                        style={{ color: stepTheme.accent }}
+                      />
+                    </button>
+                  )}
+                </li>
+              )
+            })}
+          </ul>
+        )}
       </div>
     </div>
   )

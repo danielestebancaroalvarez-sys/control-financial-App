@@ -3,8 +3,7 @@
 import { useEffect, useTransition } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { activateAssistant } from '@/lib/setup/assistant-actions'
-import { moduleHomePath } from '@/lib/app/module'
-import type { AssistantModule } from '@/lib/setup/assistant-types'
+import { getNextFinanceStepHref } from '@/lib/setup/tour-advance'
 
 export function AssistantActivateHandler() {
   const searchParams = useSearchParams()
@@ -13,12 +12,12 @@ export function AssistantActivateHandler() {
 
   useEffect(() => {
     const raw = searchParams.get('activateAssistant')
-    if (raw !== 'finance' && raw !== 'time') return
+    if (raw !== 'finance') return
 
-    const module = raw as AssistantModule
     startTransition(async () => {
-      await activateAssistant(module)
-      router.replace(moduleHomePath(module), { scroll: false })
+      await activateAssistant('finance')
+      const next = await getNextFinanceStepHref()
+      router.replace(next ?? '/', { scroll: false })
       router.refresh()
     })
   }, [searchParams, router])

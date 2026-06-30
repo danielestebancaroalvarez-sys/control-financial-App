@@ -3,14 +3,13 @@ export type AssistantModule = 'finance' | 'time'
 export type AssistantStatus = 'unset' | 'active' | 'declined' | 'completed'
 
 export type FinanceStepId =
-  | 'profile'
-  | 'period'
   | 'income'
   | 'fixed_expense'
   | 'subscription'
   | 'savings'
+  | 'receipt_scan'
 
-export type TimeStepId = 'profile' | 'sleep' | 'fixed_time' | 'activity' | 'first_task'
+export type TimeStepId = never
 
 export type AssistantStep = {
   id: string
@@ -38,5 +37,6 @@ export type AssistantState = {
 
 export function shouldShowWelcomeCard(state: AssistantState): boolean {
   if (state.welcomeSeen) return false
-  return state.finance.status === 'unset' || state.time.status === 'unset'
+  if (!state.isOwner) return false
+  return state.finance.status === 'unset'
 }

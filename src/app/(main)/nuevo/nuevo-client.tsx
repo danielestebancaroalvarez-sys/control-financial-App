@@ -1,23 +1,52 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowDownLeft, ArrowUpRight, CalendarPlus, Repeat } from 'lucide-react'
 import { AddTransactionForm } from '@/components/transactions/add-transaction-form'
 import { FixedScheduleForm } from '@/components/transactions/fixed-schedule-form'
 import { refreshAssistantProgress } from '@/lib/setup/assistant-actions'
+import { getNextFinanceStepHref } from '@/lib/setup/tour-advance'
+import { parseTourParam } from '@/lib/setup/tour-config'
 import { TX_TYPE_THEME, type TxType } from '@/components/transactions/tx-type-theme'
 import type { Category } from '@/lib/finance/types'
 import type { CurrencyCode, HouseholdMember } from '@/lib/household/types'
 
 type EntryMode = 'variable' | 'fixed'
 
-export type NuevoGuideMode = 'income' | 'fixed' | 'subscription'
-
 const SUBSCRIPTION_CATEGORY = {
   defaultCategoryName: 'Suscripciones',
   categoryFilter: (c: Category) => c.is_subscription,
+}
+
+const MERCADO_CATEGORY = {
+  defaultCategoryName: 'Mercado',
+  categoryFilter: (c: Category) => c.name === 'Mercado',
+}
+
+type TourPreset = {
+  txType: TxType
+  mode: EntryMode
+  subscription: boolean
+  mercado: boolean
+}
+
+function getTourPreset(tour: string | null): TourPreset | null {
+  const tourId = parseTourParam(tour)
+  if (!tourId) return null
+  switch (tourId) {
+    case 'income-fixed':
+      return { txType: 'income', mode: 'fixed', subscription: false, mercado: false }
+    case 'expense-fixed':
+      return { txType: 'expense', mode: 'fixed', subscription: false, mercado: false }
+    case 'subscription':
+      return { txType: 'expense', mode: 'fixed', subscription: true, mercado: false }
+    case 'receipt-scan':
+      return { txType: 'expense', mode: 'variable', subscription: false, mercado: true }
+    default:
+      return null
+  }
 }
 
 export function NuevoClient({
@@ -39,19 +68,41 @@ export function NuevoClient({
 }) {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const urlGuide = searchParams.get('guide')
-  const isSubscriptionGuide = urlGuide === 'subscription'
-  const subscriptionPicker = isSubscriptionGuide ? SUBSCRIPTION_CATEGORY : {}
+  const tourParam = searchParams.get('tour')
+  const preset = getTourPreset(tourParam)
 
-  const [txType, setTxType] = useState<TxType>('expense')
-  const [mode, setMode] = useState<EntryMode>('variable')
+  const [txType, setTxType] = useState<TxType>(preset?.txType ?? 'expense')
+  const [mode, setMode] = useState<EntryMode>(preset?.mode ?? 'variable')
   const theme = TX_TYPE_THEME[txType]
 
-  async function handleAssistantSave() {
-    if (urlGuide === 'income' || urlGuide === 'fixed' || urlGuide === 'subscription') {
-      await refreshAssistantProgress('finance')
-    }
+  useEffect(() => {
+    const next = getTourPreset(searchParams.get('tour'))
+    if (!next) return
+    setTxType(next.txType)
+    setMode(next.mode)
+  }, [searchParams])
+
+  const categoryPicker = preset?.subscription
+    ? SUBSCRIPTION_CATEGORY
+    : preset?.mercado
+      ? MERCADO_CATEGORY
+      : {}
+
+  const tourId = parseTourParam(tourParam)
+  const isFixedTour =
+    tourId === 'income-fixed' ||
+    tourId === 'expense-fixed' ||
+    tourId === 'subscription'
+  const isReceiptTour = tourId === 'receipt-scan'
+
+  async function handleTourSave() {
+    if (!tourId) return
+    await refreshAssistantProgress('finance')
+    const next = await getNextFinanceStepHref()
     router.refresh()
+    if (next) {
+      router.push(next)
+    }
   }
 
   return (
@@ -78,6 +129,7 @@ export function NuevoClient({
               <button
                 key={type}
                 type="button"
+                data-tour={type === 'income' ? 'tx-income' : 'tx-expense'}
                 onClick={() => setTxType(type)}
                 className={`rounded-2xl border-2 p-4 text-left transition-all ${
                   active ? t.cardActive : t.cardIdle
@@ -107,6 +159,7 @@ export function NuevoClient({
         <div className="grid grid-cols-1 gap-2">
           <button
             type="button"
+            data-tour="mode-variable"
             onClick={() => setMode('variable')}
             className={`flex items-start gap-3 rounded-2xl border-2 p-4 text-left transition-all ${
               mode === 'variable' ? theme.cardActive : theme.cardIdle
@@ -128,6 +181,7 @@ export function NuevoClient({
           </button>
           <button
             type="button"
+            data-tour="mode-fixed"
             onClick={() => setMode('fixed')}
             className={`flex items-start gap-3 rounded-2xl border-2 p-4 text-left transition-all ${
               mode === 'fixed' ? theme.cardActive : theme.cardIdle
@@ -159,7 +213,7 @@ export function NuevoClient({
 
         {mode === 'variable' ? (
           <AddTransactionForm
-            key={`var-${txType}`}
+            key={`var-${txType}-${tourParam ?? 'default'}`}
             householdId={householdId}
             baseCurrency={baseCurrency}
             categories={categories}
@@ -169,24 +223,20 @@ export function NuevoClient({
             authorAvatarUrl={authorAvatarUrl}
             defaultType={txType}
             hideTypeSelector
-            {...subscriptionPicker}
-            onSuccess={isSubscriptionGuide ? handleAssistantSave : undefined}
+            {...categoryPicker}
+            onSuccess={isReceiptTour ? handleTourSave : undefined}
           />
         ) : (
           <>
             <FixedScheduleForm
-              key={`fix-${txType}`}
+              key={`fix-${txType}-${tourParam ?? 'default'}`}
               householdId={householdId}
               baseCurrency={baseCurrency}
               categories={categories}
               defaultType={txType}
               hideTypeSelector
-              {...subscriptionPicker}
-              onSuccess={
-                urlGuide === 'income' || urlGuide === 'fixed' || isSubscriptionGuide
-                  ? handleAssistantSave
-                  : undefined
-              }
+              {...categoryPicker}
+              onSuccess={isFixedTour ? handleTourSave : undefined}
             />
             <Link
               href="/fijos"
