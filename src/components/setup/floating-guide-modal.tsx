@@ -36,6 +36,8 @@ function StepIcon({ stepId }: { stepId: GuideStepConfig['id'] }) {
       return <User className={className} />
     case 'sleep':
       return <Moon className={className} />
+    case 'time_fixed':
+      return <Repeat className={className} />
     case 'task':
       return <CheckSquare className={className} />
     case 'new':
@@ -66,14 +68,7 @@ export function FloatingGuideModal({
   if (!mounted) return null
 
   const modal = (
-    <>
-      <button
-        type="button"
-        className="fixed inset-0 z-[69] bg-black/45"
-        aria-label="Cerrar guía"
-        onClick={onDismiss}
-      />
-      <div className="fixed inset-x-0 bottom-[calc(5.25rem+env(safe-area-inset-bottom))] z-[70] flex justify-center px-4 pointer-events-none">
+    <div className="fixed inset-x-0 bottom-[calc(5.25rem+env(safe-area-inset-bottom))] z-[70] flex justify-center px-4 pointer-events-none">
         <div
           className="pointer-events-auto w-full max-w-md rounded-[22px] overflow-hidden border-2 cc-surface-solid"
           style={{
@@ -166,7 +161,6 @@ export function FloatingGuideModal({
           </div>
         </div>
       </div>
-    </>
   )
 
   return createPortal(modal, document.body)

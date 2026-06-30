@@ -16,8 +16,6 @@ export default async function TiempoNuevoPage({
   if (!ctx) redirect('/login')
 
   const params = await searchParams
-  const guide =
-    params.guide === 'sleep' || params.guide === 'task' ? params.guide : null
   const user = await getAuthUser()
   const [categories, members, sleepData, taskTemplates] = await Promise.all([
     getTimeCategories(ctx.household.id),
@@ -37,7 +35,6 @@ export default async function TiempoNuevoPage({
         initialUserId={params.user}
         sleepData={sleepData}
         taskTemplates={taskTemplates}
-        initialGuide={guide}
       />
     </Suspense>
   )

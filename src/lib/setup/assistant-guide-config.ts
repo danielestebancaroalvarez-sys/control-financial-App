@@ -8,6 +8,7 @@ export type GuideStepId =
   | 'subscription'
   | 'savings'
   | 'sleep'
+  | 'time_fixed'
   | 'task'
   | 'new'
 
@@ -44,8 +45,7 @@ export const GUIDE_STEPS: Record<GuideStepId, GuideStepConfig> = {
     stepIndex: 3,
     totalSteps: 5,
     title: 'Registra tu ingreso fijo',
-    description: 'Completa el formulario con categoría, monto, frecuencia y modo de pago.',
-    hint: 'Al continuar verás Ingreso + Fijo ya seleccionados. Completa el formulario abajo.',
+    description: 'En Nuevo registro elige Ingreso → Fijo y completa categoría, monto y frecuencia.',
   },
   fixed: {
     id: 'fixed',
@@ -53,8 +53,7 @@ export const GUIDE_STEPS: Record<GuideStepId, GuideStepConfig> = {
     stepIndex: 4,
     totalSteps: 5,
     title: 'Añade un gasto fijo',
-    description: 'Arriendo, servicios u otros pagos regulares del hogar.',
-    hint: 'Al continuar verás Gasto + Fijo seleccionados. Elige categoría y monto.',
+    description: 'En Nuevo registro elige Gasto → Fijo y programa arriendo, servicios u otros pagos regulares.',
   },
   subscription: {
     id: 'subscription',
@@ -62,8 +61,8 @@ export const GUIDE_STEPS: Record<GuideStepId, GuideStepConfig> = {
     stepIndex: 5,
     totalSteps: 5,
     title: 'Registra una suscripción',
-    description: 'Netflix, Spotify y otros débitos automáticos.',
-    hint: 'Al continuar verás Suscripción + Fijo en morado. Categoría Suscripciones preseleccionada.',
+    description: 'En Nuevo registro elige Gasto y selecciona la categoría Suscripciones en el formulario.',
+    hint: 'La categoría Suscripciones aparece preseleccionada en el selector.',
   },
   savings: {
     id: 'savings',
@@ -77,27 +76,35 @@ export const GUIDE_STEPS: Record<GuideStepId, GuideStepConfig> = {
     id: 'sleep',
     module: 'time',
     stepIndex: 2,
-    totalSteps: 4,
+    totalSteps: 5,
     title: 'Registra o configura tu sueño',
-    description: 'Usa el registro rápido o añade un sueño manual.',
+    description: 'Elige Sueño y usa el registro rápido o añade un sueño manual.',
   },
-  task: {
-    id: 'task',
+  time_fixed: {
+    id: 'time_fixed',
     module: 'time',
-    stepIndex: 4,
-    totalSteps: 4,
-    title: 'Crea tu primera tarea',
-    description: 'Asigna título, duración y opcionalmente a alguien del hogar.',
-    hint: 'El tipo Tarea ya está seleccionado.',
+    stepIndex: 3,
+    totalSteps: 5,
+    title: 'Programa un tiempo fijo',
+    description: 'Elige Tiempo → Bloque fijo para actividades que se repiten cada semana en tu horario.',
+    hint: 'Ejemplo: trabajo, gym o tiempo de estudio con hora de inicio y fin.',
   },
   new: {
     id: 'new',
     module: 'time',
-    stepIndex: 3,
-    totalSteps: 4,
+    stepIndex: 4,
+    totalSteps: 5,
     title: 'Crea una actividad guardada',
     description: 'Plantillas reutilizables para tareas frecuentes del hogar.',
     hint: 'Pulsa "Nueva actividad" y guarda título y duración.',
+  },
+  task: {
+    id: 'task',
+    module: 'time',
+    stepIndex: 5,
+    totalSteps: 5,
+    title: 'Crea tu primera tarea',
+    description: 'Elige Tarea, asigna título, duración y opcionalmente a alguien del hogar.',
   },
 }
 

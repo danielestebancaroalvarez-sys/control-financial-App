@@ -10,7 +10,7 @@ export type FinanceStepId =
   | 'subscription'
   | 'savings'
 
-export type TimeStepId = 'profile' | 'sleep' | 'activity' | 'first_task'
+export type TimeStepId = 'profile' | 'sleep' | 'fixed_time' | 'activity' | 'first_task'
 
 export type AssistantStep = {
   id: string

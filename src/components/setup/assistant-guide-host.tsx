@@ -18,7 +18,7 @@ function resolveGuideStep(step: GuideStepConfig, pathname: string): GuideStepCon
       ...step,
       module: 'time',
       stepIndex: 1,
-      totalSteps: 4,
+      totalSteps: 5,
       title: 'Completa tu nombre de perfil',
       description: 'Edita tu nombre para que aparezca en tareas y horario.',
     }

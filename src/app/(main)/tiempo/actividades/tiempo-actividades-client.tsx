@@ -1,14 +1,13 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Loader2, Pencil, Plus, Sparkles, Trash2 } from 'lucide-react'
 import { CategoryIcon } from '@/components/transactions/category-icon'
 import { TaskAppearancePicker } from '@/components/time/task-appearance-picker'
 import { refreshAssistantProgress } from '@/lib/setup/assistant-actions'
 import { getGuideStepTheme } from '@/lib/setup/guide-step-theme'
-import { useScrollOnGuideDismiss } from '@/hooks/use-persisted-guide'
 import {
   createTaskTemplate,
   deleteTaskTemplate,
@@ -52,9 +51,6 @@ export function TiempoActividadesClient({
   initialTemplates: TaskTemplate[]
 }) {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const guideNew = searchParams.get('guide') === 'new'
-  const [guideActive, setGuideActive] = useState(guideNew)
   const [templates, setTemplates] = useState(initialTemplates)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
@@ -76,15 +72,6 @@ export function TiempoActividadesClient({
     setShowForm(true)
     setError(null)
   }
-
-  useEffect(() => {
-    if (guideNew) {
-      setGuideActive(true)
-      openCreate()
-    }
-  }, [guideNew])
-
-  useScrollOnGuideDismiss('guide-activity-form')
 
   function openEdit(template: TaskTemplate) {
     setEditingId(template.id)
@@ -227,7 +214,7 @@ export function TiempoActividadesClient({
       </button>
 
       {showForm && (
-        <section id="guide-activity-form" className="cc-surface rounded-[24px] p-4 space-y-3">
+        <section className="cc-surface rounded-[24px] p-4 space-y-3">
           <h2 className="text-[15px] font-bold text-cc-primary">
             {isEditing ? 'Editar actividad' : 'Nueva actividad'}
           </h2>

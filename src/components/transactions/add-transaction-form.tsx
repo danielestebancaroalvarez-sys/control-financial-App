@@ -31,6 +31,8 @@ export function AddTransactionForm({
   defaultType = 'expense',
   hideTypeSelector = false,
   authorAvatarUrl,
+  defaultCategoryName,
+  categoryFilter,
 }: {
   householdId: string
   baseCurrency: CurrencyCode
@@ -42,6 +44,8 @@ export function AddTransactionForm({
   onSuccess?: () => void
   defaultType?: TxType
   hideTypeSelector?: boolean
+  defaultCategoryName?: string
+  categoryFilter?: (category: Category) => boolean
 }) {
   const router = useRouter()
   const [txType, setTxType] = useState<TxType>(defaultType)
@@ -66,10 +70,20 @@ export function AddTransactionForm({
   const [receiptUploadWarning, setReceiptUploadWarning] = useState<string | null>(null)
   const [attributedTo, setAttributedTo] = useState(currentUserId)
 
-  const filteredCategories = useMemo(
-    () => categories.filter(c => c.type === txType && c.name !== 'Ahorro'),
-    [categories, txType]
-  )
+  const filteredCategories = useMemo(() => {
+    const byType = categories.filter(c => c.type === txType && c.name !== 'Ahorro')
+    if (!categoryFilter) return byType
+    const filtered = byType.filter(categoryFilter)
+    return filtered.length > 0 ? filtered : byType
+  }, [categories, txType, categoryFilter])
+
+  useEffect(() => {
+    if (!defaultCategoryName) return
+    const match = filteredCategories.find(
+      c => c.name.toLowerCase() === defaultCategoryName.toLowerCase()
+    )
+    if (match) setCategoryId(match.id)
+  }, [defaultCategoryName, filteredCategories])
 
   const selectedCategory = filteredCategories.find(
     c => c.id === (categoryId || filteredCategories[0]?.id)

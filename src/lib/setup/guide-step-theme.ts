@@ -71,6 +71,14 @@ export const GUIDE_STEP_THEMES: Record<GuideStepId, GuideStepTheme> = {
     border: '#4F46E550',
     glow: '0 12px 40px rgba(79, 70, 229, 0.35)',
   },
+  time_fixed: {
+    accent: '#6366F1',
+    accentLight: '#EEF2FF',
+    accentLightDark: '#1e1b4b',
+    gradient: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)',
+    border: '#6366F150',
+    glow: '0 12px 40px rgba(99, 102, 241, 0.35)',
+  },
   task: {
     accent: '#6366F1',
     accentLight: '#EEF2FF',
@@ -97,6 +105,7 @@ const ASSISTANT_STEP_ID_MAP: Record<string, GuideStepId> = {
   subscription: 'subscription',
   savings: 'savings',
   sleep: 'sleep',
+  fixed_time: 'time_fixed',
   first_task: 'task',
   activity: 'new',
 }

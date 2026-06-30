@@ -106,18 +106,23 @@ async function timeProgressData(householdId: string, userId: string) {
         .limit(20),
     ])
 
-  const hasSleepBlock = (sleepBlocksRes.data ?? []).some(row => {
+  let hasSleepBlock = false
+  let hasFixedTime = false
+
+  for (const row of sleepBlocksRes.data ?? []) {
     const cat = Array.isArray(row.time_categories)
       ? row.time_categories[0]
       : row.time_categories
-    return cat?.name === 'Sueño'
-  })
+    if (cat?.name === 'Sueño') hasSleepBlock = true
+    else hasFixedTime = true
+  }
 
   return {
     templateCount: templatesRes.count ?? 0,
     taskCount: tasksRes.count ?? 0,
     hasSleep:
       (sleepSessionsRes.data?.length ?? 0) > 0 || hasSleepBlock,
+    hasFixedTime,
   }
 }
 
@@ -194,6 +199,13 @@ function buildTimeSteps(completed: Record<TimeStepId, boolean>): AssistantStep[]
       description: 'Configura o registra tu primer sueño.',
       href: '/tiempo/nuevo?guide=sleep',
       completed: completed.sleep,
+    },
+    {
+      id: 'fixed_time',
+      label: 'Tiempo fijo',
+      description: 'Programa un bloque recurrente en tu horario.',
+      href: '/tiempo/nuevo?guide=time_fixed',
+      completed: completed.fixed_time,
     },
     {
       id: 'activity',
@@ -283,6 +295,7 @@ export async function getTimeModuleProgress(): Promise<ModuleAssistantState> {
   const completed: Record<TimeStepId, boolean> = {
     profile: profileDone,
     sleep: data.hasSleep,
+    fixed_time: data.hasFixedTime,
     activity: data.templateCount > 0,
     first_task: data.taskCount > 0,
   }
@@ -316,7 +329,7 @@ export async function householdHasTimeData(): Promise<boolean> {
   if (!user || !household) return true
 
   const data = await timeProgressData(household.id, user.id)
-  return data.templateCount > 0 || data.taskCount > 0 || data.hasSleep
+  return data.templateCount > 0 || data.taskCount > 0 || data.hasSleep || data.hasFixedTime
 }
 
 export async function getIsHouseholdOwner(): Promise<boolean> {
