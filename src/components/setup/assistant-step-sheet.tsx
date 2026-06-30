@@ -1,12 +1,15 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useSyncExternalStore } from 'react'
 import { createPortal } from 'react-dom'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Check, ChevronRight, Sparkles, X } from 'lucide-react'
 import { useIsDark } from '@/hooks/use-is-dark'
 import type { AssistantModule, AssistantStep } from '@/lib/setup/assistant-types'
+import {
+  extractGuideFromHref,
+  openGuideOverlay,
+} from '@/lib/setup/guide-overlay-store'
 import { resolveGuideStepTheme } from '@/lib/setup/guide-step-theme'
 
 const MODULE_LABELS: Record<AssistantModule, string> = {
@@ -32,15 +35,18 @@ export function AssistantStepSheet({
   totalCount: number
   onClose: () => void
 }) {
-  const [mounted, setMounted] = useState(false)
   const router = useRouter()
   const isDark = useIsDark()
+  const canPortal = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  )
   const accent = MODULE_ACCENTS[module]
   const label = MODULE_LABELS[module]
   const progress = totalCount > 0 ? (completedCount / totalCount) * 100 : 0
 
   useEffect(() => {
-    setMounted(true)
     const prev = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     return () => {
@@ -48,13 +54,20 @@ export function AssistantStepSheet({
     }
   }, [])
 
+  function goToStep(href: string) {
+    const guideId = extractGuideFromHref(href)
+    if (guideId) openGuideOverlay(guideId)
+    onClose()
+    router.push(href)
+  }
+
   useEffect(() => {
     for (const step of steps) {
       if (!step.completed) router.prefetch(step.href)
     }
   }, [steps, router])
 
-  if (!mounted) return null
+  if (!canPortal) return null
 
   const sheet = (
     <div className="fixed inset-0 z-[80] flex items-end justify-center">
@@ -117,10 +130,10 @@ export function AssistantStepSheet({
                     </div>
                   </div>
                 ) : (
-                  <Link
-                    href={step.href}
-                    onClick={onClose}
-                    className="flex items-center gap-3 p-3 rounded-2xl border-2 transition-colors hover:opacity-95"
+                  <button
+                    type="button"
+                    onClick={() => goToStep(step.href)}
+                    className="flex w-full items-center gap-3 p-3 rounded-2xl border-2 transition-colors hover:opacity-95 text-left"
                     style={{
                       borderColor: stepTheme.accent,
                       backgroundColor: stepTheme.surfaceBg,
@@ -147,7 +160,7 @@ export function AssistantStepSheet({
                       className="w-4 h-4 shrink-0"
                       style={{ color: stepTheme.accent }}
                     />
-                  </Link>
+                  </button>
                 )}
               </li>
             )

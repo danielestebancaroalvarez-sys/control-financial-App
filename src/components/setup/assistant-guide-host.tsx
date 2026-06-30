@@ -1,10 +1,15 @@
 'use client'
 
-import { Suspense, useCallback, useMemo } from 'react'
-import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { useCallback, useEffect, useMemo, useSyncExternalStore } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
 import { getAppModule } from '@/lib/app/module'
 import { parseGuideParam } from '@/lib/setup/assistant-guide-config'
 import type { GuideStepConfig } from '@/lib/setup/assistant-guide-config'
+import {
+  clearPendingGuideOverlay,
+  getPendingGuideOverlay,
+  subscribeGuideOverlay,
+} from '@/lib/setup/guide-overlay-store'
 import { FloatingGuideModal } from './floating-guide-modal'
 
 function resolveGuideStep(step: GuideStepConfig, pathname: string): GuideStepConfig {
@@ -21,32 +26,51 @@ function resolveGuideStep(step: GuideStepConfig, pathname: string): GuideStepCon
   return step
 }
 
-function AssistantGuideHostInner() {
-  const searchParams = useSearchParams()
+function usePendingGuide() {
+  return useSyncExternalStore(
+    subscribeGuideOverlay,
+    getPendingGuideOverlay,
+    () => null
+  )
+}
+
+function readGuideFromUrl(): string | null {
+  if (typeof window === 'undefined') return null
+  return new URLSearchParams(window.location.search).get('guide')
+}
+
+export function AssistantGuideHost() {
   const pathname = usePathname()
   const router = useRouter()
-  const guide = searchParams.get('guide')
+  const pendingGuide = usePendingGuide()
+
+  const urlGuide = useMemo(() => readGuideFromUrl(), [pathname, pendingGuide])
+
+  const guideId = urlGuide ?? pendingGuide
+
+  useEffect(() => {
+    if (urlGuide && urlGuide === pendingGuide) {
+      clearPendingGuideOverlay()
+    }
+  }, [urlGuide, pendingGuide])
+
   const step = useMemo(() => {
-    const parsed = parseGuideParam(guide)
+    if (!guideId) return null
+    const parsed = parseGuideParam(guideId)
     return parsed ? resolveGuideStep(parsed, pathname) : null
-  }, [guide, pathname])
+  }, [guideId, pathname])
 
   const dismiss = useCallback(() => {
-    const params = new URLSearchParams(searchParams.toString())
+    clearPendingGuideOverlay()
+    const params = new URLSearchParams(
+      typeof window !== 'undefined' ? window.location.search : ''
+    )
     params.delete('guide')
     const query = params.toString()
     router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
-  }, [pathname, router, searchParams])
+  }, [pathname, router])
 
   if (!step) return null
 
   return <FloatingGuideModal step={step} onDismiss={dismiss} />
-}
-
-export function AssistantGuideHost() {
-  return (
-    <Suspense fallback={null}>
-      <AssistantGuideHostInner />
-    </Suspense>
-  )
 }

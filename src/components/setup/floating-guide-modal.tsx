@@ -1,6 +1,6 @@
 'use client'
 
-import { useLayoutEffect, useState } from 'react'
+import { useSyncExternalStore } from 'react'
 import { createPortal } from 'react-dom'
 import {
   ArrowDownLeft,
@@ -45,6 +45,8 @@ function StepIcon({ stepId }: { stepId: GuideStepConfig['id'] }) {
   }
 }
 
+const isBrowser = () => typeof window !== 'undefined'
+
 export function FloatingGuideModal({
   step,
   onDismiss,
@@ -52,14 +54,14 @@ export function FloatingGuideModal({
   step: GuideStepConfig
   onDismiss: () => void
 }) {
-  const [mounted, setMounted] = useState(false)
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    isBrowser,
+    () => false
+  )
   const isDark = useIsDark()
   const theme = resolveGuideStepTheme(step.id, isDark)
   const progress = (step.stepIndex / step.totalSteps) * 100
-
-  useLayoutEffect(() => {
-    setMounted(true)
-  }, [])
 
   if (!mounted) return null
 
@@ -71,9 +73,7 @@ export function FloatingGuideModal({
         aria-label="Cerrar guía"
         onClick={onDismiss}
       />
-      <div
-        className="fixed inset-x-0 bottom-[calc(5.25rem+env(safe-area-inset-bottom))] z-[70] flex justify-center px-4 pointer-events-none"
-      >
+      <div className="fixed inset-x-0 bottom-[calc(5.25rem+env(safe-area-inset-bottom))] z-[70] flex justify-center px-4 pointer-events-none">
         <div
           className="pointer-events-auto w-full max-w-md rounded-[22px] overflow-hidden border-2 cc-surface-solid"
           style={{
@@ -85,7 +85,7 @@ export function FloatingGuideModal({
         >
           <div className="h-1.5 w-full bg-[var(--cc-surface-muted)] overflow-hidden">
             <div
-              className="h-full rounded-r-full transition-none"
+              className="h-full rounded-r-full"
               style={{ background: theme.gradient, width: `${progress}%` }}
             />
           </div>
